@@ -18,7 +18,7 @@ in {
 
   services.restic.backups.r2 = {
     initialize = true;
-    repository = "s3:https://${accountId}.r2.cloudflarestorage.com/pix-backups";
+    repository = "s3:https://${accountId}.r2.cloudflarestorage.com/pix-backup";
     passwordFile = config.sops.secrets.restic-password.path;
     environmentFile = config.sops.templates.restic-r2-env.path;
 
