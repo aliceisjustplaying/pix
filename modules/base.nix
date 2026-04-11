@@ -107,5 +107,8 @@
   # at(1) daemon for deferred job scheduling (used by bsky-boost)
   services.atd.enable = true;
 
+  # cron for scheduled tasks
+  services.cron.enable = true;
+
   programs.git.enable = true;
 }
