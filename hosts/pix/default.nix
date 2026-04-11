@@ -1,7 +1,7 @@
 { config, lib, modulesPath, ... }:
 let
   # Set this to false after Tailscale works and you have verified SSH over the tailnet.
-  publicSshBootstrap = true;
+  publicSshBootstrap = false;
 
   operatorKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+aS2lsR/vsc46amWdsUXGEFuEARJaz3yGAFtVePQuE operator";
   pixKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIASGKGmqo6Inrjo5Vy1z9iS4NKPB6kX8nXiluyjJ8bMe pix.mosphere.at";
