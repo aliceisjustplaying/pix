@@ -206,6 +206,28 @@ cd ~/src/piclaw-customizations
 
 Use `--force` to skip version check, `--dry-run` to compare versions without installing, `--no-restart` if the caller handles restart.
 
+### Update Claude Code and Codex CLI
+
+These are managed as Nix flake inputs:
+
+```bash
+cd ~/src/pix
+nix flake update claude-code codex-cli
+git add flake.lock && git commit -m "Update claude-code and codex-cli"
+rebuild
+```
+
+### Update all Nix inputs (nixpkgs, home-manager, etc.)
+
+```bash
+cd ~/src/pix
+nix flake update
+git add flake.lock && git commit -m "Update flake inputs"
+rebuild
+```
+
+This includes kernel updates. The new kernel takes effect on next reboot.
+
 ### Resize the server
 
 In `hcloud` or the Hetzner dashboard, you can upgrade CPU/RAM without expanding the disk. This lets you downgrade later. If you expand the disk, the upgrade is permanent.
