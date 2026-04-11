@@ -13,6 +13,7 @@ in {
     ../../modules/tailscale.nix
     ../../modules/cloudflared.nix
     ../../modules/piclaw.nix
+    ../../modules/backup.nix
   ];
 
   networking.hostName = "pix";
