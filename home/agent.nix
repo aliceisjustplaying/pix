@@ -1,5 +1,18 @@
 { config, pkgs, ... }:
-{
+let
+  home = config.home.homeDirectory;
+
+  # SSH-based host commands for use inside the sandboxed piclaw service.
+  # The piclaw systemd unit runs with ProtectSystem=strict, so commands
+  # that write outside ~/  (nixos-rebuild, systemctl) must go through
+  # SSH to localhost.  An ed25519 keypair (keys/piclaw-local.pub) is
+  # authorized for agent@localhost to make this work.
+  hostCmd = cmd: ''
+    #!/usr/bin/env bash
+    set -euo pipefail
+    exec ssh -o BatchMode=yes localhost ${cmd}
+  '';
+in {
   home.stateVersion = "25.11";
   programs.home-manager.enable = true;
 
@@ -9,9 +22,9 @@
   };
 
   home.sessionPath = [
-    "${config.home.homeDirectory}/.local/bin"
-    "${config.home.homeDirectory}/.bun/bin"
-    "${config.home.homeDirectory}/.nix-profile/bin"
+    "${home}/.local/bin"
+    "${home}/.bun/bin"
+    "${home}/.nix-profile/bin"
     "/run/wrappers/bin"
     "/run/current-system/sw/bin"
   ];
@@ -29,22 +42,57 @@
     uv
   ];
 
-  # npm tries to install globals into the read-only Nix store.
-  # Redirect to ~/.local so `pi install npm:…` works.
-  home.file.".npmrc".text = "prefix=${config.home.homeDirectory}/.local";
+  home.file.".npmrc".text = "prefix=${home}/.local";
+
+  # Scripts that work both interactively and from inside piclaw's sandbox.
+  home.file.".local/bin/rebuild" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd ${home}/src/pix
+      git pull
+      ssh -o BatchMode=yes localhost "sudo nixos-rebuild switch --flake ${home}/src/pix#pix"
+    '';
+  };
+
+  home.file.".local/bin/update" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd ${home}/src/piclaw-customizations
+      git pull
+      ssh -o BatchMode=yes localhost "cd ${home}/src/piclaw-customizations && ./scripts/piclaw-update.sh $*"
+    '';
+  };
+
+  home.file.".local/bin/pstatus" = {
+    executable = true;
+    text = hostCmd ''"systemctl status tailscaled cloudflared piclaw --no-pager"'';
+  };
+
+  home.file.".local/bin/plogs" = {
+    executable = true;
+    text = hostCmd ''"journalctl -u piclaw -n 50 --no-pager"'';
+  };
+
+  home.file.".local/bin/prestart" = {
+    executable = true;
+    text = hostCmd ''"sudo systemctl restart piclaw"'';
+  };
+
+  home.file.".local/bin/backup" = {
+    executable = true;
+    text = hostCmd ''"sudo systemctl start restic-backups-r2.service && sudo journalctl -u restic-backups-r2.service --no-pager -f"'';
+  };
 
   programs.bash = {
     enable = true;
     shellAliases = {
       ll = "ls -lah";
-      rebuild = "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/src/pix#pix";
       sync-nix = "cd ~/src/pix && git pull && rebuild";
-      update = "cd ~/src/piclaw-customizations && git pull && ./scripts/piclaw-update.sh";
       update-force = "cd ~/src/piclaw-customizations && git pull && ./scripts/piclaw-update.sh --force";
-      pstatus = "systemctl status tailscaled cloudflared piclaw --no-pager";
-      plogs = "journalctl -u piclaw -n 50 --no-pager";
-      prestart = "sudo systemctl restart piclaw";
-      backup = "sudo systemctl start restic-backups-r2.service && sudo journalctl -u restic-backups-r2.service --no-pager -f";
     };
   };
 
