@@ -102,6 +102,35 @@
     gh
     patch
     at
+
+    # Camoufox (anti-detection Firefox) runtime dependencies
+    gtk3
+    dbus-glib
+    alsa-lib
+    xorg.libXcomposite
+    xorg.libXdamage
+    xorg.libXrandr
+    xorg.libXtst
+    xorg.libXScrnSaver
+    pango
+    cairo
+    atk
+    at-spi2-atk
+    cups.lib
+    libdrm
+    mesa
+    nss
+    nspr
+    xorg.libxcb
+    xorg.libX11
+    xorg.libXext
+    xorg.libXfixes
+    xorg.libXi
+    expat
+    glib
+    gdk-pixbuf
+    fontconfig
+    freetype
   ];
 
   # at(1) daemon for deferred job scheduling (used by bsky-boost)
