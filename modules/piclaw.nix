@@ -75,8 +75,6 @@ in {
     "L+ /workspace - - - - ${agentHome}/workspace"
   ];
 
-  # Copies sops secrets that agent needs into the right locations.
-  # Runs on every boot and whenever the source secrets change.
   systemd.services.agent-secrets = {
     description = "Copy decrypted secrets for agent user";
     after = [ "network-online.target" ];
@@ -98,7 +96,7 @@ in {
     };
   };
 
-  # Allow the piclaw service to SSH back to localhost for nixos-rebuild etc.
+  # Authorizes piclaw's local key for SSH-based host commands (rebuild, etc.)
   users.users.agent.openssh.authorizedKeys.keyFiles = [
     ../keys/piclaw-local.pub
   ];
