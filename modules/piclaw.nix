@@ -116,7 +116,7 @@ in {
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
       ExecStart = "/usr/local/bin/piclaw";
-      Restart = "on-failure";
+      Restart = "always";
       RestartSec = "5s";
       TimeoutStartSec = "60s";
       UMask = "0077";
