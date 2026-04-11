@@ -40,14 +40,12 @@
 
   programs.git = {
     enable = true;
-    userName = "alice";
-    userEmail = "aliceisjustplaying@gmail.com";
-    signing = {
-      key = "~/.ssh/id_ed25519_github";
-      signByDefault = true;
-      format = "ssh";
-    };
     settings = {
+      user.name = "alice";
+      user.email = "aliceisjustplaying@gmail.com";
+      user.signingKey = "~/.ssh/id_ed25519_github";
+      commit.gpgSign = true;
+      gpg.format = "ssh";
       init.defaultBranch = "main";
       pull.rebase = false;
     };
