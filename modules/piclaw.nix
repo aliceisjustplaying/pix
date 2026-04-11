@@ -96,30 +96,10 @@ in {
     };
   };
 
-  # Patch pi-coding-agent's jiti loader so that tryNative=false under Bun.
-  # Without this, Bun's native resolver skips jiti's alias map and npm-installed
-  # pi package extensions fail to resolve @mariozechner/* peer imports.
-  # Runs as root (files are root-owned from bun install -g) before piclaw starts.
-  systemd.services.piclaw-patch = {
-    description = "Patch pi-coding-agent jiti loader for Bun runtime";
-    wantedBy = [ "multi-user.target" ];
-    before = [ "piclaw.service" ];
-    unitConfig.ConditionPathExists = "${agentHome}/.bun/install/global/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/loader.js";
-
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = "${agentHome}/src/pix/patches/pi-coding-agent-jiti-trynative.sh";
-      Environment = [
-        "PATH=${lib.makeBinPath [ pkgs.bash pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.findutils ]}"
-      ];
-    };
-  };
-
   systemd.services.piclaw = {
     description = "Piclaw";
-    after = [ "network-online.target" "agent-secrets.service" "piclaw-patch.service" ];
-    wants = [ "network-online.target" "agent-secrets.service" "piclaw-patch.service" ];
+    after = [ "network-online.target" "agent-secrets.service" ];
+    wants = [ "network-online.target" "agent-secrets.service" ];
     wantedBy = [ "multi-user.target" ];
     unitConfig.ConditionPathExists = "/usr/local/bin/piclaw";
 
@@ -135,6 +115,12 @@ in {
         "XDG_CONFIG_HOME=${agentHome}/.config"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
+      # "+" prefix → runs as root before the service drops to User=agent.
+      # Patches jiti's tryNative for Bun runtime so pi package extensions load.
+      ExecStartPre = "+${pkgs.writeShellScript "piclaw-patch" ''
+        export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.findutils ]}
+        exec ${agentHome}/src/pix/patches/pi-coding-agent-jiti-trynative.sh
+      ''}";
       ExecStart = "/usr/local/bin/piclaw";
       Restart = "always";
       RestartSec = "5s";
