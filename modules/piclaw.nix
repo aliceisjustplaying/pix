@@ -98,6 +98,11 @@ in {
     };
   };
 
+  # Allow the piclaw service to SSH back to localhost for nixos-rebuild etc.
+  users.users.agent.openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK2L4GYpNFZ9NBvoIJLNHr2Meffv+MUsD6bIcTDQqo+8 piclaw-local"
+  ];
+
   systemd.services.piclaw = {
     description = "Piclaw";
     after = [ "network-online.target" "agent-secrets.service" ];
