@@ -53,7 +53,7 @@ Create and encrypt `secrets/secrets.yaml`:
 sops secrets/secrets.yaml
 ```
 
-Required secrets: `tailscale-auth-key`, `cloudflared-tunnel-token`, `piclaw-keychain-key`, `piclaw-web-totp-secret`, `piclaw-web-internal-secret`, `exa-api-key`, `github-clone-key`, `cloudflare-api-token`. See `SECRETS-CHECKLIST.md` for how to generate each one.
+Required secrets: `tailscale-auth-key`, `cloudflared-tunnel-token`, `piclaw-keychain-key`, `piclaw-web-totp-secret`, `piclaw-web-internal-secret`, `exa-api-key`, `github-clone-key`, `cloudflare-api-token`, `restic-password`, `r2-access-key-id`, `r2-secret-access-key`. See `SECRETS-CHECKLIST.md` for how to generate each one.
 
 **Back up both age keys** (`~/.config/sops/age/keys.txt` and `secrets/age/pix-host.key`) to a password manager. These cannot be recovered.
 
@@ -227,6 +227,27 @@ rebuild
 ```
 
 This includes kernel updates. The new kernel takes effect on next reboot.
+
+### Enable Hetzner automatic backups
+
+```bash
+hcloud server enable-backup <SERVER_ID>
+```
+
+### Manual restic backup
+
+```bash
+sudo systemctl start restic-backups-r2.service
+sudo journalctl -u restic-backups-r2.service --no-pager
+```
+
+### List restic snapshots
+
+The restic password is in SOPS. Export it first, then query:
+
+```bash
+sudo restic -r s3:https://b752c979e541327de3e87e52f0906aa1.r2.cloudflarestorage.com/pix-backup snapshots
+```
 
 ### Resize the server
 

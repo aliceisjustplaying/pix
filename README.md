@@ -7,7 +7,7 @@ NixOS host for Piclaw on a Hetzner ARM64 VPS.
 - `flake.nix` — top-level flake
 - `hosts/pix/default.nix` — host-specific config
 - `disko/pix.nix` — disk layout
-- `modules/` — service modules (base, tailscale, cloudflared, piclaw)
+- `modules/` — service modules (base, tailscale, cloudflared, piclaw, backup)
 - `home/agent.nix` — Home Manager config for `agent`
 - `scripts/deploy.sh` — `nixos-anywhere` install helper
 - `scripts/prepare-bootstrap-key.sh` — generate/copy the host age key for first install
@@ -39,3 +39,14 @@ Piclaw itself is an **application managed by the agent** via the separate [`picl
 - Run the update script from that repo to install Piclaw
 - Re-auth `claude` and `codex` as the `agent` user
 - Open `https://pix.mosphere.at`, complete TOTP bootstrap, then enroll passkeys
+
+## Backups
+
+Two layers:
+
+- **Hetzner automatic backups** — full-disk rolling snapshots, enabled via `hcloud server enable-backup`
+- **Restic to Cloudflare R2** — daily encrypted backups of `/workspace/.piclaw` and `/home/agent/src` to the `pix-backup` R2 bucket, with 7 daily / 4 weekly / 3 monthly retention. Configured in `modules/backup.nix`
+
+To trigger a manual backup: `sudo systemctl start restic-backups-r2.service`
+
+To list snapshots: `sudo restic -r s3:https://b752c979e541327de3e87e52f0906aa1.r2.cloudflarestorage.com/pix-backup snapshots`

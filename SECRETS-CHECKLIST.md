@@ -117,9 +117,46 @@ How to create it:
 Where it goes:
 - `secrets/secrets.yaml` under `cloudflare-api-token`
 
+### 9. `restic-password`
+What it is:
+- the encryption password for the restic backup repository on Cloudflare R2
+
+How to create it:
+
+```bash
+openssl rand -hex 32
+```
+
+Where it goes:
+- `secrets/secrets.yaml` under `restic-password`
+
+**Back this up** to a password manager. Without it, backups cannot be restored.
+
+### 10. `r2-access-key-id`
+What it is:
+- the S3-compatible Access Key ID for the Cloudflare R2 backup bucket
+
+How to create it:
+- Cloudflare dashboard → R2 → Manage R2 API Tokens → Create API token
+- permission: Object Read & Write
+- scope: `pix-backup` bucket only
+
+Where it goes:
+- `secrets/secrets.yaml` under `r2-access-key-id`
+
+### 11. `r2-secret-access-key`
+What it is:
+- the S3-compatible Secret Access Key paired with the R2 Access Key ID above
+
+How to create it:
+- created at the same time as `r2-access-key-id`
+
+Where it goes:
+- `secrets/secrets.yaml` under `r2-secret-access-key`
+
 ## Required bootstrap key material
 
-### 9. Operator age key
+### 12. Operator age key
 What it is:
 - the age key used on your Mac to edit and decrypt the SOPS file
 
@@ -133,7 +170,7 @@ age-keygen -y ~/.config/sops/age/keys.txt
 
 Use the printed public recipient in `.sops.yaml` (at the repo root).
 
-### 10. Host age key
+### 13. Host age key
 What it is:
 - the server-side age key that lets the fresh host decrypt `secrets/secrets.yaml` on first boot
 
