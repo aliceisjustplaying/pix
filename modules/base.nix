@@ -69,6 +69,24 @@
     jq
     ripgrep
     fd
+    bat
+    fzf
+    eza
+    delta
+    just
+    direnv
+    shellcheck
+    shfmt
+    yq-go
+    gnumake
+
+    # Rust toolchain
+    rustc
+    cargo
+    clippy
+    rustfmt
+    rust-analyzer
+
     tree
     tmux
     htop
