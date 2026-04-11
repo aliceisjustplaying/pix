@@ -103,35 +103,7 @@
     patch
     at
 
-    # Camoufox (anti-detection Firefox) runtime dependencies
-    gtk3
-    dbus-glib
-    alsa-lib
-    xorg.libXcomposite
-    xorg.libXdamage
-    xorg.libXrandr
-    xorg.libXtst
-    xorg.libXScrnSaver
-    pango
-    cairo
-    atk
-    at-spi2-atk
-    cups.lib
-    libdrm
-    mesa
-    nss
-    nspr
-    xorg.libxcb
-    xorg.libX11
-    xorg.libXext
-    xorg.libXfixes
-    xorg.libXi
-    expat
-    glib
-    gdk-pixbuf
-    fontconfig
-    freetype
-    stdenv.cc.cc.lib  # libstdc++ for Camoufox
+
   ];
 
   # at(1) daemon for deferred job scheduling (used by bsky-boost)
@@ -146,6 +118,42 @@
       "0 17 * * * agent cd /home/agent/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 2 >> data/cron.log 2>&1"
       "0 22 * * * agent cd /home/agent/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 3 >> data/cron.log 2>&1"
       "0  2 * * * agent cd /home/agent/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 4 >> data/cron.log 2>&1"
+    ];
+  };
+
+  # Allow running dynamically-linked binaries from outside the Nix store
+  # (needed for Camoufox, Playwright browsers, etc.)
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      stdenv.cc.cc.lib
+      gtk3
+      glib
+      dbus-glib
+      alsa-lib
+      nss
+      nspr
+      xorg.libX11
+      xorg.libXcomposite
+      xorg.libXdamage
+      xorg.libXext
+      xorg.libXfixes
+      xorg.libXrandr
+      xorg.libXtst
+      xorg.libXScrnSaver
+      xorg.libxcb
+      xorg.libXi
+      pango
+      cairo
+      atk
+      at-spi2-atk
+      cups.lib
+      libdrm
+      mesa
+      expat
+      gdk-pixbuf
+      fontconfig
+      freetype
     ];
   };
 
