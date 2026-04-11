@@ -96,6 +96,23 @@ in {
     };
   };
 
+  # Privileged rebuild service — piclaw can trigger via:
+  #   sudo systemctl start nixos-rebuild.service
+  # Runs as root so it can write to /nix/var/nix/profiles.
+  systemd.services.nixos-rebuild = {
+    description = "NixOS rebuild switch";
+    serviceConfig = {
+      Type = "oneshot";
+      WorkingDirectory = "${agentHome}/src/pix";
+      ExecStart = "${pkgs.nixos-rebuild}/bin/nixos-rebuild switch --flake ${agentHome}/src/pix#pix";
+      Environment = [
+        "HOME=${agentHome}"
+        "PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.git pkgs.nix pkgs.nixos-rebuild pkgs.systemd ]}:/run/wrappers/bin"
+      ];
+      TimeoutStartSec = "300s";
+    };
+  };
+
   systemd.services.piclaw = {
     description = "Piclaw";
     after = [ "network-online.target" "agent-secrets.service" ];
