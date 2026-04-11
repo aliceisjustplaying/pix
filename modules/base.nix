@@ -107,8 +107,17 @@
   # at(1) daemon for deferred job scheduling (used by bsky-boost)
   services.atd.enable = true;
 
-  # cron for scheduled tasks
-  services.cron.enable = true;
+  # cron for bsky-boost scheduled rounds
+  services.cron = {
+    enable = true;
+    systemCronJobs = [
+      "CRON_TZ=Europe/London"
+      "0 10 * * * agent cd /home/agent/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 1 >> data/cron.log 2>&1"
+      "0 17 * * * agent cd /home/agent/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 2 >> data/cron.log 2>&1"
+      "0 22 * * * agent cd /home/agent/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 3 >> data/cron.log 2>&1"
+      "0  2 * * * agent cd /home/agent/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 4 >> data/cron.log 2>&1"
+    ];
+  };
 
   programs.git.enable = true;
 }
