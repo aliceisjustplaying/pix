@@ -38,6 +38,13 @@
     shellAliases = {
       ll = "ls -lah";
       rebuild = "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/src/pix#pix";
+      sync-nix = "cd ~/src/pix && git pull && rebuild";
+      update = "cd ~/src/piclaw-customizations && git pull && ./scripts/piclaw-update.sh";
+      update-force = "cd ~/src/piclaw-customizations && git pull && ./scripts/piclaw-update.sh --force";
+      pstatus = "systemctl status tailscaled cloudflared piclaw --no-pager";
+      plogs = "journalctl -u piclaw -n 50 --no-pager";
+      prestart = "sudo systemctl restart piclaw";
+      backup = "sudo systemctl start restic-backups-r2.service && sudo journalctl -u restic-backups-r2.service --no-pager -f";
     };
   };
 
