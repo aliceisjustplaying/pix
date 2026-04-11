@@ -24,6 +24,7 @@ in {
 
     paths = [
       "/workspace/.piclaw"
+      "/home/agent/src"
     ];
 
     timerConfig = {
