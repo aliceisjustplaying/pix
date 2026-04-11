@@ -34,7 +34,7 @@
     enable = true;
     shellAliases = {
       ll = "ls -lah";
-      rebuild = "sudo systemctl start nixos-rebuild.service && echo 'Rebuild complete' || echo 'Rebuild failed'";
+      rebuild = "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/src/pix#pix";
     };
   };
 
