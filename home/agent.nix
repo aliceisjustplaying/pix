@@ -71,6 +71,12 @@
         identitiesOnly = true;
         extraOptions.StrictHostKeyChecking = "accept-new";
       };
+      "localhost" = {
+        user = "agent";
+        identityFile = "~/.ssh/id_ed25519_local";
+        identitiesOnly = true;
+        extraOptions.StrictHostKeyChecking = "accept-new";
+      };
     };
   };
 }
