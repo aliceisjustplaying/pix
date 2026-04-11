@@ -26,6 +26,10 @@
     uv
   ];
 
+  # npm tries to install globals into the read-only Nix store.
+  # Redirect to ~/.local so `pi install npm:…` works.
+  home.file.".npmrc".text = "prefix=${config.home.homeDirectory}/.local";
+
   programs.bash = {
     enable = true;
     shellAliases = {
