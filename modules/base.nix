@@ -131,6 +131,7 @@
     gdk-pixbuf
     fontconfig
     freetype
+    stdenv.cc.cc.lib  # libstdc++ for Camoufox
   ];
 
   # at(1) daemon for deferred job scheduling (used by bsky-boost)
