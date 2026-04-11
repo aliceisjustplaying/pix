@@ -96,10 +96,30 @@ in {
     };
   };
 
+  # Patch pi-coding-agent's jiti loader so that tryNative=false under Bun.
+  # Without this, Bun's native resolver skips jiti's alias map and npm-installed
+  # pi package extensions fail to resolve @mariozechner/* peer imports.
+  # Runs as root (files are root-owned from bun install -g) before piclaw starts.
+  systemd.services.piclaw-patch = {
+    description = "Patch pi-coding-agent jiti loader for Bun runtime";
+    wantedBy = [ "multi-user.target" ];
+    before = [ "piclaw.service" ];
+    unitConfig.ConditionPathExists = "${agentHome}/.bun/install/global/node_modules/@mariozechner/pi-coding-agent/dist/core/extensions/loader.js";
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${agentHome}/src/pix/patches/pi-coding-agent-jiti-trynative.sh";
+      Environment = [
+        "PATH=${lib.makeBinPath [ pkgs.bash pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.findutils ]}"
+      ];
+    };
+  };
+
   systemd.services.piclaw = {
     description = "Piclaw";
-    after = [ "network-online.target" "agent-secrets.service" ];
-    wants = [ "network-online.target" "agent-secrets.service" ];
+    after = [ "network-online.target" "agent-secrets.service" "piclaw-patch.service" ];
+    wants = [ "network-online.target" "agent-secrets.service" "piclaw-patch.service" ];
     wantedBy = [ "multi-user.target" ];
     unitConfig.ConditionPathExists = "/usr/local/bin/piclaw";
 
