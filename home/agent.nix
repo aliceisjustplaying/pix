@@ -11,6 +11,9 @@
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin"
     "${config.home.homeDirectory}/.bun/bin"
+    "${config.home.homeDirectory}/.nix-profile/bin"
+    "/run/wrappers/bin"
+    "/run/current-system/sw/bin"
   ];
 
   home.packages = with pkgs; [

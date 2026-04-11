@@ -18,6 +18,8 @@ let
     pkgs.sqlite
     pkgs.ffmpeg
     pkgs.yt-dlp
+    pkgs.tmux
+    pkgs.which
     pkgs.claude-code
     pkgs.codex
   ];
