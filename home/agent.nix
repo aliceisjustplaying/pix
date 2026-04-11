@@ -52,7 +52,7 @@ in {
       set -euo pipefail
       cd ${home}/src/pix
       git pull
-      ssh -o BatchMode=yes localhost "sudo nixos-rebuild switch --flake ${home}/src/pix#pix"
+      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && sudo nixos-rebuild switch --flake ${home}/src/pix#pix"
     '';
   };
 
@@ -63,7 +63,7 @@ in {
       set -euo pipefail
       cd ${home}/src/piclaw-customizations
       git pull
-      ssh -o BatchMode=yes localhost "cd ${home}/src/piclaw-customizations && ./scripts/piclaw-update.sh $*"
+      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && cd ${home}/src/piclaw-customizations && ./scripts/piclaw-update.sh $*"
     '';
   };
 
