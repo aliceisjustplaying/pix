@@ -99,6 +99,8 @@
     ssh-to-age
     cloudflared
     bubblewrap
+    gh
+    patch
   ];
 
   programs.git.enable = true;
