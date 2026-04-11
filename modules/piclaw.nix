@@ -101,6 +101,29 @@ in {
     ../keys/piclaw-local.pub
   ];
 
+  systemd.services.camofox = {
+    description = "Camofox Browser - Anti-detection browser REST API";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+
+    serviceConfig = {
+      Type = "simple";
+      User = "agent";
+      Group = "users";
+      WorkingDirectory = "${agentHome}/src/camofox-browser";
+      Environment = [
+        "HOME=${agentHome}"
+        "NODE_ENV=production"
+        "CAMOFOX_PORT=9377"
+        "PATH=${lib.makeBinPath [ pkgs.nodejs_24 pkgs.yt-dlp pkgs.coreutils pkgs.bash ]}"
+      ];
+      ExecStart = "${pkgs.nodejs_24}/bin/node server.js";
+      Restart = "on-failure";
+      RestartSec = "5s";
+    };
+  };
+
   systemd.services.piclaw = {
     description = "Piclaw";
     after = [ "network-online.target" "agent-secrets.service" ];
