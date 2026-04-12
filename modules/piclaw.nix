@@ -6,13 +6,17 @@ let
     pkgs.bash
     pkgs.coreutils
     pkgs.curl
+    pkgs.diffutils
     pkgs.findutils
     pkgs.gnugrep
     pkgs.gnused
+    pkgs.gh
     pkgs.git
+    pkgs.gnupatch
     pkgs.openssh
     pkgs.bun
     pkgs.nodejs_24
+    pkgs.python3
     pkgs.jq
     pkgs.procps
     pkgs.sqlite
