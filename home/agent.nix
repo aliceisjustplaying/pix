@@ -30,7 +30,7 @@ let
 
     exec ssh -o BatchMode=yes localhost /run/current-system/sw/bin/bash -s -- "$job_name" "$command_b64" <<'EOF'
 set -euo pipefail
-export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:$PATH
+export PATH=${home}/.local/bin:${home}/.bun/bin:/etc/profiles/per-user/agent/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:$PATH
 
 job_name="$1"
 command_b64="$2"
@@ -45,7 +45,7 @@ sudo systemd-run \
   --gid=users \
   --setenv=HOME=${home} \
   --setenv=USER=agent \
-  --setenv=PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin \
+  --setenv=PATH=${home}/.local/bin:${home}/.bun/bin:/etc/profiles/per-user/agent/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin \
   --unit "$unit_name" \
   --description "$job_name" \
   /run/current-system/sw/bin/bash -lc "$command_string"
@@ -101,7 +101,7 @@ in {
       git pull
       exec ${home}/.local/bin/host-queue \
         pix-rebuild \
-        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/pix && sudo nixos-rebuild switch --flake path:${home}/workspace/src/pix#pix"
+        "export PATH=${home}/.local/bin:${home}/.bun/bin:/etc/profiles/per-user/agent/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/pix && sudo nixos-rebuild switch --flake path:${home}/workspace/src/pix#pix"
     '';
   };
 
@@ -119,7 +119,7 @@ in {
       git pull
       exec ${home}/.local/bin/host-queue \
         piclaw-update \
-        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && sudo ./scripts/piclaw-update-host.sh''${args_string:+ ''${args_string}}"
+        "export PATH=${home}/.local/bin:${home}/.bun/bin:/etc/profiles/per-user/agent/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && sudo ./scripts/piclaw-update-host.sh''${args_string:+ ''${args_string}}"
     '';
   };
 
@@ -135,7 +135,7 @@ in {
       args_string="''${quoted_args[*]}"
       exec ${home}/.local/bin/host-queue \
         piclaw-rollback \
-        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && sudo ./scripts/piclaw-rollback-host.sh''${args_string:+ ''${args_string}}"
+        "export PATH=${home}/.local/bin:${home}/.bun/bin:/etc/profiles/per-user/agent/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && sudo ./scripts/piclaw-rollback-host.sh''${args_string:+ ''${args_string}}"
     '';
   };
 
