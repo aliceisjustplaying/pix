@@ -111,7 +111,7 @@ in {
       Type = "simple";
       User = "agent";
       Group = "users";
-      WorkingDirectory = "${agentHome}/src/camofox-browser";
+      WorkingDirectory = "/workspace/src/camofox-browser";
       Environment = [
         "HOME=${agentHome}"
         "NODE_ENV=production"
@@ -129,21 +129,22 @@ in {
     after = [ "network-online.target" "agent-secrets.service" ];
     wants = [ "network-online.target" "agent-secrets.service" ];
     wantedBy = [ "multi-user.target" ];
-    unitConfig.ConditionPathExists = "/usr/local/bin/piclaw";
+    unitConfig.ConditionPathExists = "/workspace/src/piclaw-live/runtime/src/index.ts";
 
     serviceConfig = {
       Type = "simple";
       User = "agent";
       Group = "users";
-      WorkingDirectory = "${agentHome}";
+      WorkingDirectory = "/workspace/src/piclaw-live";
       EnvironmentFile = config.sops.templates.piclaw-env.path;
       Environment = [
         "HOME=${agentHome}"
         "USER=agent"
         "XDG_CONFIG_HOME=${agentHome}/.config"
+        "PICLAW_LIVE_ROOT=/workspace/src/piclaw-live"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
-      ExecStart = "/usr/local/bin/piclaw";
+      ExecStart = "${pkgs.bun}/bin/bun runtime/src/index.ts";
       Restart = "always";
       RestartSec = "5s";
       TimeoutStartSec = "60s";
