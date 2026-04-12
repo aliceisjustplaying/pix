@@ -1,6 +1,7 @@
 { config, pkgs, ... }:
 let
   home = config.home.homeDirectory;
+  workspaceSrc = "/workspace/src";
 
   # SSH-based host commands for use inside the sandboxed piclaw service.
   # The piclaw systemd unit runs with ProtectSystem=strict, so commands
@@ -50,9 +51,9 @@ in {
     text = ''
       #!/usr/bin/env bash
       set -euo pipefail
-      cd ${home}/src/pix
+      cd ${workspaceSrc}/pix
       git pull
-      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && sudo nixos-rebuild switch --flake ${home}/src/pix#pix"
+      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && sudo nixos-rebuild switch --flake ${workspaceSrc}/pix#pix"
     '';
   };
 
@@ -61,9 +62,18 @@ in {
     text = ''
       #!/usr/bin/env bash
       set -euo pipefail
-      cd ${home}/src/piclaw-customizations
+      cd ${workspaceSrc}/piclaw-customizations
       git pull
-      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && cd ${home}/src/piclaw-customizations && ./scripts/piclaw-update.sh $*"
+      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && ./scripts/piclaw-update.sh $*"
+    '';
+  };
+
+  home.file.".local/bin/rollback" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && ./scripts/piclaw-rollback.sh $*"
     '';
   };
 
@@ -91,8 +101,9 @@ in {
     enable = true;
     shellAliases = {
       ll = "ls -lah";
-      sync-nix = "cd ~/src/pix && git pull && rebuild";
-      update-force = "cd ~/src/piclaw-customizations && git pull && ./scripts/piclaw-update.sh --force";
+      sync-nix = "cd /workspace/src/pix && git pull && rebuild";
+      update-force = "cd /workspace/src/piclaw-customizations && git pull && ./scripts/piclaw-update.sh --force";
+      rollback-force = "rollback";
     };
   };
 

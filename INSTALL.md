@@ -122,7 +122,8 @@ sudo tailscale status
 The pix repo is public, so use HTTPS (the GitHub SSH key isn't available until after the first rebuild):
 
 ```bash
-cd ~/src
+mkdir -p /workspace/src
+cd /workspace/src
 git clone https://github.com/<YOU>/pix.git
 cd pix && rebuild
 ```
@@ -130,23 +131,23 @@ cd pix && rebuild
 After rebuild, sops secrets are decrypted and the GitHub SSH key works:
 
 ```bash
-cd ~/src
+mkdir -p /workspace/src
+cd /workspace/src
 git clone git@github.com:<YOU>/piclaw-customizations.git
 ```
 
 Then switch the pix remote to SSH for future pushes:
 
 ```bash
-cd ~/src/pix && git remote set-url origin git@github.com:<YOU>/pix.git
+cd /workspace/src/pix && git remote set-url origin git@github.com:<YOU>/pix.git
 ```
 
 ## First Piclaw install
 
-Prepare the global install directory and run the update:
+Deploy the first live checkout and start the service from source:
 
 ```bash
-mkdir -p ~/.bun/install/global
-cd ~/src/piclaw-customizations
+cd /workspace/src/piclaw-customizations
 ./scripts/piclaw-update.sh --force
 ```
 
@@ -181,7 +182,7 @@ Complete their login flows manually.
 
 After Tailscale SSH works and you can still reach the box:
 
-Edit `~/src/pix/hosts/pix/default.nix`, change `publicSshBootstrap = true` to `false`, then:
+Edit `/workspace/src/pix/hosts/pix/default.nix`, change `publicSshBootstrap = true` to `false`, then:
 
 ```bash
 rebuild
@@ -200,18 +201,26 @@ rebuild
 ### Update Piclaw
 
 ```bash
-cd ~/src/piclaw-customizations
+cd /workspace/src/piclaw-customizations
 ./scripts/piclaw-update.sh
 ```
 
 Use `--force` to skip version check, `--dry-run` to compare versions without installing, `--no-restart` if the caller handles restart.
+
+### Roll back Piclaw
+
+```bash
+rollback
+```
+
+This swaps `/workspace/src/piclaw-live.previous` back into place and restarts the service. The first source-run deployment has no rollback target yet; rollback becomes available after the next successful update.
 
 ### Update Claude Code and Codex CLI
 
 These are managed as Nix flake inputs:
 
 ```bash
-cd ~/src/pix
+cd /workspace/src/pix
 nix flake update claude-code codex-cli
 git add flake.lock && git commit -m "Update claude-code and codex-cli"
 rebuild
@@ -220,7 +229,7 @@ rebuild
 ### Update all Nix inputs (nixpkgs, home-manager, etc.)
 
 ```bash
-cd ~/src/pix
+cd /workspace/src/pix
 nix flake update
 git add flake.lock && git commit -m "Update flake inputs"
 rebuild

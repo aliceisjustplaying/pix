@@ -23,8 +23,13 @@ in {
     environmentFile = config.sops.templates.restic-r2-env.path;
 
     paths = [
-      "/workspace/.piclaw"
-      "/home/agent/src"
+      "/workspace"
+    ];
+
+    exclude = [
+      "/workspace/.cache"
+      "/workspace/src/piclaw-live"
+      "/workspace/src/piclaw-live.previous"
     ];
 
     timerConfig = {
