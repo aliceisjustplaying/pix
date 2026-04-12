@@ -13,6 +13,42 @@ let
     set -euo pipefail
     exec ssh -o BatchMode=yes localhost ${cmd}
   '';
+
+  hostQueueScript = ''
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [ "$#" -lt 2 ]; then
+      echo "usage: $(basename "$0") <job-name> <command>" >&2
+      exit 64
+    fi
+
+    job_name="$1"
+    shift
+    command_string="$1"
+    command_b64="$(printf '%s' "$command_string" | base64 -w0)"
+
+    exec ssh -o BatchMode=yes localhost /run/current-system/sw/bin/bash -s -- "$job_name" "$command_b64" <<'EOF'
+set -euo pipefail
+export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:$PATH
+
+job_name="$1"
+command_b64="$2"
+command_string="$(printf '%s' "$command_b64" | base64 -d)"
+unit_name="''${job_name}-$(date +%s)"
+
+sudo systemd-run \
+  --quiet \
+  --collect \
+  --service-type=exec \
+  --unit "$unit_name" \
+  --description "$job_name" \
+  /run/current-system/sw/bin/bash -lc "$command_string"
+
+printf 'queued %s\n' "$unit_name"
+printf 'follow logs with: ssh localhost sudo journalctl -u %s -f\n' "$unit_name"
+EOF
+  '';
 in {
   home.stateVersion = "25.11";
   programs.home-manager.enable = true;
@@ -45,6 +81,11 @@ in {
 
   home.file.".npmrc".text = "prefix=${home}/.local";
 
+  home.file.".local/bin/host-queue" = {
+    executable = true;
+    text = hostQueueScript;
+  };
+
   # Scripts that work both interactively and from inside piclaw's sandbox.
   home.file.".local/bin/rebuild" = {
     executable = true;
@@ -53,7 +94,9 @@ in {
       set -euo pipefail
       cd ${workspaceSrc}/pix
       git pull
-      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && sudo nixos-rebuild switch --flake ${workspaceSrc}/pix#pix"
+      exec ${home}/.local/bin/host-queue \
+        pix-rebuild \
+        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/pix && nixos-rebuild switch --flake ${workspaceSrc}/pix#pix"
     '';
   };
 
@@ -62,9 +105,16 @@ in {
     text = ''
       #!/usr/bin/env bash
       set -euo pipefail
+      quoted_args=()
+      for arg in "$@"; do
+        quoted_args+=("$(printf '%q' "$arg")")
+      done
+      args_string="''${quoted_args[*]}"
       cd ${workspaceSrc}/piclaw-customizations
       git pull
-      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && ./scripts/piclaw-update.sh $*"
+      exec ${home}/.local/bin/host-queue \
+        piclaw-update \
+        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && ./scripts/piclaw-update.sh''${args_string:+ ''${args_string}}"
     '';
   };
 
@@ -73,7 +123,14 @@ in {
     text = ''
       #!/usr/bin/env bash
       set -euo pipefail
-      ssh -o BatchMode=yes localhost "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && ./scripts/piclaw-rollback.sh $*"
+      quoted_args=()
+      for arg in "$@"; do
+        quoted_args+=("$(printf '%q' "$arg")")
+      done
+      args_string="''${quoted_args[*]}"
+      exec ${home}/.local/bin/host-queue \
+        piclaw-rollback \
+        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && ./scripts/piclaw-rollback.sh''${args_string:+ ''${args_string}}"
     '';
   };
 
@@ -89,7 +146,11 @@ in {
 
   home.file.".local/bin/prestart" = {
     executable = true;
-    text = hostCmd ''"sudo systemctl restart piclaw"'';
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      exec ${home}/.local/bin/host-queue piclaw-restart "systemctl restart piclaw"
+    '';
   };
 
   home.file.".local/bin/backup" = {
