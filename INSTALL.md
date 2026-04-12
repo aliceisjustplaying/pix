@@ -134,6 +134,10 @@ After rebuild, sops secrets are decrypted and the GitHub SSH key works:
 mkdir -p /workspace/src
 cd /workspace/src
 git clone git@github.com:<YOU>/piclaw-customizations.git
+git clone git@github.com:<YOU>/piclaw.git piclaw-fork
+cd piclaw-fork
+git remote add upstream https://github.com/rcarmo/piclaw.git
+cd ..
 ```
 
 Then switch the pix remote to SSH for future pushes:
@@ -206,6 +210,20 @@ cd /workspace/src/piclaw-customizations
 ```
 
 Use `--force` to skip version check, `--dry-run` to compare versions without installing, `--no-restart` if the caller handles restart.
+
+### Work on upstream Piclaw PRs
+
+Use the dedicated fork checkout, not the deployment checkout:
+
+```bash
+cd /workspace/src/piclaw-fork
+git fetch upstream
+git switch main
+git reset --hard upstream/main
+git switch -c <branch-name>
+```
+
+`/workspace/src/piclaw-live` is reserved for the running service and local patch-stack validation.
 
 ### Roll back Piclaw
 

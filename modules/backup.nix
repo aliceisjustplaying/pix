@@ -30,6 +30,7 @@ in {
       "/workspace/.cache"
       "/workspace/src/piclaw-live"
       "/workspace/src/piclaw-live.previous"
+      "/workspace/src/piclaw-fork"
     ];
 
     timerConfig = {
