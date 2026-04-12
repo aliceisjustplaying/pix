@@ -41,6 +41,11 @@ sudo systemd-run \
   --quiet \
   --collect \
   --service-type=exec \
+  --uid=agent \
+  --gid=users \
+  --setenv=HOME=${home} \
+  --setenv=USER=agent \
+  --setenv=PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin \
   --unit "$unit_name" \
   --description "$job_name" \
   /run/current-system/sw/bin/bash -lc "$command_string"
@@ -96,7 +101,7 @@ in {
       git pull
       exec ${home}/.local/bin/host-queue \
         pix-rebuild \
-        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/pix && nixos-rebuild switch --flake ${workspaceSrc}/pix#pix"
+        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/pix && sudo nixos-rebuild switch --flake path:${home}/workspace/src/pix#pix"
     '';
   };
 
@@ -114,7 +119,7 @@ in {
       git pull
       exec ${home}/.local/bin/host-queue \
         piclaw-update \
-        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && ./scripts/piclaw-update.sh''${args_string:+ ''${args_string}}"
+        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && sudo ./scripts/piclaw-update-host.sh''${args_string:+ ''${args_string}}"
     '';
   };
 
@@ -130,7 +135,17 @@ in {
       args_string="''${quoted_args[*]}"
       exec ${home}/.local/bin/host-queue \
         piclaw-rollback \
-        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && ./scripts/piclaw-rollback.sh''${args_string:+ ''${args_string}}"
+        "export PATH=${home}/.local/bin:${home}/.bun/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd ${workspaceSrc}/piclaw-customizations && sudo ./scripts/piclaw-rollback-host.sh''${args_string:+ ''${args_string}}"
+    '';
+  };
+
+  home.file.".local/bin/verify-deploy" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      cd ${workspaceSrc}/piclaw-customizations
+      exec ./scripts/piclaw-verify-deploy.sh "$@"
     '';
   };
 
@@ -149,7 +164,7 @@ in {
     text = ''
       #!/usr/bin/env bash
       set -euo pipefail
-      exec ${home}/.local/bin/host-queue piclaw-restart "systemctl restart piclaw"
+      exec ${home}/.local/bin/host-queue piclaw-restart "sudo systemctl restart piclaw"
     '';
   };
 
@@ -163,7 +178,7 @@ in {
     shellAliases = {
       ll = "ls -lah";
       sync-nix = "cd /workspace/src/pix && git pull && rebuild";
-      update-force = "cd /workspace/src/piclaw-customizations && git pull && ./scripts/piclaw-update.sh --force";
+      update-force = "cd /workspace/src/piclaw-customizations && git pull && sudo ./scripts/piclaw-update-host.sh --force";
       rollback-force = "rollback";
     };
   };
