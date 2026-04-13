@@ -8,8 +8,16 @@ let
     pkgs.curl
     pkgs.diffutils
     pkgs.findutils
+    pkgs.ripgrep
+    pkgs.fd
     pkgs.gnugrep
     pkgs.gnused
+    pkgs.gnumake
+    pkgs.tree
+    pkgs.unzip
+    pkgs.zip
+    pkgs.shellcheck
+    pkgs.shfmt
     pkgs.gh
     pkgs.git
     pkgs.gnupatch
