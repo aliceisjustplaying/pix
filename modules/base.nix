@@ -79,6 +79,7 @@
     shfmt
     yq-go
     gnumake
+    zig
 
     # Rust toolchain
     rustc
@@ -99,6 +100,7 @@
     ssh-to-age
     cloudflared
     bubblewrap
+    chromium
     gh
     patch
     at

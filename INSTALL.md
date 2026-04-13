@@ -211,6 +211,11 @@ cd /workspace/src/piclaw-customizations
 
 Use `--force` to skip version check, `--dry-run` to compare versions without installing, `--no-restart` if the caller handles restart.
 
+Host-level helper tooling now includes:
+
+- `chromium` for Playwright/browser validation
+- `zig` for rebuilding `ghostty-web` wasm artifacts when a forked/vendor patch needs a fresh `ghostty-vt.wasm`
+
 ### Work on upstream Piclaw PRs
 
 Use the dedicated fork checkout, not the deployment checkout:
