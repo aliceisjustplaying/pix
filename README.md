@@ -19,6 +19,7 @@ NixOS host for PiClaw on a Hetzner ARM64 VPS.
 - Upstream PR work from `/workspace/src/piclaw-fork`
 - Binds `127.0.0.1:8080`, published via Cloudflare Tunnel as `pix.mosphere.at`
 - Tailscale for admin access only
+- System packages include `chromium` for Playwright/browser validation and `zig` for rebuilding vendored `ghostty-web` wasm artifacts when needed
 
 ## What Nix manages vs. what it doesn't
 
