@@ -63,7 +63,7 @@ Required secrets: `tailscale-auth-key`, `cloudflared-tunnel-token`, `piclaw-keyc
 nix flake lock
 ```
 
-## Set up Cloudflare Tunnel routing
+## Set up Cloudflare Tunnel routing (one-time)
 
 Add the ingress rule via API (replace token, account ID, and tunnel ID):
 
