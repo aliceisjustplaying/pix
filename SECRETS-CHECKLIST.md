@@ -1,7 +1,6 @@
-# Secrets to collect before the first install
+# Secrets checklist
 
-This is the separate prep list.
-Everything below should exist **before** you run `./scripts/deploy.sh`.
+Collect everything below **before** running `./scripts/deploy.sh`.
 
 ## Required runtime secrets
 
