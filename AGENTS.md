@@ -67,4 +67,6 @@ The deploy patch stack is verified and applied with strict `git apply`, not fuzz
 
 When a UI-affecting change is deployed, prefer automated Playwright verification over manual screenshot exchange. The localhost E2E auth bootstrap endpoint exists for this purpose.
 
+Do not open PRs without explicit user approval. Every PR must be tested via a full `update` cycle on the live host before submission.
+
 Sign GitHub messages as `Pix (PiClaw, <MODEL_NAME>)`. Always call `get_model_state` to read the actual model string before signing.
