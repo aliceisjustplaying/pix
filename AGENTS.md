@@ -33,6 +33,15 @@ When a patch makes things worse, stop and bisect. Do not layer another fix on to
 
 The deploy patch stack uses strict `git apply`. Treat `.rej` / `.orig` files as debris.
 
+## Shared workspace coordination
+
+Use `locket` to coordinate access to shared workspace resources when multiple agents or shells may touch the same path.
+
+- For one-shot modifying commands, prefer `locket with-lock <path> -- <command> ...`.
+- For read-then-edit flows on shared files, run `locket lock <path>`, read the live file, edit it, then run the exact printed `locket unlock <path> <token>` command.
+- Use stable canonical paths for conceptual locks. For repo-wide git operations, lock `<repo>/.git/index`.
+- Never remove `<path>.locket` manually or use `--absolute-zero` in active repos unless the user explicitly asks.
+
 ## Host facts
 
 - Canonical workspace: `/workspace`
