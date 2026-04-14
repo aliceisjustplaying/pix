@@ -75,6 +75,7 @@ in {
     bun
     nodejs_24
     gh
+    hcloud
     ffmpeg
     yt-dlp
     sqlite
