@@ -19,6 +19,7 @@ let
     pkgs.shellcheck
     pkgs.shfmt
     pkgs.gh
+    pkgs.ghstack
     pkgs.git
     pkgs.gnupatch
     pkgs.openssh

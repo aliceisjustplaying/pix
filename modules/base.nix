@@ -102,6 +102,7 @@
     bubblewrap
     chromium
     gh
+    ghstack
     patch
     at
 
