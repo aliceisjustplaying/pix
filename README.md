@@ -19,6 +19,7 @@ NixOS host for PiClaw on a Hetzner ARM64 VPS.
 - Upstream PR work from `/workspace/src/piclaw-fork`
 - Binds `127.0.0.1:8080`, published via Cloudflare Tunnel as `pix.mosphere.at`
 - Web Push uses `PICLAW_WEB_PUSH_VAPID_SUBJECT=https://pix.mosphere.at` so Apple Home Screen web apps accept outbound VAPID JWTs
+- Notification source markers (`[Local]`, `[Web Push]`) stay hidden by default; set `PICLAW_WEB_NOTIFICATION_DEBUG_LABELS=1` only while debugging delivery routing
 - Tailscale for admin access only
 - System packages include `chromium` for Playwright/browser validation and `zig` for rebuilding vendored `ghostty-web` wasm artifacts when needed
 
@@ -43,3 +44,7 @@ See [`SECRETS-CHECKLIST.md`](SECRETS-CHECKLIST.md) for secrets prep.
 For iPhone Safari PWA / Home Screen notifications, PiClaw must advertise a real public VAPID subject. The placeholder fallback used by upstream code, `mailto:notifications@localhost.invalid`, is sufficient for local development but Apple Push rejects it in production with `403 {"reason":"BadJwtToken"}`.
 
 On this host the service env is rendered from [`modules/piclaw.nix`](modules/piclaw.nix), and the correct subject is pinned to `https://pix.mosphere.at`. If iPhone subscriptions appear in `/workspace/.piclaw/web-push/subscriptions.json` but no pushes arrive, verify this env var first.
+
+Optional debug env:
+
+- `PICLAW_WEB_NOTIFICATION_DEBUG_LABELS=1` — show `[Local]` / `[Web Push]` suffixes in notification titles while validating routing. Default is off.
