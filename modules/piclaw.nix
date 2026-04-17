@@ -85,6 +85,7 @@ in {
     "d ${agentHome}/.local/bin 0755 agent users - -"
     "d ${agentHome}/.pi 0700 agent users - -"
     "d ${agentHome}/.ssh 0700 agent users - -"
+    "d /workspace/.pi/gmail-channel 0700 agent users - -"
     "d /usr/local/bin 0755 root root - -"
     "L+ /workspace - - - - ${agentHome}/workspace"
   ];
@@ -159,6 +160,40 @@ in {
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
       ExecStart = "${pkgs.bun}/bin/bun runtime/src/index.ts";
+      Restart = "always";
+      RestartSec = "5s";
+      TimeoutStartSec = "60s";
+      UMask = "0077";
+      PrivateTmp = true;
+      ProtectSystem = "strict";
+      ProtectHome = false;
+      ReadWritePaths = [ "${agentHome}" "/workspace" ];
+    };
+  };
+
+  systemd.services.gmail-channel-daemon = {
+    description = "Gmail Channel Daemon";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    unitConfig.ConditionPathExists = "${agentHome}/gmail-channel-plugin/daemon.ts";
+
+    serviceConfig = {
+      Type = "simple";
+      User = "agent";
+      Group = "users";
+      WorkingDirectory = "${agentHome}/gmail-channel-plugin";
+      EnvironmentFile = "-/workspace/.pi/gmail-channel.env";
+      Environment = [
+        "HOME=${agentHome}"
+        "USER=agent"
+        "XDG_CONFIG_HOME=${agentHome}/.config"
+        "GMAIL_STATE_DIR=/workspace/.pi/gmail-channel"
+        "GMAIL_PICLAW_DATA_DIR=/workspace/.piclaw/data"
+        "GMAIL_PICLAW_CHAT_JID=web:default"
+        "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
+      ];
+      ExecStart = "${pkgs.bun}/bin/bun run daemon.ts";
       Restart = "always";
       RestartSec = "5s";
       TimeoutStartSec = "60s";
