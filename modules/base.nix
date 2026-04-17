@@ -56,7 +56,7 @@
     home = "/home/agent";
     createHome = true;
     shell = pkgs.bashInteractive;
-    extraGroups = [ "wheel" ];
+    extraGroups = [ "wheel" "atd" ];
   };
 
   environment.enableAllTerminfo = true;
