@@ -113,8 +113,15 @@ in {
   #
   # Poll a transient systemd unit on the host until it reaches a terminal
   # state, printing a heartbeat on the configured cadence and exiting
-  # as soon as a result is known. Use this instead of `journalctl -f`
+  # with the unit's real result code. Use this instead of `journalctl -f`
   # so the agent doesn't sit silently in a follower stream.
+  #
+  # Implementation note: host-queue starts units with `systemd-run --collect`,
+  # which causes systemd to forget the unit's `Result` once it exits.
+  # Polling `systemctl show` therefore returns `Result=success` even for
+  # failed runs once they're complete. We instead grep the journal for the
+  # systemd-emitted terminal lines (`Deactivated successfully` /
+  # `Failed with result`), which are stable and reliable.
   home.file.".local/bin/host-follow" = {
     executable = true;
     text = ''
@@ -153,6 +160,25 @@ in {
 
       echo "[host-follow] watching $unit (heartbeat=$heartbeat s, max=$max_seconds s)"
 
+      # Read the unit's recent journal in one shot. Grep for the systemd-
+      # emitted terminal lines because `--collect`'d transient units lose
+      # their Result property after exit.
+      check_terminal() {
+        local journal
+        journal="$(ssh -o BatchMode=yes localhost \
+          "journalctl --no-pager -n 200 -u $unit -o cat 2>/dev/null" || true)"
+
+        if printf '%s\n' "$journal" | grep -qE 'Failed with result|Main process exited, code=(exited|killed), status=[1-9]'; then
+          echo "failed"
+          return 0
+        fi
+        if printf '%s\n' "$journal" | grep -qE 'Deactivated successfully'; then
+          echo "success"
+          return 0
+        fi
+        echo "running"
+      }
+
       while :; do
         now=$(date +%s)
         elapsed=$(( now - start_ts ))
@@ -163,24 +189,23 @@ in {
           exit 124
         fi
 
-        # ActiveState values: active, reloading, inactive, failed, activating, deactivating
-        read -r active_state result_state <<<"$(ssh -o BatchMode=yes localhost \
-          "systemctl show -p ActiveState -p Result $unit --value 2>/dev/null | tr '\n' ' '" || true)"
-        active_state="''${active_state:-unknown}"
-        result_state="''${result_state:-unknown}"
-
-        case "$active_state" in
-          inactive|failed)
-            echo "[host-follow] unit $unit done: active=$active_state result=$result_state after $elapsed s"
+        terminal="$(check_terminal)"
+        case "$terminal" in
+          success)
+            echo "[host-follow] unit $unit succeeded after $elapsed s"
             ssh -o BatchMode=yes localhost "journalctl --no-pager -n $tail_lines -u $unit" || true
-            if [ "$result_state" = "success" ]; then exit 0; fi
+            exit 0
+            ;;
+          failed)
+            echo "[host-follow] unit $unit FAILED after $elapsed s"
+            ssh -o BatchMode=yes localhost "journalctl --no-pager -n $tail_lines -u $unit" || true
             exit 1
             ;;
         esac
 
         if [ $(( now - last_beat )) -ge "$heartbeat" ]; then
           last_beat=$now
-          echo "[host-follow] still running after $elapsed s (active=$active_state)"
+          echo "[host-follow] still running after $elapsed s"
         fi
 
         sleep 3
