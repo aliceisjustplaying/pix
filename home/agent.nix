@@ -2,6 +2,8 @@
 let
   home = config.home.homeDirectory;
   workspaceSrc = "/workspace/src";
+  vibesPkg = pkgs.callPackage ../pkgs/vibes.nix { };
+  codexAcpPkg = pkgs.callPackage ../pkgs/codex-acp.nix { };
 
   # SSH-based host commands for use inside the sandboxed piclaw service.
   # The piclaw systemd unit runs with ProtectSystem=strict, so commands
@@ -86,6 +88,8 @@ in {
     codex
     python3
     uv
+    vibesPkg
+    codexAcpPkg
   ];
 
   home.file.".npmrc".text = "prefix=${home}/.local";
