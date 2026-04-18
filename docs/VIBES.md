@@ -3,9 +3,9 @@
 This host runs a second local web UI alongside PiClaw:
 
 - PiClaw: `127.0.0.1:8080` -> `https://pix.mosphere.at`
-- Vibes: `127.0.0.1:8081` -> `https://vibes.mosphere.at`
+- Vibes: `0.0.0.0:8081`, reachable only through Tailscale
 
-The Vibes instance is single-user, bound to localhost, and backed by Codex through ACP.
+The Vibes instance is single-user, backed by Codex through ACP, and intentionally not published on the public internet.
 
 ## What Nix manages
 
@@ -19,12 +19,17 @@ Repo-managed pieces:
 
 Service defaults:
 
-- `VIBES_HOST=127.0.0.1`
+- `VIBES_HOST=0.0.0.0`
 - `VIBES_PORT=8081`
 - `VIBES_DB_PATH=/workspace/.pi/vibes/vibes.db`
 - `VIBES_AGENT_NAME=Codex`
 - `VIBES_ACP_AGENT=${codex-acp}/bin/codex-acp`
 - working directory `/workspace`
+
+Network policy:
+
+- `networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 22 8081 ]`
+- no public firewall opening for `8081`
 
 Runtime state lives under `/workspace/.pi/vibes`.
 
@@ -62,15 +67,20 @@ The local patch in `pkgs/vibes.nix` fixes that for Codex ACP by:
 
 This is intentionally a local patch against upstream `0.6.12`, not a forked repo checkout.
 
-## Cloudflare publication
+## Access model
 
-The repo only manages the local service. Publishing `vibes.mosphere.at` also required a manual Cloudflare Tunnel update outside this repo:
+Vibes is not password-protected by upstream default. The stock auth middleware is a no-op unless a custom callback is wired in, so this host treats network isolation as the control boundary.
 
-- add ingress for `vibes.mosphere.at` -> `http://localhost:8081`
-- keep the existing `pix.mosphere.at` ingress -> `http://localhost:8080`
-- add proxied DNS `CNAME` for `vibes.mosphere.at` pointing at the tunnel hostname
+Because of that, the service is tailscale-only:
 
-If Vibes is healthy locally but unreachable externally, check the tunnel ingress and DNS first.
+- Vibes listens on `8081`
+- the firewall only permits that port on `tailscale0`
+- the previous Cloudflare publication for `vibes.mosphere.at` should remain removed
+
+Use one of:
+
+- `http://100.74.251.100:8081`
+- `http://pix:8081` if MagicDNS is enabled in the tailnet
 
 ## Deploy and verify
 
@@ -85,8 +95,8 @@ Useful checks:
 
 ```bash
 curl -s http://127.0.0.1:8081/health
-curl -s http://127.0.0.1:8081/agent/models
-curl -s https://vibes.mosphere.at/agent/models
+curl -s http://100.74.251.100:8081/health
+curl -s http://100.74.251.100:8081/agent/models
 systemctl status vibes.service
 ```
 
@@ -105,4 +115,4 @@ Expected `/agent/models` shape in ACP mode:
 
 - Vibes is still a single configured backend on this host: Codex only.
 - Model changes happen within the active ACP session and do not require restarting `vibes.service`.
-- The service is local-only; Cloudflare is the public entrypoint.
+- The service is tailscale-only; there is no intended public hostname.
