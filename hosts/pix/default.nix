@@ -14,6 +14,7 @@ in {
     ../../modules/cloudflared.nix
     ../../modules/piclaw.nix
     ../../modules/vibes.nix
+    ../../modules/vibes-go.nix
     ../../modules/backup.nix
   ];
 
@@ -45,7 +46,7 @@ in {
   networking.firewall = {
     enable = true;
     allowedTCPPorts = lib.optionals publicSshBootstrap [ 22 ];
-    interfaces.tailscale0.allowedTCPPorts = [ 22 8081 ];
+    interfaces.tailscale0.allowedTCPPorts = [ 22 8081 8082 ];
   };
 
   home-manager = {
