@@ -45,7 +45,7 @@ in {
   networking.firewall = {
     enable = true;
     allowedTCPPorts = lib.optionals publicSshBootstrap [ 22 ];
-    interfaces.tailscale0.allowedTCPPorts = [ 22 ];
+    interfaces.tailscale0.allowedTCPPorts = [ 22 8081 ];
   };
 
   home-manager = {

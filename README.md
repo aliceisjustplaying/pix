@@ -19,7 +19,7 @@ NixOS host for PiClaw on a Hetzner ARM64 VPS.
 - PiClaw runs from `/workspace/src/piclaw-live`, managed by [`piclaw-customizations`](https://github.com/aliceisjustplaying/piclaw-customizations)
 - Upstream PR work from `/workspace/src/piclaw-fork`
 - Binds `127.0.0.1:8080`, published via Cloudflare Tunnel as `pix.mosphere.at`
-- Vibes binds `127.0.0.1:8081`, published via Cloudflare Tunnel as `vibes.mosphere.at`
+- Vibes binds `0.0.0.0:8081`, but firewall exposure is limited to `tailscale0`
 - Web Push uses `PICLAW_WEB_PUSH_VAPID_SUBJECT=https://pix.mosphere.at` so Apple Home Screen web apps accept outbound VAPID JWTs
 - Notification source markers (`[Local]`, `[Web Push]`) stay hidden by default; set `PICLAW_WEB_NOTIFICATION_DEBUG_LABELS=1` only while debugging delivery routing
 - Tailscale for admin access only
@@ -40,7 +40,7 @@ NixOS host for PiClaw on a Hetzner ARM64 VPS.
 
 See [`INSTALL.md`](INSTALL.md) for first-deploy runbook and day-2 operations.
 See [`SECRETS-CHECKLIST.md`](SECRETS-CHECKLIST.md) for secrets prep.
-See [`docs/VIBES.md`](docs/VIBES.md) for the Codex-backed Vibes deployment.
+See [`docs/VIBES.md`](docs/VIBES.md) for the Codex-backed Vibes deployment and tailscale-only access.
 
 ## Web Push note
 

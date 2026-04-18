@@ -40,7 +40,7 @@ in {
         "HOME=${agentHome}"
         "USER=agent"
         "XDG_CONFIG_HOME=${agentHome}/.config"
-        "VIBES_HOST=127.0.0.1"
+        "VIBES_HOST=0.0.0.0"
         "VIBES_PORT=8081"
         "VIBES_DB_PATH=/workspace/.pi/vibes/vibes.db"
         "VIBES_AGENT_NAME=Codex"
