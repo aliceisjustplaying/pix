@@ -76,6 +76,9 @@ in {
     nodejs_24
     gh
     hcloud
+    ncdu
+    gdu
+    diskus
     ffmpeg
     yt-dlp
     sqlite
@@ -104,6 +107,85 @@ in {
   home.file.".local/bin/host-queue" = {
     executable = true;
     text = hostQueueScript;
+  };
+
+  # host-follow <unit> [--heartbeat 45] [--max 900]
+  #
+  # Poll a transient systemd unit on the host until it reaches a terminal
+  # state, printing a heartbeat on the configured cadence and exiting
+  # as soon as a result is known. Use this instead of `journalctl -f`
+  # so the agent doesn't sit silently in a follower stream.
+  home.file.".local/bin/host-follow" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      unit=""
+      heartbeat=45
+      max_seconds=900
+      tail_lines=40
+
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+          --heartbeat) heartbeat="$2"; shift 2 ;;
+          --max) max_seconds="$2"; shift 2 ;;
+          --tail) tail_lines="$2"; shift 2 ;;
+          -h|--help)
+            echo "usage: host-follow <unit> [--heartbeat 45] [--max 900] [--tail 40]"
+            exit 0
+            ;;
+          *)
+            if [ -z "$unit" ]; then unit="$1"; else
+              echo "unexpected arg: $1" >&2; exit 64
+            fi
+            shift ;;
+        esac
+      done
+
+      if [ -z "$unit" ]; then
+        echo "usage: host-follow <unit> [--heartbeat 45] [--max 900] [--tail 40]" >&2
+        exit 64
+      fi
+
+      start_ts=$(date +%s)
+      last_beat=$start_ts
+
+      echo "[host-follow] watching $unit (heartbeat=$heartbeat s, max=$max_seconds s)"
+
+      while :; do
+        now=$(date +%s)
+        elapsed=$(( now - start_ts ))
+
+        if [ "$elapsed" -ge "$max_seconds" ]; then
+          echo "[host-follow] TIMEOUT after $elapsed s; unit $unit still not terminal"
+          ssh -o BatchMode=yes localhost "journalctl --no-pager -n $tail_lines -u $unit" || true
+          exit 124
+        fi
+
+        # ActiveState values: active, reloading, inactive, failed, activating, deactivating
+        read -r active_state result_state <<<"$(ssh -o BatchMode=yes localhost \
+          "systemctl show -p ActiveState -p Result $unit --value 2>/dev/null | tr '\n' ' '" || true)"
+        active_state="''${active_state:-unknown}"
+        result_state="''${result_state:-unknown}"
+
+        case "$active_state" in
+          inactive|failed)
+            echo "[host-follow] unit $unit done: active=$active_state result=$result_state after $elapsed s"
+            ssh -o BatchMode=yes localhost "journalctl --no-pager -n $tail_lines -u $unit" || true
+            if [ "$result_state" = "success" ]; then exit 0; fi
+            exit 1
+            ;;
+        esac
+
+        if [ $(( now - last_beat )) -ge "$heartbeat" ]; then
+          last_beat=$now
+          echo "[host-follow] still running after $elapsed s (active=$active_state)"
+        fi
+
+        sleep 3
+      done
+    '';
   };
 
   # Scripts that work both interactively and from inside piclaw's sandbox.
