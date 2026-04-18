@@ -12,6 +12,7 @@ NixOS host for PiClaw on a Hetzner ARM64 VPS.
 - `scripts/` — `deploy.sh` (nixos-anywhere), `prepare-bootstrap-key.sh`
 - `secrets/` — SOPS policy and encrypted secrets file
 - `docs/VIBES.md` — Vibes service, Codex ACP wiring, and verification notes
+- `docs/VIBES-GO.md` — Go-port Vibes service, Codex ACP wiring, and reserved hostname notes
 
 ## Key defaults
 
@@ -20,6 +21,7 @@ NixOS host for PiClaw on a Hetzner ARM64 VPS.
 - Upstream PR work from `/workspace/src/piclaw-fork`
 - Binds `127.0.0.1:8080`, published via Cloudflare Tunnel as `pix.mosphere.at`
 - Vibes binds `0.0.0.0:8081`, but firewall exposure is limited to `tailscale0`
+- Vibes Go binds `0.0.0.0:8082`, but firewall exposure is limited to `tailscale0`
 - Web Push uses `PICLAW_WEB_PUSH_VAPID_SUBJECT=https://pix.mosphere.at` so Apple Home Screen web apps accept outbound VAPID JWTs
 - Notification source markers (`[Local]`, `[Web Push]`) stay hidden by default; set `PICLAW_WEB_NOTIFICATION_DEBUG_LABELS=1` only while debugging delivery routing
 - Tailscale for admin access only
@@ -41,6 +43,7 @@ NixOS host for PiClaw on a Hetzner ARM64 VPS.
 See [`INSTALL.md`](INSTALL.md) for first-deploy runbook and day-2 operations.
 See [`SECRETS-CHECKLIST.md`](SECRETS-CHECKLIST.md) for secrets prep.
 See [`docs/VIBES.md`](docs/VIBES.md) for the Codex-backed Vibes deployment and tailscale-only access.
+See [`docs/VIBES-GO.md`](docs/VIBES-GO.md) for the Go-port deployment on `8082` and the reserved `vibes-go.mosphere.at` hostname.
 
 ## Web Push note
 
