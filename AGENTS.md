@@ -17,6 +17,8 @@ Before deploying, updating, reinstalling, restarting, or otherwise activating a 
 
 Keep status updates concrete and limited to the action you are taking. If a rejected option matters for correctness or safety, name it plainly. Otherwise, do not narrate your choices by contrasting them with rejected options.
 
+For queued host jobs, rebuilds, deploys, rollbacks, or other long-running commands, do not go silent while tailing logs. Use the `host-follow <unit>` helper instead of `journalctl -f`; it polls the unit to terminal state, prints a heartbeat every ~45 s, and exits with the unit's result code. Send a short update when the job is queued, again on the first material state change, and immediately once success, failure, rollback, or a blocker is visible. If you have a reason to bypass `host-follow`, name it; do not just default to a bare `journalctl -f`.
+
 Prefer short prose by default. Use sections or lists when they make engineering work clearer, especially for debugging findings, review comments, plans, verification steps, command results, or change summaries.
 
 Be direct and specific. Avoid filler, canned enthusiasm, and overexplaining. Say when you are unsure.
@@ -33,6 +35,8 @@ When a patch makes things worse, stop and bisect. Do not layer another fix on to
 
 The deploy patch stack uses strict `git apply`. Treat `.rej` / `.orig` files as debris.
 
+Do not use ad hoc package installs for persistent host or agent tooling on this machine. For tools that should remain available, change the NixOS or Home Manager config in `/workspace/src/pix`, validate it, and use the normal rebuild path. Do not treat `nix profile install`, `brew install`, `apt install`, or similar one-off installs as the real install method here.
+
 ## Shared workspace coordination
 
 Use `locket` to coordinate access to shared workspace resources when multiple agents or shells may touch the same path.
@@ -47,6 +51,8 @@ Use `locket` to coordinate access to shared workspace resources when multiple ag
 - Canonical workspace: `/workspace`
 - Persistent state: `/workspace/.piclaw` and `/workspace/.pi`
 - Never delete `/workspace/.piclaw/store/messages.db`
+- `/workspace` is the canonical agent-facing path, but on this host it resolves through a symlink to `/home/agent/workspace`. When invoking Nix flakes directly with `path:` inputs, prefer the real `/home/agent/workspace/...` path if the `/workspace` form causes path-resolution issues.
+- Do not create temporary worktrees just to dodge unrelated dirty files in `/workspace/src/pix` unless the user explicitly asks for that isolation or it is required for correctness.
 
 Authoritative repos:
 - `/workspace/src/pix` controls the NixOS host, Home Manager config, secrets, and `piclaw.service`.
@@ -58,15 +64,25 @@ Deployment layout:
 - `/workspace/src/piclaw-fork` is for clean upstream Piclaw work and PRs.
 - `/workspace/.cache/piclaw-upstream` is the persistent upstream cache used by the update tooling.
 
-Local deploy commands:
-- `rebuild` for host changes from `pix`
-- `update` for app changes from `piclaw-customizations`
-- `rollback` to restore `piclaw-live.previous`
-- `verify-deploy` to validate a candidate Piclaw deploy without activating it
+Local deploy commands (declared in `pix/home/agent.nix`, installed under `~/.local/bin`):
+- `rebuild` — `git pull` in `/workspace/src/pix`, then queue a host-side `nixos-rebuild switch --flake path:/workspace/src/pix#pix`.
+- `update` — `git pull` in `/workspace/src/piclaw-customizations`, then queue `sudo ./scripts/piclaw-update-host.sh [args]` on the host. Passes through args (e.g. `--force`).
+- `rollback` — queue `sudo ./scripts/piclaw-rollback-host.sh [args]` on the host to restore `piclaw-live.previous`.
+- `verify-deploy` — run `./scripts/piclaw-verify-deploy.sh` locally to validate a candidate Piclaw deploy without activating it. Does not go through the host queue.
+- `prestart` — queue `sudo systemctl restart piclaw` on the host.
+- `pstatus`, `plogs` — SSH wrappers for `systemctl status` / `journalctl -u piclaw` on the host.
+- `host-follow <unit>` — poll a transient host-queue unit to terminal state (heartbeat ~45 s, hard cap 15 min); use this instead of `journalctl -f` when watching a rebuild/update/rollback/prestart job.
+- `backup` — SSH wrapper that starts `restic-backups-r2.service` and tails its journal.
+
+Shell aliases (bash): `sync-nix` = `cd /workspace/src/pix && git pull && rebuild`; `update-force` = `cd /workspace/src/piclaw-customizations && git pull && sudo ./scripts/piclaw-update-host.sh --force`; `rollback-force` = `rollback`.
+
+`rebuild`, `update`, `rollback`, and `prestart` are asynchronous: they dispatch through `host-queue`, which SSHes to localhost and runs `systemd-run` to create a transient unit named `<job>-<epoch>`. The command returns immediately after queueing and prints `follow logs with: ssh localhost sudo journalctl -u <unit> -f`. Watch that journal to confirm success or failure — exit code on the client only tells you the job was queued.
+
+Prefer bounded log reads or periodic polling over indefinite `journalctl -f` when monitoring queued jobs. Use log-following only when it materially helps, and break out to report as soon as the user's question can be answered.
 
 Do not assume upstream PiClaw deployment docs match this machine. Do not use upstream `docker-compose`, repo-install, supervisor, or bundled reload paths here unless the user explicitly asks for migration work.
 
-The Piclaw service runs with `ProtectSystem=strict`. Host-level commands such as `nixos-rebuild` and `systemctl` go through SSH to localhost using the local-only ed25519 key configured for this host.
+The Piclaw service runs with `ProtectSystem=strict`. Host-level commands such as `nixos-rebuild` and `systemctl` go through SSH to localhost using the local-only ed25519 key configured for this host. Direct in-process `sudo nixos-rebuild` from inside the piclaw sandbox will not work — always use the `rebuild`/`update`/`rollback`/`prestart` helpers (or `host-queue` directly) so the work runs on the host.
 
 The Piclaw service PATH already includes `gh`, `git`, `patch`, `diff`, and `python3`. Host-side helpers use `/run/current-system/sw/bin/` and `/run/wrappers/bin/` when they need host-only tools or setuid wrappers.
 
