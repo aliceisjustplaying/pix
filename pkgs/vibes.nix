@@ -110,6 +110,9 @@ def _get_select_values(option: dict | None) -> list[str]:
 
 
 def _get_current_model_value() -> str | None:
+    if os.environ.get(\"VIBES_AVAILABLE_MODELS\", \"\").strip():
+        return _state.current_model_fallback
+
     option = _get_session_select_option(\"model\")
     if option:
         value = str(option.get(\"currentValue\") or \"\").strip()
@@ -139,6 +142,10 @@ def _get_current_thinking_value() -> str | None:
 
 
 def _get_available_model_values() -> list[str]:
+    env_list = os.environ.get(\"VIBES_AVAILABLE_MODELS\", \"\").strip()
+    if env_list:
+        return [m.strip() for m in env_list.split(\",\") if m.strip()]
+
     values = _get_select_values(_get_session_select_option(\"model\"))
     if values:
         return values
@@ -153,13 +160,7 @@ def _get_available_model_values() -> list[str]:
         base_model = model_id.split(\"/\", 1)[0].strip()
         if base_model and base_model not in models:
             models.append(base_model)
-    if models:
-        return models
-
-    env_list = os.environ.get(\"VIBES_AVAILABLE_MODELS\", \"\").strip()
-    if env_list:
-        return [m.strip() for m in env_list.split(\",\") if m.strip()]
-    return []
+    return models
 
 
 def _get_available_thinking_values() -> list[str]:
