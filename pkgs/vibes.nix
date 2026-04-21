@@ -37,6 +37,7 @@ replace_once(
         self.session_modes = None
         self.session_models = None
         self.session_config_options = []
+        self.current_model_fallback = None
 """,
 )
 
@@ -52,6 +53,7 @@ replace_once(
     _state.session_modes = None
     _state.session_models = None
     _state.session_config_options = []
+    _state.current_model_fallback = None
 """,
 )
 
@@ -117,6 +119,9 @@ def _get_current_model_value() -> str | None:
     current_model_id = str(((_state.session_models or {}).get(\"currentModelId\")) or \"\").strip()
     if current_model_id:
         return current_model_id.split(\"/\", 1)[0].strip() or None
+
+    if _state.current_model_fallback:
+        return _state.current_model_fallback
     return None
 
 
@@ -148,7 +153,13 @@ def _get_available_model_values() -> list[str]:
         base_model = model_id.split(\"/\", 1)[0].strip()
         if base_model and base_model not in models:
             models.append(base_model)
-    return models
+    if models:
+        return models
+
+    env_list = os.environ.get(\"VIBES_AVAILABLE_MODELS\", \"\").strip()
+    if env_list:
+        return [m.strip() for m in env_list.split(\",\") if m.strip()]
+    return []
 
 
 def _get_available_thinking_values() -> list[str]:
@@ -201,12 +212,22 @@ async def set_session_config_option(config_id: str, value: str) -> dict:
         if not _state.session_id:
             raise RuntimeError(\"No active session\")
 
-        result = await _send_request(\"session/set_config_option\", {
-            \"sessionId\": _state.session_id,
-            \"configId\": config_id,
-            \"value\": value,
-        })
-        _cache_session_metadata(result)
+        try:
+            result = await _send_request(\"session/set_config_option\", {
+                \"sessionId\": _state.session_id,
+                \"configId\": config_id,
+                \"value\": value,
+            })
+            _cache_session_metadata(result)
+        except _AgentError as exc:
+            if exc.code == -32601 and config_id == \"model\":
+                await _send_request(\"session/set_model\", {
+                    \"sessionId\": _state.session_id,
+                    \"modelId\": value,
+                })
+                _state.current_model_fallback = value
+            else:
+                raise
 
     return await get_session_model_state()
 
@@ -263,6 +284,7 @@ replace_once(
         _state.session_modes = None
         _state.session_models = None
         _state.session_config_options = []
+        _state.current_model_fallback = None
 """,
 )
 
@@ -537,6 +559,55 @@ replace_once(
             lines.append(f\"Model: `{state['current']}`\")
         if state.get(\"supports_thinking\"):
             lines.append(f\"Thinking level: `{state.get('thinking_level') or 'default'}`\")
+""",
+)
+
+# Ensure os is importable so the env-var model-list fallback works.
+replace_once(
+    "src/vibes/acp_client.py",
+    """import asyncio
+import base64
+""",
+    """import asyncio
+import base64
+import os
+""",
+)
+
+# Carry structured JSON-RPC error details through to callers so we can
+# detect method-not-found and fall back to standard ACP methods.
+replace_once(
+    "src/vibes/acp_client.py",
+    """class _ACPState:
+    \"\"\"Encapsulated ACP client state.\"\"\"
+""",
+    """class _AgentError(RuntimeError):
+    \"\"\"Raised when the ACP agent returns a JSON-RPC error response.\"\"\"
+
+    def __init__(self, err) -> None:
+        super().__init__(f\"Agent error: {err}\")
+        if isinstance(err, dict):
+            self.code = err.get(\"code\")
+            self.message = err.get(\"message\")
+            self.data = err.get(\"data\")
+        else:
+            self.code = None
+            self.message = None
+            self.data = None
+
+
+class _ACPState:
+    \"\"\"Encapsulated ACP client state.\"\"\"
+""",
+)
+
+replace_once(
+    "src/vibes/acp_client.py",
+    """                if \"error\" in response:
+                    raise RuntimeError(f\"Agent error: {response['error']}\")
+""",
+    """                if \"error\" in response:
+                    raise _AgentError(response['error'])
 """,
 )
 PY

@@ -48,6 +48,7 @@ in {
         "VIBES_DB_PATH=/workspace/.pi/vibes-claude/vibes.db"
         "VIBES_AGENT_NAME=Claude"
         "VIBES_ACP_AGENT=${claudeCodeAcpPkg}/bin/claude-code-acp"
+        "VIBES_AVAILABLE_MODELS=claude-opus-4-5,claude-opus-4-6[1m],claude-opus-4-7"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
       ExecStart = "${vibesPkg}/bin/vibes";
