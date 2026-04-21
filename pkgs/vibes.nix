@@ -123,8 +123,6 @@ def _get_current_model_value() -> str | None:
     if current_model_id:
         return current_model_id.split(\"/\", 1)[0].strip() or None
 
-    if _state.current_model_fallback:
-        return _state.current_model_fallback
     return None
 
 
@@ -233,6 +231,19 @@ async def set_session_config_option(config_id: str, value: str) -> dict:
     return await get_session_model_state()
 
 
+async def _apply_default_session_mode() -> None:
+    mode = os.environ.get(\"VIBES_DEFAULT_MODE\", \"\").strip()
+    if not mode or not _state.session_id:
+        return
+    try:
+        await _send_request(\"session/set_mode\", {
+            \"sessionId\": _state.session_id,
+            \"modeId\": mode,
+        })
+    except _AgentError:
+        logger.warning(\"Failed to apply VIBES_DEFAULT_MODE=%s\", mode, exc_info=True)
+
+
 def prompt_from_action(action_id: str, params: dict | None) -> Optional[str]:
 """,
 )
@@ -251,6 +262,7 @@ replace_once(
                 })
                 _cache_session_metadata(result)
                 _state.session_id = result.get(\"sessionId\")
+                await _apply_default_session_mode()
 """,
 )
 
@@ -268,6 +280,7 @@ replace_once(
         })
         _cache_session_metadata(result)
         _state.session_id = result.get(\"sessionId\")
+        await _apply_default_session_mode()
 """,
 )
 
@@ -587,14 +600,7 @@ replace_once(
 
     def __init__(self, err) -> None:
         super().__init__(f\"Agent error: {err}\")
-        if isinstance(err, dict):
-            self.code = err.get(\"code\")
-            self.message = err.get(\"message\")
-            self.data = err.get(\"data\")
-        else:
-            self.code = None
-            self.message = None
-            self.data = None
+        self.code = err.get(\"code\") if isinstance(err, dict) else None
 
 
 class _ACPState:
