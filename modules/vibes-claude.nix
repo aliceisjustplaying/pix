@@ -51,7 +51,7 @@ in {
         "VIBES_AVAILABLE_MODELS=claude-opus-4-5,claude-opus-4-6[1m],claude-opus-4-7"
         "VIBES_DEFAULT_MODE=bypassPermissions"
         "CLAUDE_CODE_ALWAYS_ENABLE_EFFORT=1"
-        "CLAUDE_CODE_EFFORT_LEVEL=high"
+        "CLAUDE_CODE_EFFORT_LEVEL=max"
         "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
