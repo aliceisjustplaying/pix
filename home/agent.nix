@@ -294,6 +294,17 @@ in {
     '';
   };
 
+  home.file.".local/bin/hermes-cli" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+      export HERMES_HOME=/workspace/.hermes
+      export PYTHONPATH=/workspace/.hermes/overrides''${PYTHONPATH:+:$PYTHONPATH}
+      exec /workspace/.hermes/venv/bin/hermes "$@"
+    '';
+  };
+
   home.file.".local/bin/backup" = {
     executable = true;
     text = hostCmd ''"sudo systemctl start restic-backups-r2.service && sudo journalctl -u restic-backups-r2.service --no-pager -f"'';
