@@ -21,6 +21,9 @@ to Hermes's real local tool names.
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 
 _TOOL_ALIASES = {
     "session_search": "history_search",
@@ -70,10 +73,22 @@ def _unalias_tool_name(name: str) -> str:
     return _REVERSE_TOOL_ALIASES.get(name, name)
 
 
+def _managed_hermes_venv() -> str | None:
+    hermes_home = os.getenv("HERMES_HOME", "").strip()
+    if not hermes_home:
+        return None
+
+    venv_path = Path(hermes_home) / "venv"
+    if (venv_path / "bin" / "python3").exists() or (venv_path / "bin" / "python").exists():
+        return str(venv_path)
+    return None
+
+
 def _apply() -> None:
     try:
         import agent.prompt_builder as prompt_builder
         import agent.anthropic_adapter as anthropic_adapter
+        import hermes_cli.main as hermes_main
     except Exception:
         return
 
@@ -152,6 +167,29 @@ def _apply() -> None:
     anthropic_adapter.normalize_anthropic_response_v2 = wrapped_normalize_anthropic_response_v2
     prompt_builder._pix_claude_oauth_prompt_patch_applied = True
     anthropic_adapter._MCP_TOOL_PREFIX = ""
+
+    if not getattr(hermes_main, "_pix_update_venv_patch_applied", False):
+        original_install_python_dependencies = hermes_main._install_python_dependencies_with_optional_fallback
+
+        def wrapped_install_python_dependencies(install_cmd_prefix, *, env=None):
+            fixed_env = dict(env or {})
+            managed_venv = _managed_hermes_venv()
+            project_venv = str(hermes_main.PROJECT_ROOT / "venv")
+
+            # Hermes update hardcodes PROJECT_ROOT/venv for uv. On Pix the
+            # managed install keeps its virtualenv under $HERMES_HOME/venv, so
+            # repoint uv there and leave the repo checkout as code-only state.
+            if managed_venv and fixed_env.get("VIRTUAL_ENV") in {"", "venv", project_venv}:
+                fixed_env["VIRTUAL_ENV"] = managed_venv
+                fixed_env.setdefault("UV_PROJECT_ENVIRONMENT", managed_venv)
+
+            return original_install_python_dependencies(
+                install_cmd_prefix,
+                env=fixed_env if fixed_env else env,
+            )
+
+        hermes_main._install_python_dependencies_with_optional_fallback = wrapped_install_python_dependencies
+        hermes_main._pix_update_venv_patch_applied = True
 
 
 _apply()
