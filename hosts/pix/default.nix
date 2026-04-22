@@ -13,6 +13,7 @@ in {
     ../../modules/tailscale.nix
     ../../modules/cloudflared.nix
     ../../modules/piclaw.nix
+    ../../modules/hermes.nix
     ../../modules/vibes.nix
     ../../modules/vibes-go.nix
     ../../modules/vibes-claude.nix
