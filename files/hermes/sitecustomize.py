@@ -73,6 +73,16 @@ def _unalias_tool_name(name: str) -> str:
     return _REVERSE_TOOL_ALIASES.get(name, name)
 
 
+def _unalias_response_tool_calls(result):
+    tool_calls = getattr(result, "tool_calls", None)
+    if tool_calls:
+        for tool_call in tool_calls:
+            name = getattr(tool_call, "name", None)
+            if isinstance(name, str):
+                tool_call.name = _unalias_tool_name(name)
+    return result
+
+
 def _managed_hermes_venv() -> str | None:
     hermes_home = os.getenv("HERMES_HOME", "").strip()
     if not hermes_home:
@@ -150,21 +160,44 @@ def _apply() -> None:
 
         return result
 
-    original_normalize_anthropic_response_v2 = anthropic_adapter.normalize_anthropic_response_v2
+    original_normalize_anthropic_response_v2 = getattr(
+        anthropic_adapter,
+        "normalize_anthropic_response_v2",
+        None,
+    )
 
-    def wrapped_normalize_anthropic_response_v2(*args, **kwargs):
-        result = original_normalize_anthropic_response_v2(*args, **kwargs)
-        tool_calls = getattr(result, "tool_calls", None)
-        if tool_calls:
-            for tool_call in tool_calls:
-                name = getattr(tool_call, "name", None)
-                if isinstance(name, str):
-                    tool_call.name = _unalias_tool_name(name)
-        return result
+    if callable(original_normalize_anthropic_response_v2):
+
+        def wrapped_normalize_anthropic_response_v2(*args, **kwargs):
+            result = original_normalize_anthropic_response_v2(*args, **kwargs)
+            return _unalias_response_tool_calls(result)
+
+        anthropic_adapter.normalize_anthropic_response_v2 = (
+            wrapped_normalize_anthropic_response_v2
+        )
+
+    try:
+        import agent.transports.anthropic as anthropic_transport
+    except Exception:
+        anthropic_transport = None
+
+    if anthropic_transport is not None:
+        transport_cls = getattr(anthropic_transport, "AnthropicTransport", None)
+        original_normalize_response = getattr(transport_cls, "normalize_response", None)
+        if (
+            callable(original_normalize_response)
+            and not getattr(transport_cls, "_pix_tool_alias_patch_applied", False)
+        ):
+
+            def wrapped_normalize_response(self, *args, **kwargs):
+                result = original_normalize_response(self, *args, **kwargs)
+                return _unalias_response_tool_calls(result)
+
+            transport_cls.normalize_response = wrapped_normalize_response
+            transport_cls._pix_tool_alias_patch_applied = True
 
     prompt_builder.build_skills_system_prompt = wrapped_build_skills_system_prompt
     anthropic_adapter.build_anthropic_kwargs = wrapped_build_anthropic_kwargs
-    anthropic_adapter.normalize_anthropic_response_v2 = wrapped_normalize_anthropic_response_v2
     prompt_builder._pix_claude_oauth_prompt_patch_applied = True
     anthropic_adapter._MCP_TOOL_PREFIX = ""
 
