@@ -177,6 +177,11 @@ def _apply() -> None:
         )
 
     try:
+        import agent.transports as transports
+
+        discover_transports = getattr(transports, "_discover_transports", None)
+        if callable(discover_transports):
+            discover_transports()
         import agent.transports.anthropic as anthropic_transport
     except Exception:
         anthropic_transport = None
