@@ -29,6 +29,7 @@ let
     pkgs.git
     pkgs.gnupatch
     pkgs.openssh
+    pkgs.uv
     pkgs.nodejs_24
     pkgs.python311
     pkgs.jq
@@ -125,7 +126,7 @@ EOF
   '';
 in {
   sops.templates.hermes-service-env = {
-    restartUnits = [ "hermes.service" ];
+    restartUnits = [ "hermes-gateway.service" ];
     content = ''
       HERMES_HOME=${hermesHome}
       PYTHONPATH=${hermesOverrides}
@@ -143,7 +144,7 @@ in {
     "d /workspace/src 0755 agent users - -"
   ];
 
-  systemd.services.hermes = {
+  systemd.services."hermes-gateway" = {
     description = "Hermes Agent Gateway";
     after = [ "network-online.target" "agent-secrets.service" "camofox.service" ];
     wants = [ "network-online.target" "agent-secrets.service" "camofox.service" ];
