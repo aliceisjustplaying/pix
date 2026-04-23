@@ -4,6 +4,13 @@ let
   workspaceSrc = "/workspace/src";
   vibesPkg = pkgs.callPackage ../pkgs/vibes.nix { };
   codexAcpPkg = pkgs.callPackage ../pkgs/codex-acp.nix { };
+  hermesLauncher = ''
+    #!/usr/bin/env bash
+    set -euo pipefail
+    export HERMES_HOME=/workspace/.hermes
+    export PYTHONPATH=/workspace/.hermes/overrides''${PYTHONPATH:+:$PYTHONPATH}
+    exec /workspace/.hermes/venv/bin/hermes "$@"
+  '';
 
   # SSH-based host commands for use inside the sandboxed piclaw service.
   # The piclaw systemd unit runs with ProtectSystem=strict, so commands
@@ -294,15 +301,14 @@ in {
     '';
   };
 
+  home.file.".local/bin/hermes" = {
+    executable = true;
+    text = hermesLauncher;
+  };
+
   home.file.".local/bin/hermes-cli" = {
     executable = true;
-    text = ''
-      #!/usr/bin/env bash
-      set -euo pipefail
-      export HERMES_HOME=/workspace/.hermes
-      export PYTHONPATH=/workspace/.hermes/overrides''${PYTHONPATH:+:$PYTHONPATH}
-      exec /workspace/.hermes/venv/bin/hermes "$@"
-    '';
+    text = hermesLauncher;
   };
 
   home.file.".local/bin/backup" = {
