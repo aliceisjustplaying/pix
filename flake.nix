@@ -25,7 +25,7 @@
     };
 
     codex-cli = {
-      url = "github:sadjow/codex-cli-nix";
+      url = "github:aliceisjustplaying/codex-cli-nix/codex/fix-0-124-update";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
