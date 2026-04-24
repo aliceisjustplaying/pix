@@ -35,7 +35,7 @@ let
 
     AllowUsers agent
     AuthorizedKeysFile .ssh/authorized_keys
-    UsePAM no
+    UsePAM yes
     PasswordAuthentication no
     KbdInteractiveAuthentication no
     PubkeyAuthentication yes
