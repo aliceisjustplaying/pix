@@ -15,6 +15,9 @@ let
       hash = "sha256-A5dDAhYenszjIVPPoQAS8eZcjzdQ9XOnOrG+/Vlyooo=";
     };
     patches = [ ];
+    configureFlags = pkgs.openssh.configureFlags ++ [
+      "--with-ssl-dir=${pkgs.openssl_3.dev}"
+    ];
   };
   agentKeys = lib.concatStringsSep "\n" config.users.users.agent.openssh.authorizedKeys.keys;
   ensureHostKey = pkgs.writeShellScript "dropbear-laterminal-hostkey" ''
