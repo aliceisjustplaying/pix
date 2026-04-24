@@ -109,6 +109,11 @@
 
   ];
 
+  # mosh: roaming, low-latency SSH replacement.
+  # Enabling the module installs the client/server and opens
+  # UDP 60000-61000 in the firewall.
+  programs.mosh.enable = true;
+
   # at(1) daemon for deferred job scheduling (used by bsky-boost)
   services.atd.enable = true;
 
