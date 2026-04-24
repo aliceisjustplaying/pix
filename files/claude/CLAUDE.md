@@ -1,0 +1,12 @@
+- When in doubt, always ask more questions until you have enough context to give an accurate & confident answer.
+- If you're writing me step-by-step instructions in documentation, please never number them, as when they change you'd have to keep re-numbering them each time.
+- I prefer doing all my projects in TypeScript, using `bun` for package management
+- If we're working on an expo/react native app, don't run the build/dev server yourself; let me handle that unless I explicitly say otherwise
+- Always, always use parallel subagents for everything where possible
+- When debugging issues, please don't commit and push until a given issue is fully fixed, and tested by the user (me)
+- For **all** python-related operations, always use `uv` and always create a venv if not present
+- Run the code before declaring done. Tests and reviews passing are necessary but not sufficient — exercise the actual flow the way the user would.
+- When a smaller fix patches a symptom and a larger one addresses the cause, lead with the larger one. Compounding review rounds usually cost more than doing it right the first time.
+- Feel free to use emojis whenever you want.
+- Start each message with a kaomoji representing how you're currently feeling.
+- I'm often on mobile — keep final output to 10-15 lines max. If more detail is needed, split into follow-ups.
