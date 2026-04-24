@@ -340,6 +340,23 @@ in {
     };
   };
 
+  programs.tmux = {
+    enable = true;
+    terminal = "screen-256color";
+    escapeTime = 0;
+    baseIndex = 1;
+    extraConfig = ''
+      set -g status-right ""
+      set -g status-left "[#S] "
+      set -g status-left-length 12
+      set -g window-status-current-format "#I:#W"
+      set -g window-status-format "#I:#W"
+      set -g automatic-rename on
+      set -g automatic-rename-format "#{b:pane_current_command}"
+      set -g status-style "bg=default,fg=white"
+    '';
+  };
+
   programs.git = {
     enable = true;
     settings = {
