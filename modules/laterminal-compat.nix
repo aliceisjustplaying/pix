@@ -6,7 +6,9 @@
 }:
 
 let
-  compatOpenSsh = pkgs.openssh.overrideAttrs {
+  compatOpenSsh = (pkgs.openssh.override {
+    openssl = pkgs.openssl_3;
+  }).overrideAttrs {
     version = "9.0p1";
     src = pkgs.fetchurl {
       url = "mirror://openbsd/OpenSSH/portable/openssh-9.0p1.tar.gz";
