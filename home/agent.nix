@@ -336,10 +336,10 @@ in {
     baseIndex = 1;
     extraConfig = ''
       set -g status-right ""
-      set -g status-left "[#S] "
-      set -g status-left-length 12
-      set -g window-status-current-format "#I:#W"
-      set -g window-status-format "#I:#W"
+      set -g status-left ""
+      set -g status-left-length 0
+      set -g window-status-current-format "#I:#{=10:window_name}"
+      set -g window-status-format "#I:#{=10:window_name}"
       set -g automatic-rename on
       set -g automatic-rename-format "#{b:pane_current_command}"
       set -g status-style "bg=default,fg=white"
