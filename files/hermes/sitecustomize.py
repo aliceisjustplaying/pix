@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import subprocess
 
 
 _TOOL_ALIASES = {
@@ -92,6 +93,39 @@ def _managed_hermes_venv() -> str | None:
     if (venv_path / "bin" / "python3").exists() or (venv_path / "bin" / "python").exists():
         return str(venv_path)
     return None
+
+
+def _patch_system_gateway_restart(hermes_main) -> None:
+    if getattr(subprocess, "_pix_system_gateway_restart_patch_applied", False):
+        return
+
+    original_run = subprocess.run
+
+    def wrapped_run(*args, **kwargs):
+        if args:
+            cmd = args[0]
+            if (
+                isinstance(cmd, list)
+                and cmd[:2] == ["systemctl", "restart"]
+                and len(cmd) == 3
+                and cmd[2].startswith("hermes-gateway")
+            ):
+                cmd = [
+                    "ssh",
+                    "-o",
+                    "BatchMode=yes",
+                    "localhost",
+                    "sudo",
+                    "systemctl",
+                    "restart",
+                    cmd[2],
+                ]
+                args = (cmd, *args[1:])
+        return original_run(*args, **kwargs)
+
+    subprocess.run = wrapped_run
+    hermes_main.subprocess.run = wrapped_run
+    subprocess._pix_system_gateway_restart_patch_applied = True
 
 
 def _apply() -> None:
@@ -205,6 +239,7 @@ def _apply() -> None:
     anthropic_adapter.build_anthropic_kwargs = wrapped_build_anthropic_kwargs
     prompt_builder._pix_claude_oauth_prompt_patch_applied = True
     anthropic_adapter._MCP_TOOL_PREFIX = ""
+    _patch_system_gateway_restart(hermes_main)
 
     if not getattr(hermes_main, "_pix_update_venv_patch_applied", False):
         original_install_python_dependencies = hermes_main._install_python_dependencies_with_optional_fallback
