@@ -1,16 +1,18 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
 }:
 
 let
-  compatPkgs = import inputs.nixpkgs-22_05 {
-    system = pkgs.stdenv.hostPlatform.system;
+  compatOpenSsh = pkgs.openssh.overrideAttrs {
+    version = "9.0p1";
+    src = pkgs.fetchurl {
+      url = "mirror://openbsd/OpenSSH/portable/openssh-9.0p1.tar.gz";
+      hash = "sha256-A5dDAhYenszjIVPPoQAS8eZcjzdQ9XOnOrG+/Vlyooo=";
+    };
   };
-  compatOpenSsh = compatPkgs.openssh;
   agentKeys = lib.concatStringsSep "\n" config.users.users.agent.openssh.authorizedKeys.keys;
   ensureHostKey = pkgs.writeShellScript "dropbear-laterminal-hostkey" ''
     set -eu
