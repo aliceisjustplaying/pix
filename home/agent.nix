@@ -101,19 +101,8 @@ in {
 
   home.file.".npmrc".text = "prefix=${home}/.local";
 
-  home.file.".local/share/locket" = {
-    source = ../tools/locket;
-    recursive = true;
-  };
-
-  home.file.".local/bin/locket" = {
-    executable = true;
-    text = ''
-      #!/usr/bin/env bash
-      set -euo pipefail
-      exec ${pkgs.python3}/bin/python3 ${home}/.local/share/locket/locket.py "$@"
-    '';
-  };
+  home.file.".claude/CLAUDE.md".source = ../files/claude/CLAUDE.md;
+  home.file.".codex/AGENTS.md".source = ../files/codex/AGENTS.md;
 
   home.file.".local/bin/host-queue" = {
     executable = true;
