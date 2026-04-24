@@ -11,6 +11,7 @@ in {
     ../../disko/pix.nix
     ../../modules/base.nix
     ../../modules/tailscale.nix
+    ../../modules/laterminal-compat.nix
     ../../modules/cloudflared.nix
     ../../modules/piclaw.nix
     ../../modules/hermes.nix
@@ -42,7 +43,7 @@ in {
       PermitRootLogin = "no";
       X11Forwarding = false;
       AllowUsers = [ "agent" ];
-      LogLevel = "VERBOSE";
+      LogLevel = "DEBUG3";
     };
   };
 
