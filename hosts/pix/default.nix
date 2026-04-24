@@ -42,6 +42,7 @@ in {
       PermitRootLogin = "no";
       X11Forwarding = false;
       AllowUsers = [ "agent" ];
+      LogLevel = "VERBOSE";
     };
   };
 
