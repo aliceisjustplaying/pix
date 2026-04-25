@@ -106,7 +106,6 @@ EOF
         cd "${hermesRepo}"
         export UV_PROJECT_ENVIRONMENT="${hermesVenv}"
         ${pkgs.uv}/bin/uv sync \
-          --locked \
           --extra messaging \
           --extra cron \
           --extra cli \
