@@ -8,6 +8,8 @@ let
 
   python = pkgs.python312.withPackages (ps: [ ps.pyyaml ]);
 
+  webuiPatches = ../patches/hermes-webui;
+
   bootstrap = pkgs.writeShellScript "hermes-webui-bootstrap" ''
     set -euo pipefail
     mkdir -p "${webuiState}" /workspace/src
@@ -15,8 +17,15 @@ let
       rm -rf "${webuiRepo}"
       ${pkgs.git}/bin/git clone --depth=1 https://github.com/nesquena/hermes-webui.git "${webuiRepo}"
     else
+      ${pkgs.git}/bin/git -C "${webuiRepo}" reset --hard HEAD
       ${pkgs.git}/bin/git -C "${webuiRepo}" pull --ff-only || true
     fi
+    for p in ${webuiPatches}/*.patch; do
+      [ -e "$p" ] || continue
+      ${pkgs.git}/bin/git -C "${webuiRepo}" apply "$p" || {
+        echo "patch $p failed" >&2; exit 1;
+      }
+    done
   '';
 in {
   systemd.tmpfiles.rules = [
