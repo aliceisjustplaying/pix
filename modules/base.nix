@@ -44,9 +44,7 @@
   i18n.defaultLocale = "en_US.UTF-8";
   services.qemuGuest.enable = true;
 
-  services.journald.extraConfig = ''
-    SystemMaxUse=500M
-  '';
+  services.journald.extraConfig = builtins.readFile ../files/journald/journald.conf;
 
   security.sudo.wheelNeedsPassword = false;
 

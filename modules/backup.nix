@@ -1,6 +1,7 @@
 { config, pkgs, ... }:
 let
   accountId = "b752c979e541327de3e87e52f0906aa1";
+  tmpl = import ../lib/template.nix;
 in {
   sops.secrets.restic-password = {
     restartUnits = [ "restic-backups-r2.service" ];
@@ -10,10 +11,10 @@ in {
   sops.secrets.r2-secret-access-key = { };
 
   sops.templates.restic-r2-env = {
-    content = ''
-      AWS_ACCESS_KEY_ID=${config.sops.placeholder.r2-access-key-id}
-      AWS_SECRET_ACCESS_KEY=${config.sops.placeholder.r2-secret-access-key}
-    '';
+    content = tmpl ../files/sops/restic-r2.env {
+      r2AccessKeyId = config.sops.placeholder.r2-access-key-id;
+      r2SecretAccessKey = config.sops.placeholder.r2-secret-access-key;
+    };
   };
 
   services.restic.backups.r2 = {
