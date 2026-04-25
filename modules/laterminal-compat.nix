@@ -22,6 +22,9 @@ let
       hash = "sha256-A5dDAhYenszjIVPPoQAS8eZcjzdQ9XOnOrG+/Vlyooo=";
     };
     patches = [ ];
+    preConfigure = (old.preConfigure or "") + ''
+      export LD_LIBRARY_PATH=${compatOpenSsl}/lib''${LD_LIBRARY_PATH:+:}$LD_LIBRARY_PATH
+    '';
     configureFlags = old.configureFlags ++ [
       "--with-ssl-dir=${compatOpenSsl}"
     ];
