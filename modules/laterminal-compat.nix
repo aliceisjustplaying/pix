@@ -28,7 +28,7 @@ let
     preConfigure = (old.preConfigure or "") + ''
       export LD_LIBRARY_PATH=${compatOpenSsl}/lib''${LD_LIBRARY_PATH:+:}$LD_LIBRARY_PATH
     '';
-    configureFlags = old.configureFlags ++ [
+    configureFlags = (builtins.filter (flag: flag != "--with-ldns") old.configureFlags) ++ [
       "--with-ssl-dir=${compatOpenSsl}"
     ];
   });
