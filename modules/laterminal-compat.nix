@@ -6,31 +6,17 @@
 }:
 
 let
-  compatOpenSsl = pkgs.symlinkJoin {
-    name = "openssl-3.0-compat-prefix";
-    paths = [
-      pkgs.openssl_3.dev
-      pkgs.openssl_3.out
-    ];
-  };
-  compatOpenSsh = (pkgs.openssh.override {
-    openssl = pkgs.openssl_3;
-  }).overrideAttrs (old: {
-    version = "9.0p1";
+  compatOpenSsh = pkgs.openssh.overrideAttrs (old: {
+    version = "9.2p1";
     src = pkgs.fetchurl {
-      url = "mirror://openbsd/OpenSSH/portable/openssh-9.0p1.tar.gz";
-      hash = "sha256-A5dDAhYenszjIVPPoQAS8eZcjzdQ9XOnOrG+/Vlyooo=";
+      url = "mirror://openbsd/OpenSSH/portable/openssh-9.2p1.tar.gz";
+      hash = "sha256-P2bb8WVftF9Q4cVtpiqwEhjCKIB7ITONY068351xz0Y=";
     };
     patches = [
       "${pkgs.path}/pkgs/tools/networking/openssh/dont_create_privsep_path.patch"
     ];
     doInstallCheck = false;
-    preConfigure = (old.preConfigure or "") + ''
-      export LD_LIBRARY_PATH=${compatOpenSsl}/lib''${LD_LIBRARY_PATH:+:}$LD_LIBRARY_PATH
-    '';
-    configureFlags = (builtins.filter (flag: flag != "--with-ldns") old.configureFlags) ++ [
-      "--with-ssl-dir=${compatOpenSsl}"
-    ];
+    configureFlags = builtins.filter (flag: flag != "--with-ldns") old.configureFlags;
   });
   agentKeys = lib.concatStringsSep "\n" config.users.users.agent.openssh.authorizedKeys.keys;
   ensureHostKey = pkgs.writeShellScript "dropbear-laterminal-hostkey" ''
