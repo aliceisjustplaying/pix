@@ -7,6 +7,7 @@ let
   hermesVenv = "${hermesHome}/venv";
   hermesSitePackages = "${hermesVenv}/lib/python3.11/site-packages";
   hermesSitecustomize = ../files/hermes/sitecustomize.py;
+  tmpl = import ../lib/template.nix;
 
   servicePath = lib.makeBinPath [
     pkgs.bash
@@ -127,11 +128,9 @@ EOF
 in {
   sops.templates.hermes-service-env = {
     restartUnits = [ "hermes-gateway.service" ];
-    content = ''
-      HERMES_HOME=${hermesHome}
-      PYTHONPATH=${hermesOverrides}
-      PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}
-    '';
+    content = tmpl ../files/sops/hermes-service.env {
+      inherit hermesHome hermesOverrides agentHome servicePath;
+    };
   };
 
   systemd.tmpfiles.rules = [

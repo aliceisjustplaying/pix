@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 let
   agentHome = "/home/agent";
+  tmpl = import ../lib/template.nix;
 
   servicePath = lib.makeBinPath [
     pkgs.bash
@@ -49,33 +50,19 @@ in {
 
   sops.templates.piclaw-env = {
     restartUnits = [ "piclaw.service" ];
-    content = ''
-      PICLAW_WORKSPACE=/workspace
-      PICLAW_STORE=/workspace/.piclaw/store
-      PICLAW_DATA=/workspace/.piclaw/data
-      PICLAW_WEB_HOST=127.0.0.1
-      PICLAW_WEB_PORT=8080
-      PICLAW_TRUST_PROXY=1
-      PICLAW_WEB_TERMINAL_ENABLED=1
-      PICLAW_WEB_PUSH_VAPID_SUBJECT=https://pix.mosphere.at
-      PICLAW_WEB_PASSKEY_MODE=passkey-only
-      PICLAW_AUTOSTART=1
-      PICLAW_ASSISTANT_NAME=PiClaw
-      PICLAW_DREAM_MODEL=anthropic/claude-sonnet-4-6
-      PICLAW_KEYCHAIN_KEY=${config.sops.placeholder.piclaw-keychain-key}
-      PICLAW_WEB_TOTP_SECRET=${config.sops.placeholder.piclaw-web-totp-secret}
-      PICLAW_WEB_INTERNAL_SECRET=${config.sops.placeholder.piclaw-web-internal-secret}
-      CLOUDFLARE_API_TOKEN=${config.sops.placeholder.cloudflare-api-token}
-    '';
+    content = tmpl ../files/sops/piclaw.env {
+      piclawKeychainKey = config.sops.placeholder.piclaw-keychain-key;
+      piclawWebTotpSecret = config.sops.placeholder.piclaw-web-totp-secret;
+      piclawWebInternalSecret = config.sops.placeholder.piclaw-web-internal-secret;
+      cloudflareApiToken = config.sops.placeholder.cloudflare-api-token;
+    };
   };
 
   sops.templates.agent-web-search-json = {
     restartUnits = [ "agent-secrets.service" ];
-    content = ''
-      {
-        "exaApiKey": "${config.sops.placeholder.exa-api-key}"
-      }
-    '';
+    content = tmpl ../files/sops/agent-web-search.json {
+      exaApiKey = config.sops.placeholder.exa-api-key;
+    };
   };
 
   systemd.tmpfiles.rules = [
