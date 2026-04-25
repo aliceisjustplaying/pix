@@ -14,6 +14,7 @@ in {
     ../../modules/cloudflared.nix
     ../../modules/piclaw.nix
     ../../modules/hermes.nix
+    ../../modules/hermes-webui.nix
     ../../modules/vibes.nix
     ../../modules/vibes-go.nix
     ../../modules/vibes-claude.nix
