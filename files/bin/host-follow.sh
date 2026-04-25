@@ -21,18 +21,29 @@ tail_lines=40
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --heartbeat) heartbeat="$2"; shift 2 ;;
-    --max) max_seconds="$2"; shift 2 ;;
-    --tail) tail_lines="$2"; shift 2 ;;
-    -h|--help)
+    --heartbeat)
+      heartbeat="$2"
+      shift 2
+      ;;
+    --max)
+      max_seconds="$2"
+      shift 2
+      ;;
+    --tail)
+      tail_lines="$2"
+      shift 2
+      ;;
+    -h | --help)
       echo "usage: host-follow <unit> [--heartbeat 45] [--max 900] [--tail 40]"
       exit 0
       ;;
     *)
       if [ -z "$unit" ]; then unit="$1"; else
-        echo "unexpected arg: $1" >&2; exit 64
+        echo "unexpected arg: $1" >&2
+        exit 64
       fi
-      shift ;;
+      shift
+      ;;
   esac
 done
 
@@ -67,7 +78,7 @@ check_terminal() {
 
 while :; do
   now=$(date +%s)
-  elapsed=$(( now - start_ts ))
+  elapsed=$((now - start_ts))
 
   if [ "$elapsed" -ge "$max_seconds" ]; then
     echo "[host-follow] TIMEOUT after $elapsed s; unit $unit still not terminal"
@@ -89,7 +100,7 @@ while :; do
       ;;
   esac
 
-  if [ $(( now - last_beat )) -ge "$heartbeat" ]; then
+  if [ $((now - last_beat)) -ge "$heartbeat" ]; then
     last_beat=$now
     echo "[host-follow] still running after $elapsed s"
   fi
