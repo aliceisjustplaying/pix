@@ -43,7 +43,7 @@ in {
       PermitRootLogin = "no";
       X11Forwarding = false;
       AllowUsers = [ "agent" ];
-      LogLevel = "DEBUG3";
+      LogLevel = "INFO";
     };
   };
 
