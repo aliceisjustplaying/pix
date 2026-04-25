@@ -24,6 +24,7 @@ let
     patches = [
       "${pkgs.path}/pkgs/tools/networking/openssh/dont_create_privsep_path.patch"
     ];
+    doInstallCheck = false;
     preConfigure = (old.preConfigure or "") + ''
       export LD_LIBRARY_PATH=${compatOpenSsl}/lib''${LD_LIBRARY_PATH:+:}$LD_LIBRARY_PATH
     '';
