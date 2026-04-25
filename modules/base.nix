@@ -101,6 +101,7 @@
     chromium
     gh
     ghstack
+    git-crypt
     patch
     at
 
