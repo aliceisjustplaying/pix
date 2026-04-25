@@ -21,7 +21,9 @@ let
       url = "mirror://openbsd/OpenSSH/portable/openssh-9.0p1.tar.gz";
       hash = "sha256-A5dDAhYenszjIVPPoQAS8eZcjzdQ9XOnOrG+/Vlyooo=";
     };
-    patches = [ ];
+    patches = [
+      "${pkgs.path}/pkgs/tools/networking/openssh/dont_create_privsep_path.patch"
+    ];
     preConfigure = (old.preConfigure or "") + ''
       export LD_LIBRARY_PATH=${compatOpenSsl}/lib''${LD_LIBRARY_PATH:+:}$LD_LIBRARY_PATH
     '';
