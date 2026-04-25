@@ -35,7 +35,7 @@ in {
       Type = "simple";
       User = "agent";
       Group = "users";
-      WorkingDirectory = webuiRepo;
+      WorkingDirectory = "/workspace";
       Environment = [
         "HOME=${agentHome}"
         "USER=agent"
