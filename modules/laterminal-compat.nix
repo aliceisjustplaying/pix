@@ -69,7 +69,7 @@ let
     PubkeyAcceptedAlgorithms ssh-ed25519
 
     Subsystem sftp internal-sftp
-    LogLevel DEBUG3
+    LogLevel INFO
   '';
 in {
   system.activationScripts.dropbearLaTerminalAuthorizedKeys.text = ''
