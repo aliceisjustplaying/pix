@@ -15,6 +15,10 @@ let
     patches = [
       "${pkgs.path}/pkgs/tools/networking/openssh/dont_create_privsep_path.patch"
     ];
+    postPatch = (old.postPatch or "") + ''
+      substituteInPlace configure.ac configure \
+        --replace '301*|302*)' '30*)'
+    '';
     doInstallCheck = false;
     configureFlags = builtins.filter (flag: flag != "--with-ldns") old.configureFlags;
   });
