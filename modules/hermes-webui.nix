@@ -46,10 +46,10 @@ in {
         "HERMES_WEBUI_STATE_DIR=${webuiState}"
         "HERMES_WEBUI_AGENT_DIR=/workspace/src/hermes-live"
         "HERMES_WEBUI_PYTHON=${hermesHome}/venv/bin/python"
-        "HERMES_WEBUI_DEFAULT_WORKSPACE=/workspace"
+        "HERMES_WEBUI_DEFAULT_WORKSPACE=${agentHome}"
       ];
       ExecStartPre = bootstrap;
-      ExecStart = "${python}/bin/python3 ${webuiRepo}/server.py";
+      ExecStart = "${hermesHome}/venv/bin/python ${webuiRepo}/server.py";
       Restart = "always";
       RestartSec = "10s";
       UMask = "0077";
