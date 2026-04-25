@@ -5,7 +5,7 @@ let
   hermesOverrides = "${hermesHome}/overrides";
   hermesRepo = "/workspace/src/hermes-live";
   hermesVenv = "${hermesHome}/venv";
-  hermesSitePackages = "${hermesVenv}/lib/python3.11/site-packages";
+  hermesSitePackages = "${hermesVenv}/lib/python3.12/site-packages";
   hermesSitecustomize = ../files/hermes/sitecustomize.py;
   tmpl = import ../lib/template.nix;
 
@@ -32,7 +32,7 @@ let
     pkgs.openssh
     pkgs.uv
     pkgs.nodejs_24
-    pkgs.python311
+    pkgs.python312
     pkgs.jq
     pkgs.procps
     pkgs.sqlite
@@ -101,7 +101,7 @@ EOF
 
     if [ ! -x "${hermesVenv}/bin/hermes" ] || [ ! -f "$stamp" ] || [ "$(cat "$stamp")" != "$rev" ]; then
       rm -rf "${hermesVenv}"
-      ${pkgs.uv}/bin/uv venv "${hermesVenv}" --python ${pkgs.python311}/bin/python3.11
+      ${pkgs.uv}/bin/uv venv "${hermesVenv}" --python ${pkgs.python312}/bin/python3.12
       (
         cd "${hermesRepo}"
         export UV_PROJECT_ENVIRONMENT="${hermesVenv}"
