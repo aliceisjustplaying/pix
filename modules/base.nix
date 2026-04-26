@@ -1,4 +1,13 @@
 { pkgs, ... }:
+let
+  wranglerLatest = pkgs.writeShellApplication {
+    name = "wrangler";
+    runtimeInputs = [ pkgs.nodejs ];
+    text = ''
+      exec npm exec --yes wrangler@4.85.0 -- "$@"
+    '';
+  };
+in
 {
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
@@ -67,6 +76,9 @@
     jq
     ripgrep
     fd
+    dnsutils
+    wranglerLatest
+    xdg-utils
     bat
     fzf
     eza
