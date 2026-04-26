@@ -27,6 +27,10 @@
       url = "github:sadjow/codex-cli-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+    };
   };
 
   outputs = inputs@{
@@ -37,6 +41,7 @@
     sops-nix,
     claude-code,
     codex-cli,
+    llm-agents,
     ...
   }:
   let
@@ -51,6 +56,9 @@
           nixpkgs.overlays = [
             claude-code.overlays.default
             codex-cli.overlays.default
+            (final: _prev: {
+              agent-browser = llm-agents.packages.${final.stdenv.hostPlatform.system}.agent-browser;
+            })
           ];
         }
         disko.nixosModules.disko

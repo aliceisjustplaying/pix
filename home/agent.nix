@@ -46,6 +46,7 @@ in {
     uv
     vibesPkg
     codexAcpPkg
+    agent-browser
   ];
 
   home.file.".npmrc".text = "prefix=${home}/.local";
