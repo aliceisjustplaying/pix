@@ -15,6 +15,7 @@ in {
     ../../modules/piclaw.nix
     ../../modules/hermes.nix
     ../../modules/hermes-webui.nix
+    ../../modules/plausible.nix
     ../../modules/vibes.nix
     ../../modules/vibes-go.nix
     ../../modules/vibes-claude.nix
