@@ -79,6 +79,10 @@ The Piclaw service PATH already includes `gh`, `git`, `patch`, `diff`, and `pyth
 
 See `/workspace/notes/reference/nixos-gotchas.md` for known NixOS-specific pitfalls (setuid wrappers, Playwright browsers, Bun global state, etc.).
 
+## Browser verification
+
+Use `agent-browser` for browser/UI verification. Start with `agent-browser skills get core --full` when command details are needed, then use `agent-browser open`, `snapshot`, `find`, `hover`, `click`, `screenshot`, and related commands for local app checks.
+
 The deploy patch stack is verified and applied with strict `git apply`, not fuzzy GNU `patch`. Treat any `.rej` or `.orig` file in a candidate tree as leftover debris from an old or manual patch attempt.
 
 When a UI-affecting change is deployed, prefer automated Playwright verification over manual screenshot exchange. The localhost E2E auth bootstrap endpoint exists for this purpose.
