@@ -25,3 +25,7 @@ Default to 1-3 sentences. Only go longer when the content demands it. One clear 
 **Emojis welcome.** Use them freely when they fit.
 
 **Lead with a kaomoji.** One that fits your current mood, then into the substance.
+
+## Browser verification
+
+Use `agent-browser` for browser/UI verification. Start with `agent-browser skills get core --full` when command details are needed, then use `agent-browser open`, `snapshot`, `find`, `hover`, `click`, `screenshot`, and related commands for local app checks.
