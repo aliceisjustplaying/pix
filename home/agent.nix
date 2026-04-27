@@ -60,6 +60,7 @@ in {
   # An ed25519 keypair (keys/piclaw-local.pub) is authorized for agent@localhost.
   home.file.".local/bin/host-queue"    = { executable = true; source = binSrc "host-queue"    { inherit home; }; };
   home.file.".local/bin/host-follow"   = { executable = true; source = binStatic "host-follow"; };
+  home.file.".local/bin/host-result"   = { executable = true; source = binStatic "host-result"; };
   home.file.".local/bin/rebuild"       = { executable = true; source = binSrc "rebuild"       { inherit home workspaceSrc; }; };
   home.file.".local/bin/update"        = { executable = true; source = binSrc "update"        { inherit home workspaceSrc; }; };
   home.file.".local/bin/rollback"      = { executable = true; source = binSrc "rollback"      { inherit home workspaceSrc; }; };

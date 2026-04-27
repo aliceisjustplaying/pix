@@ -62,12 +62,13 @@ Local deploy commands (declared in `pix/home/agent.nix`, installed under `~/.loc
 - `verify-deploy` — run `./scripts/piclaw-verify-deploy.sh` locally to validate a candidate Piclaw deploy without activating it. Does not go through the host queue.
 - `prestart` — queue `sudo systemctl restart piclaw` on the host.
 - `pstatus`, `plogs` — SSH wrappers for `systemctl status` / `journalctl -u piclaw` on the host.
-- `host-follow <unit>` — poll a transient host-queue unit to terminal state (heartbeat ~45 s, hard cap 15 min); use this instead of `journalctl -f` when watching a rebuild/update/rollback/prestart job.
+- `host-follow <unit>` — poll a transient host-queue unit to terminal state (heartbeat ~45 s, hard cap 15 min); use this instead of `journalctl -f` when watching a rebuild/update/rollback job.
+- `host-result <unit>` — read the detached host-side result watcher written by `host-queue`; use this after `prestart` or any job that may kill the current agent process before `host-follow` can return.
 - `backup` — SSH wrapper that starts `restic-backups-r2.service` and tails its journal.
 
 Shell aliases (bash): `sync-nix` = `cd /workspace/src/pix && git pull && rebuild`; `update-force` = `cd /workspace/src/piclaw-customizations && git pull && sudo ./scripts/piclaw-update-host.sh --force`; `rollback-force` = `rollback`.
 
-`rebuild`, `update`, `rollback`, and `prestart` are asynchronous: they dispatch through `host-queue`, which SSHes to localhost and runs `systemd-run` to create a transient unit named `<job>-<epoch>`. The command returns immediately after queueing and prints `follow logs with: ssh localhost sudo journalctl -u <unit> -f`. Watch that journal to confirm success or failure — exit code on the client only tells you the job was queued.
+`rebuild`, `update`, `rollback`, and `prestart` are asynchronous: they dispatch through `host-queue`, which SSHes to localhost and runs `systemd-run` to create a transient unit named `<job>-<epoch>` plus a detached `<job>-<epoch>-watch` unit that writes `/workspace/.piclaw/host-queue-results/<unit>.status`. The command returns immediately after queueing and prints follow/check commands. For jobs that do not restart Piclaw, use `host-follow <unit>`; after `prestart`, use `host-result <unit> --wait 120` once the agent reconnects, because the restart can kill the in-process follower before it returns.
 
 Prefer bounded log reads or periodic polling over indefinite `journalctl -f` when monitoring queued jobs. Use log-following only when it materially helps, and break out to report as soon as the user's question can be answered.
 
