@@ -1,6 +1,7 @@
-{ config, lib, pkgs, ... }:
+{ config, pkgs, ... }:
 let
-  agentHome = "/home/agent";
+  agentService = import ../lib/agent-service.nix { inherit pkgs; };
+  agentHome = agentService.home;
   hermesHome = "/workspace/.hermes";
   hermesOverrides = "${hermesHome}/overrides";
   hermesRepo = "/workspace/src/hermes-live";
@@ -9,16 +10,11 @@ let
   hermesSitecustomize = ../files/hermes/sitecustomize.py;
   tmpl = import ../lib/template.nix;
 
-  servicePath = lib.makeBinPath [
-    pkgs.bash
-    pkgs.coreutils
+  servicePath = agentService.path [
     pkgs.curl
     pkgs.diffutils
-    pkgs.findutils
     pkgs.ripgrep
     pkgs.fd
-    pkgs.gnugrep
-    pkgs.gnused
     pkgs.gnumake
     pkgs.tree
     pkgs.unzip
@@ -27,19 +23,13 @@ let
     pkgs.shfmt
     pkgs.gh
     pkgs.ghstack
-    pkgs.git
     pkgs.gnupatch
-    pkgs.openssh
     pkgs.uv
     pkgs.nodejs_24
     pkgs.python312
-    pkgs.jq
-    pkgs.procps
-    pkgs.sqlite
     pkgs.ffmpeg
     pkgs.yt-dlp
     pkgs.tmux
-    pkgs.which
     pkgs.claude-code
     pkgs.codex
   ];
