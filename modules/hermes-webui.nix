@@ -7,8 +7,6 @@ let
   webuiState = "${hermesHome}/webui";
   port = 8787;
 
-  webuiPatches = ../patches/hermes-webui;
-
   bootstrap = pkgs.writeShellScript "hermes-webui-bootstrap" ''
     set -euo pipefail
     mkdir -p "${webuiState}" /workspace/src
@@ -19,17 +17,6 @@ let
       ${pkgs.git}/bin/git -C "${webuiRepo}" reset --hard HEAD
       ${pkgs.git}/bin/git -C "${webuiRepo}" pull --ff-only || true
     fi
-    for p in ${webuiPatches}/*.patch; do
-      [ -e "$p" ] || continue
-      if ${pkgs.git}/bin/git -C "${webuiRepo}" apply --check "$p"; then
-        ${pkgs.git}/bin/git -C "${webuiRepo}" apply "$p"
-      elif ${pkgs.git}/bin/git -C "${webuiRepo}" apply --reverse --check "$p"; then
-        echo "patch $p already applied; skipping"
-      else
-        echo "patch $p failed" >&2
-        exit 1
-      fi
-    done
   '';
 in {
   systemd.tmpfiles.rules = [
