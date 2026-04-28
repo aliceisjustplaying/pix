@@ -2,12 +2,10 @@
 let
   agentService = import ../lib/agent-service.nix { inherit pkgs; };
   agentHome = agentService.home;
-  vibesPkg = pkgs.callPackage ../pkgs/vibes.nix { };
-  codexAcpPkg = pkgs.callPackage ../pkgs/codex-acp.nix { };
   servicePath = agentService.path [
     pkgs.codex
     pkgs.python3
-    codexAcpPkg
+    pkgs.codex-acp
   ];
 in {
   systemd.tmpfiles.rules = [
@@ -30,10 +28,10 @@ in {
         "VIBES_PORT=8081"
         "VIBES_DB_PATH=/workspace/.pi/vibes/vibes.db"
         "VIBES_AGENT_NAME=Codex"
-        "VIBES_ACP_AGENT=${codexAcpPkg}/bin/codex-acp"
+        "VIBES_ACP_AGENT=${pkgs.codex-acp}/bin/codex-acp"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
-      ExecStart = "${vibesPkg}/bin/vibes";
+      ExecStart = "${pkgs.vibes}/bin/vibes";
     };
   };
 }

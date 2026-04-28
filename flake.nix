@@ -74,6 +74,10 @@
             codex-cli.overlays.default
             (final: _prev: {
               agent-browser = llm-agents.packages.${final.stdenv.hostPlatform.system}.agent-browser;
+              claude-code-acp = final.callPackage ./pkgs/claude-code-acp { };
+              codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
+              vibes = final.callPackage ./pkgs/vibes.nix { };
+              vibes-go = final.callPackage ./pkgs/vibes-go.nix { };
               inherit (unstablePkgs)
                 gh
                 uv

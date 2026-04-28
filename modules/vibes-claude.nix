@@ -3,13 +3,11 @@ let
   agentService = import ../lib/agent-service.nix { inherit pkgs; };
   agentHome = agentService.home;
   workingDir = "/home/agent/newmem";
-  vibesPkg = pkgs.callPackage ../pkgs/vibes.nix { };
-  claudeCodeAcpPkg = pkgs.callPackage ../pkgs/claude-code-acp { };
   servicePath = agentService.path [
     pkgs.nodejs
     pkgs.claude-code
     pkgs.python3
-    claudeCodeAcpPkg
+    pkgs.claude-code-acp
   ];
 in {
   systemd.tmpfiles.rules = [
@@ -33,7 +31,7 @@ in {
         "VIBES_PORT=8083"
         "VIBES_DB_PATH=/workspace/.pi/vibes-claude/vibes.db"
         "VIBES_AGENT_NAME=Claude"
-        "VIBES_ACP_AGENT=${claudeCodeAcpPkg}/bin/claude-code-acp"
+        "VIBES_ACP_AGENT=${pkgs.claude-code-acp}/bin/claude-code-acp"
         "VIBES_AVAILABLE_MODELS=claude-opus-4-5,claude-opus-4-6[1m],claude-opus-4-7"
         "VIBES_DEFAULT_MODE=bypassPermissions"
         "CLAUDE_CODE_ALWAYS_ENABLE_EFFORT=1"
@@ -41,7 +39,7 @@ in {
         "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
-      ExecStart = "${vibesPkg}/bin/vibes";
+      ExecStart = "${pkgs.vibes}/bin/vibes";
     };
   };
 }

@@ -2,11 +2,9 @@
 let
   agentService = import ../lib/agent-service.nix { inherit pkgs; };
   agentHome = agentService.home;
-  vibesGoPkg = pkgs.callPackage ../pkgs/vibes-go.nix { };
-  codexAcpPkg = pkgs.callPackage ../pkgs/codex-acp.nix { };
   servicePath = agentService.path [
     pkgs.codex
-    codexAcpPkg
+    pkgs.codex-acp
   ];
 in {
   systemd.tmpfiles.rules = [
@@ -31,10 +29,10 @@ in {
         "VIBES_AGENT_NAME=Codex"
         "VIBES_DEFAULT_AGENT=acp"
         "VIBES_PI_ENABLED=false"
-        "VIBES_ACP_AGENT=${codexAcpPkg}/bin/codex-acp"
+        "VIBES_ACP_AGENT=${pkgs.codex-acp}/bin/codex-acp"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
-      ExecStart = "${vibesGoPkg}/bin/vibes";
+      ExecStart = "${pkgs.vibes-go}/bin/vibes";
     };
   };
 }

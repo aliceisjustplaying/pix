@@ -2,8 +2,6 @@
 let
   home = config.home.homeDirectory;
   workspaceSrc = "/workspace/src";
-  vibesPkg = pkgs.callPackage ../pkgs/vibes.nix { };
-  codexAcpPkg = pkgs.callPackage ../pkgs/codex-acp.nix { };
 
   # Render a script from files/bin/<name>.sh. Pass replacements for the
   # @placeholder@ tokens the file uses (replaceVars errors on unused vars).
@@ -61,8 +59,8 @@ in {
     codex
     python3
     uv
-    vibesPkg
-    codexAcpPkg
+    vibes
+    codex-acp
     agent-browser
   ];
 
