@@ -1,6 +1,7 @@
 { pkgs, ... }:
 let
-  agentHome = "/home/agent";
+  agentService = import ../lib/agent-service.nix { inherit pkgs; };
+  agentHome = agentService.home;
   hermesHome = "/workspace/.hermes";
   webuiRepo = "/workspace/src/hermes-webui";
   webuiState = "${hermesHome}/webui";
@@ -38,10 +39,7 @@ in {
 
     path = [ pkgs.git ];
 
-    serviceConfig = {
-      Type = "simple";
-      User = "agent";
-      Group = "users";
+    serviceConfig = agentService.serviceDefaults // {
       WorkingDirectory = "/workspace";
       Environment = [
         "HOME=${agentHome}"
@@ -57,13 +55,8 @@ in {
       ];
       ExecStartPre = bootstrap;
       ExecStart = "${hermesHome}/venv/bin/python ${webuiRepo}/server.py";
-      Restart = "always";
       RestartSec = "10s";
-      UMask = "0077";
-      PrivateTmp = true;
-      ProtectSystem = "strict";
-      ProtectHome = false;
-      ReadWritePaths = [ agentHome "/workspace" ];
+      TimeoutStartSec = "90s";
     };
   };
 
