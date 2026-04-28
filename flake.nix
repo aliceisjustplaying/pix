@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,6 +37,7 @@
   outputs = inputs@{
     self,
     nixpkgs,
+    nixpkgs-unstable,
     home-manager,
     disko,
     sops-nix,
@@ -46,7 +48,21 @@
   }:
   let
     system = "aarch64-linux";
-  in {
+    unstablePkgs = import nixpkgs-unstable {
+      inherit system;
+      config.allowUnfree = true;
+    };
+  in rec {
+    packages.${system} = let
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfree = true;
+      };
+    in {
+      codex-acp = pkgs.callPackage ./pkgs/codex-acp.nix { };
+      vibes-go = pkgs.callPackage ./pkgs/vibes-go.nix { };
+    };
+
     nixosConfigurations.pix = nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = { inherit inputs; };
@@ -58,6 +74,25 @@
             codex-cli.overlays.default
             (final: _prev: {
               agent-browser = llm-agents.packages.${final.stdenv.hostPlatform.system}.agent-browser;
+              inherit (unstablePkgs)
+                gh
+                uv
+                ;
+              bun = unstablePkgs.bun.overrideAttrs (finalAttrs: _oldAttrs: {
+                version = "1.3.13";
+                src = final.fetchurl {
+                  url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
+                  hash = "sha256-cLrkGzkIsKEg4eWMXIrzDnSvrjuNEbDT/djnh937SyI=";
+                };
+                passthru = unstablePkgs.bun.passthru // {
+                  sources = unstablePkgs.bun.passthru.sources // {
+                    "aarch64-linux" = final.fetchurl {
+                      url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
+                      hash = "sha256-cLrkGzkIsKEg4eWMXIrzDnSvrjuNEbDT/djnh937SyI=";
+                    };
+                  };
+                };
+              });
             })
           ];
         }

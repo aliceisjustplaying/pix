@@ -2,11 +2,11 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "codex-acp";
-  version = "0.11.1";
+  version = "0.12.0";
 
   src = fetchurl {
     url = "https://github.com/zed-industries/codex-acp/releases/download/v${version}/codex-acp-${version}-aarch64-unknown-linux-gnu.tar.gz";
-    hash = "sha256-3em+8cBOcs+3DSn8Ek7DStZ/4wuLFz86Gsu+Wz6esKw=";
+    hash = "sha256-4F5hPaZXsrpnMl4moiMT7ZsoKKreK50YGFvoOtFD6c8=";
   };
 
   nativeBuildInputs = [ autoPatchelfHook ];

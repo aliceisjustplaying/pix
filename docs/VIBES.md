@@ -13,7 +13,7 @@ Repo-managed pieces:
 
 - `modules/vibes.nix` defines `systemd.services.vibes`
 - `pkgs/vibes.nix` packages upstream `rcarmo/vibes` `0.6.12`
-- `pkgs/codex-acp.nix` packages `zed-industries/codex-acp` `0.11.1`
+- `pkgs/codex-acp.nix` packages `zed-industries/codex-acp` `0.12.0`
 - `home/agent.nix` installs `vibes` and `codex-acp` into the `agent` profile
 - `hosts/pix/default.nix` imports the Vibes module
 
