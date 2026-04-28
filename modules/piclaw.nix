@@ -4,16 +4,11 @@ let
   agentHome = agentService.home;
   tmpl = import ../lib/template.nix;
 
-  servicePath = lib.makeBinPath [
-    pkgs.bash
-    pkgs.coreutils
+  servicePath = agentService.path [
     pkgs.curl
     pkgs.diffutils
-    pkgs.findutils
     pkgs.ripgrep
     pkgs.fd
-    pkgs.gnugrep
-    pkgs.gnused
     pkgs.gnumake
     pkgs.tree
     pkgs.unzip
@@ -22,19 +17,13 @@ let
     pkgs.shfmt
     pkgs.gh
     pkgs.ghstack
-    pkgs.git
     pkgs.gnupatch
-    pkgs.openssh
     pkgs.bun
     pkgs.nodejs_24
     pkgs.python3
-    pkgs.jq
-    pkgs.procps
-    pkgs.sqlite
     pkgs.ffmpeg
     pkgs.yt-dlp
     pkgs.tmux
-    pkgs.which
     pkgs.claude-code
     pkgs.codex
   ];
