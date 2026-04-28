@@ -1,12 +1,10 @@
-{ config, lib, pkgs, ... }:
+{ pkgs, ... }:
 let
   agentHome = "/home/agent";
   hermesHome = "/workspace/.hermes";
   webuiRepo = "/workspace/src/hermes-webui";
   webuiState = "${hermesHome}/webui";
   port = 8787;
-
-  python = pkgs.python312.withPackages (ps: [ ps.pyyaml ]);
 
   webuiPatches = ../patches/hermes-webui;
 
