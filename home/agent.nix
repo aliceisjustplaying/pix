@@ -65,6 +65,7 @@ in {
   home.file.".local/bin/update"        = { executable = true; source = binSrc "update"        { inherit home workspaceSrc; }; };
   home.file.".local/bin/rollback"      = { executable = true; source = binSrc "rollback"      { inherit home workspaceSrc; }; };
   home.file.".local/bin/verify-deploy" = { executable = true; source = binSrc "verify-deploy" { inherit workspaceSrc; }; };
+  home.file.".local/bin/pix-update-pins" = { executable = true; source = binStatic "pix-update-pins"; };
   home.file.".local/bin/prestart"      = { executable = true; source = binSrc "prestart"      { inherit home; }; };
   home.file.".local/bin/pstatus"       = { executable = true; source = binStatic "pstatus"; };
   home.file.".local/bin/plogs"         = { executable = true; source = binStatic "plogs"; };
@@ -81,7 +82,7 @@ in {
       rollback-force = "rollback";
       pix = "cd /workspace/src/pix";
       pclaw = "cd /workspace/src/piclaw-customizations";
-      nfu = "cd /workspace/src/pix && nix flake update && rebuild";
+      nfu = "cd /workspace/src/pix && pix-update-pins && rebuild";
       c = "claude --dangerously-skip-permissions";
       c45 = "claude --dangerously-skip-permissions --model claude-opus-4-5";
       c46 = "claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]'";
