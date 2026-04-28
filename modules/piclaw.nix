@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 let
-  agentHome = "/home/agent";
+  agentService = import ../lib/agent-service.nix { inherit lib pkgs; };
+  agentHome = agentService.home;
   tmpl = import ../lib/template.nix;
 
   servicePath = lib.makeBinPath [
@@ -133,10 +134,7 @@ in {
     wantedBy = [ "multi-user.target" ];
     unitConfig.ConditionPathExists = "/workspace/src/piclaw-live/runtime/src/index.ts";
 
-    serviceConfig = {
-      Type = "simple";
-      User = "agent";
-      Group = "users";
+    serviceConfig = agentService.serviceDefaults // {
       WorkingDirectory = "/workspace/src/piclaw-live";
       EnvironmentFile = config.sops.templates.piclaw-env.path;
       Environment = [
@@ -147,14 +145,6 @@ in {
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
       ExecStart = "${pkgs.bun}/bin/bun runtime/src/index.ts";
-      Restart = "always";
-      RestartSec = "5s";
-      TimeoutStartSec = "60s";
-      UMask = "0077";
-      PrivateTmp = true;
-      ProtectSystem = "strict";
-      ProtectHome = false;
-      ReadWritePaths = [ "${agentHome}" "/workspace" ];
     };
   };
 
@@ -165,10 +155,7 @@ in {
     wantedBy = [ "multi-user.target" ];
     unitConfig.ConditionPathExists = "${agentHome}/gmail-channel-plugin/daemon.ts";
 
-    serviceConfig = {
-      Type = "simple";
-      User = "agent";
-      Group = "users";
+    serviceConfig = agentService.serviceDefaults // {
       WorkingDirectory = "${agentHome}/gmail-channel-plugin";
       EnvironmentFile = "-/workspace/.pi/gmail-channel.env";
       Environment = [
@@ -181,14 +168,6 @@ in {
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
       ExecStart = "${pkgs.bun}/bin/bun run daemon.ts";
-      Restart = "always";
-      RestartSec = "5s";
-      TimeoutStartSec = "60s";
-      UMask = "0077";
-      PrivateTmp = true;
-      ProtectSystem = "strict";
-      ProtectHome = false;
-      ReadWritePaths = [ "${agentHome}" "/workspace" ];
     };
   };
 }
