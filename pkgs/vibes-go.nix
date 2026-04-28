@@ -45,7 +45,7 @@ EOF
 EOF
 )
     new_routes=$(cat <<'EOF'
-	apiProxyURL, err := url.Parse("http://127.0.0.1:8081")
+	apiProxyURL, err := url.Parse("http://100.74.251.100:8081")
 	if err != nil {
 		return nil, fmt.Errorf("parse legacy API proxy URL: %w", err)
 	}
