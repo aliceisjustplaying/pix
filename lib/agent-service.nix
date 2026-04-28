@@ -1,4 +1,4 @@
-{ lib, pkgs }:
+{ pkgs }:
 
 {
   home = "/home/agent";
@@ -18,7 +18,7 @@
   };
 
   path = extraPackages:
-    lib.makeBinPath ([
+    pkgs.lib.makeBinPath ([
       pkgs.bash
       pkgs.coreutils
       pkgs.findutils

@@ -1,6 +1,6 @@
-{ lib, pkgs, ... }:
+{ pkgs, ... }:
 let
-  agentService = import ../lib/agent-service.nix { inherit lib pkgs; };
+  agentService = import ../lib/agent-service.nix { inherit pkgs; };
   agentHome = agentService.home;
   vibesGoPkg = pkgs.callPackage ../pkgs/vibes-go.nix { };
   codexAcpPkg = pkgs.callPackage ../pkgs/codex-acp.nix { };

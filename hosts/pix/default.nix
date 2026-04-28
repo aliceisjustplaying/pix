@@ -1,4 +1,4 @@
-{ config, lib, modulesPath, ... }:
+{ lib, modulesPath, ... }:
 let
   # Set this to false after Tailscale works and you have verified SSH over the tailnet.
   publicSshBootstrap = false;

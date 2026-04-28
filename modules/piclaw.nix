@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }:
 let
-  agentService = import ../lib/agent-service.nix { inherit lib pkgs; };
+  agentService = import ../lib/agent-service.nix { inherit pkgs; };
   agentHome = agentService.home;
   tmpl = import ../lib/template.nix;
 

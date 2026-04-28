@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, ... }:
 let
   accountId = "b752c979e541327de3e87e52f0906aa1";
   tmpl = import ../lib/template.nix;
