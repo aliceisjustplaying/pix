@@ -55,6 +55,20 @@ def set_vibes_vendor_hash(hash_value):
     )
 
 
+def update_bun_hashes(hash_value):
+    file = repo / "flake.nix"
+    text = file.read_text()
+    pattern = r'(bun = unstablePkgs\.bun\.overrideAttrs .*?\n\s+}\);\n)'
+    match = re.search(pattern, text, flags=re.S)
+    if not match:
+        raise RuntimeError("flake.nix: could not find Bun override block")
+    block = match.group(1)
+    new_block, count = re.subn(r'hash = "sha256-[^"]+";', f'hash = "{hash_value}";', block)
+    if count != 2:
+        raise RuntimeError(f"flake.nix: expected two Bun hash replacements, got {count}")
+    file.write_text(text[:match.start(1)] + new_block + text[match.end(1):])
+
+
 print("updating nixpkgs-unstable")
 subprocess.run([
     "nix", "flake", "update", "nixpkgs-unstable",
@@ -71,8 +85,7 @@ replace(
     r'(bun = unstablePkgs\.bun\.overrideAttrs.*?version = ")[^"]+(";)',
     rf'\g<1>{bun_version}\2',
 )
-flake = repo / "flake.nix"
-flake.write_text(re.sub(r'hash = "sha256-[^"]+";', f'hash = "{bun_hash}";', flake.read_text()))
+update_bun_hashes(bun_hash)
 print(f"bun {bun_version}")
 
 codex = github_json("https://api.github.com/repos/zed-industries/codex-acp/releases/latest")
