@@ -1,21 +1,10 @@
 { lib, pkgs, ... }:
 let
-  agentHome = "/home/agent";
+  agentService = import ../lib/agent-service.nix { inherit lib pkgs; };
+  agentHome = agentService.home;
   vibesGoPkg = pkgs.callPackage ../pkgs/vibes-go.nix { };
   codexAcpPkg = pkgs.callPackage ../pkgs/codex-acp.nix { };
-
-  servicePath = lib.makeBinPath [
-    pkgs.bash
-    pkgs.coreutils
-    pkgs.findutils
-    pkgs.git
-    pkgs.gnugrep
-    pkgs.gnused
-    pkgs.jq
-    pkgs.openssh
-    pkgs.procps
-    pkgs.sqlite
-    pkgs.which
+  servicePath = agentService.path [
     pkgs.codex
     codexAcpPkg
   ];
