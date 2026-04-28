@@ -12,6 +12,23 @@ let
 
   # Files with no placeholders; included verbatim.
   binStatic = name: ../files/bin + "/${name}.sh";
+
+  binFiles = {
+    host-queue = binSrc "host-queue" { inherit home; };
+    host-follow = binStatic "host-follow";
+    host-result = binStatic "host-result";
+    rebuild = binSrc "rebuild" { inherit home workspaceSrc; };
+    update = binSrc "update" { inherit home workspaceSrc; };
+    rollback = binSrc "rollback" { inherit home workspaceSrc; };
+    verify-deploy = binSrc "verify-deploy" { inherit workspaceSrc; };
+    pix-update-pins = binStatic "pix-update-pins";
+    prestart = binSrc "prestart" { inherit home; };
+    pstatus = binStatic "pstatus";
+    plogs = binStatic "plogs";
+    backup = binStatic "backup";
+    hermes = binStatic "hermes";
+    hermes-cli = binStatic "hermes";
+  };
 in {
   home.stateVersion = "25.11";
   programs.home-manager.enable = true;
@@ -49,29 +66,23 @@ in {
     agent-browser
   ];
 
-  home.file.".npmrc".text = "prefix=${home}/.local";
-
-  home.file.".claude/CLAUDE.md".source = ../files/claude/CLAUDE.md;
-  home.file.".codex/AGENTS.md".source = ../files/codex/AGENTS.md;
-
   # SSH-based host commands work from inside piclaw's sandbox: the piclaw
   # systemd unit runs with ProtectSystem=strict, so commands that write
   # outside ~/ (nixos-rebuild, systemctl) tunnel through SSH to localhost.
   # An ed25519 keypair (keys/piclaw-local.pub) is authorized for agent@localhost.
-  home.file.".local/bin/host-queue"    = { executable = true; source = binSrc "host-queue"    { inherit home; }; };
-  home.file.".local/bin/host-follow"   = { executable = true; source = binStatic "host-follow"; };
-  home.file.".local/bin/host-result"   = { executable = true; source = binStatic "host-result"; };
-  home.file.".local/bin/rebuild"       = { executable = true; source = binSrc "rebuild"       { inherit home workspaceSrc; }; };
-  home.file.".local/bin/update"        = { executable = true; source = binSrc "update"        { inherit home workspaceSrc; }; };
-  home.file.".local/bin/rollback"      = { executable = true; source = binSrc "rollback"      { inherit home workspaceSrc; }; };
-  home.file.".local/bin/verify-deploy" = { executable = true; source = binSrc "verify-deploy" { inherit workspaceSrc; }; };
-  home.file.".local/bin/pix-update-pins" = { executable = true; source = binStatic "pix-update-pins"; };
-  home.file.".local/bin/prestart"      = { executable = true; source = binSrc "prestart"      { inherit home; }; };
-  home.file.".local/bin/pstatus"       = { executable = true; source = binStatic "pstatus"; };
-  home.file.".local/bin/plogs"         = { executable = true; source = binStatic "plogs"; };
-  home.file.".local/bin/backup"        = { executable = true; source = binStatic "backup"; };
-  home.file.".local/bin/hermes"        = { executable = true; source = binStatic "hermes"; };
-  home.file.".local/bin/hermes-cli"    = { executable = true; source = binStatic "hermes"; };
+  home.file = pkgs.lib.mapAttrs'
+    (name: source: {
+      name = ".local/bin/${name}";
+      value = {
+        executable = true;
+        inherit source;
+      };
+    })
+    binFiles // {
+      ".npmrc".text = "prefix=${home}/.local";
+      ".claude/CLAUDE.md".source = ../files/claude/CLAUDE.md;
+      ".codex/AGENTS.md".source = ../files/codex/AGENTS.md;
+    };
 
   programs.bash = {
     enable = true;
