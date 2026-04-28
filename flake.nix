@@ -52,15 +52,46 @@
       inherit system;
       config.allowUnfree = true;
     };
+    hostOverlay = final: _prev: {
+      agent-browser = llm-agents.packages.${final.stdenv.hostPlatform.system}.agent-browser;
+      claude-code-acp = final.callPackage ./pkgs/claude-code-acp { };
+      codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
+      vibes = final.callPackage ./pkgs/vibes.nix { };
+      vibes-go = final.callPackage ./pkgs/vibes-go.nix { };
+      inherit (unstablePkgs)
+        gh
+        uv
+        ;
+      bun = unstablePkgs.bun.overrideAttrs (finalAttrs: _oldAttrs: {
+        version = "1.3.13";
+        src = final.fetchurl {
+          url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
+          hash = "sha256-cLrkGzkIsKEg4eWMXIrzDnSvrjuNEbDT/djnh937SyI=";
+        };
+        passthru = unstablePkgs.bun.passthru // {
+          sources = unstablePkgs.bun.passthru.sources // {
+            "aarch64-linux" = final.fetchurl {
+              url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
+              hash = "sha256-cLrkGzkIsKEg4eWMXIrzDnSvrjuNEbDT/djnh937SyI=";
+            };
+          };
+        };
+      });
+    };
   in rec {
     packages.${system} = let
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
+        overlays = [ hostOverlay ];
       };
     in {
-      codex-acp = pkgs.callPackage ./pkgs/codex-acp.nix { };
-      vibes-go = pkgs.callPackage ./pkgs/vibes-go.nix { };
+      inherit (pkgs)
+        claude-code-acp
+        codex-acp
+        vibes
+        vibes-go
+        ;
     };
 
     nixosConfigurations.pix = nixpkgs.lib.nixosSystem {
@@ -72,32 +103,7 @@
           nixpkgs.overlays = [
             claude-code.overlays.default
             codex-cli.overlays.default
-            (final: _prev: {
-              agent-browser = llm-agents.packages.${final.stdenv.hostPlatform.system}.agent-browser;
-              claude-code-acp = final.callPackage ./pkgs/claude-code-acp { };
-              codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
-              vibes = final.callPackage ./pkgs/vibes.nix { };
-              vibes-go = final.callPackage ./pkgs/vibes-go.nix { };
-              inherit (unstablePkgs)
-                gh
-                uv
-                ;
-              bun = unstablePkgs.bun.overrideAttrs (finalAttrs: _oldAttrs: {
-                version = "1.3.13";
-                src = final.fetchurl {
-                  url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
-                  hash = "sha256-cLrkGzkIsKEg4eWMXIrzDnSvrjuNEbDT/djnh937SyI=";
-                };
-                passthru = unstablePkgs.bun.passthru // {
-                  sources = unstablePkgs.bun.passthru.sources // {
-                    "aarch64-linux" = final.fetchurl {
-                      url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
-                      hash = "sha256-cLrkGzkIsKEg4eWMXIrzDnSvrjuNEbDT/djnh937SyI=";
-                    };
-                  };
-                };
-              });
-            })
+            hostOverlay
           ];
         }
         disko.nixosModules.disko
