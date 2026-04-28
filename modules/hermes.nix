@@ -138,10 +138,7 @@ in {
     wants = [ "network-online.target" "agent-secrets.service" "camofox.service" ];
     wantedBy = [ "multi-user.target" ];
 
-    serviceConfig = {
-      Type = "simple";
-      User = "agent";
-      Group = "users";
+    serviceConfig = agentService.serviceDefaults // {
       WorkingDirectory = "/workspace";
       EnvironmentFile = config.sops.templates.hermes-service-env.path;
       Environment = [
@@ -152,14 +149,8 @@ in {
       ];
       ExecStartPre = hermesBootstrap;
       ExecStart = "${hermesVenv}/bin/hermes gateway run --replace";
-      Restart = "always";
       RestartSec = "10s";
       TimeoutStartSec = "15min";
-      UMask = "0077";
-      PrivateTmp = true;
-      ProtectSystem = "strict";
-      ProtectHome = false;
-      ReadWritePaths = [ "${agentHome}" "/workspace" ];
     };
   };
 }
