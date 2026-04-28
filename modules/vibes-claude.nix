@@ -23,10 +23,7 @@ in {
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
 
-    serviceConfig = {
-      Type = "simple";
-      User = "agent";
-      Group = "users";
+    serviceConfig = agentService.serviceDefaults // {
       WorkingDirectory = workingDir;
       Environment = [
         "HOME=${agentHome}"
@@ -45,14 +42,6 @@ in {
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
       ExecStart = "${vibesPkg}/bin/vibes";
-      Restart = "always";
-      RestartSec = "5s";
-      TimeoutStartSec = "60s";
-      UMask = "0077";
-      PrivateTmp = true;
-      ProtectSystem = "strict";
-      ProtectHome = false;
-      ReadWritePaths = [ "${agentHome}" "/workspace" ];
     };
   };
 }
