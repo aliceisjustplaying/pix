@@ -21,9 +21,14 @@ let
     fi
     for p in ${webuiPatches}/*.patch; do
       [ -e "$p" ] || continue
-      ${pkgs.git}/bin/git -C "${webuiRepo}" apply "$p" || {
-        echo "patch $p failed" >&2; exit 1;
-      }
+      if ${pkgs.git}/bin/git -C "${webuiRepo}" apply --check "$p"; then
+        ${pkgs.git}/bin/git -C "${webuiRepo}" apply "$p"
+      elif ${pkgs.git}/bin/git -C "${webuiRepo}" apply --reverse --check "$p"; then
+        echo "patch $p already applied; skipping"
+      else
+        echo "patch $p failed" >&2
+        exit 1
+      fi
     done
   '';
 in {
