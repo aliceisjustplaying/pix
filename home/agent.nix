@@ -48,6 +48,7 @@ in {
     bun
     nodejs_24
     gh
+    portless
     hcloud
     ncdu
     gdu

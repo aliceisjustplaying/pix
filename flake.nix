@@ -56,6 +56,7 @@
       agent-browser = llm-agents.packages.${final.stdenv.hostPlatform.system}.agent-browser;
       claude-code-acp = final.callPackage ./pkgs/claude-code-acp { };
       codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
+      portless = final.callPackage ./pkgs/portless.nix { };
       vibes = final.callPackage ./pkgs/vibes.nix { };
       vibes-go = final.callPackage ./pkgs/vibes-go.nix { };
       inherit (unstablePkgs)
@@ -89,6 +90,7 @@
       inherit (pkgs)
         claude-code-acp
         codex-acp
+        portless
         vibes
         vibes-go
         ;

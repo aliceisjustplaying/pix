@@ -96,6 +96,15 @@ replace("pkgs/codex-acp.nix", r'version = "[^"]+";', f'version = "{codex_version
 replace("pkgs/codex-acp.nix", r'hash = "sha256-[^"]+";', f'hash = "{codex_hash}";')
 print(f"codex-acp {codex_version}")
 
+with urllib.request.urlopen("https://registry.npmjs.org/portless/latest") as response:
+    portless = json.load(response)
+portless_version = portless["version"]
+portless_url = f"https://registry.npmjs.org/portless/-/portless-{portless_version}.tgz"
+portless_hash = sri_for_url(portless_url)
+replace("pkgs/portless.nix", r'version = "[^"]+";', f'version = "{portless_version}";')
+replace("pkgs/portless.nix", r'hash = "sha256-[^"]+";', f'hash = "{portless_hash}";')
+print(f"portless {portless_version}")
+
 vibes_repo = github_json("https://api.github.com/repos/rcarmo/vibes")
 vibes_branch = vibes_repo["default_branch"]
 vibes_ref = github_json(f"https://api.github.com/repos/rcarmo/vibes/branches/{vibes_branch}")
