@@ -12,11 +12,11 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "portless";
-  version = "0.11.1";
+  version = "0.12.0";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/portless/-/portless-${version}.tgz";
-    hash = "sha256-K1FAz6OOCbx2UUNb+dc01i8x6v1y3P1VFrotVCePJuA=";
+    hash = "sha256-q5yLEzmfyzf7V9I7qFfW6gwx+gHcWfjMTvBH4OZAnak=";
   };
 
   dontBuild = true;

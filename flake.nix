@@ -25,7 +25,7 @@
     };
 
     codex-cli = {
-      url = "github:sadjow/codex-cli-nix";
+      url = "github:aliceisjustplaying/codex-cli-nix/fix-linux-musl-assets";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
