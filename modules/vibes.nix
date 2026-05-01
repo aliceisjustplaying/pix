@@ -4,7 +4,6 @@ let
   agentHome = agentService.home;
   servicePath = agentService.path [
     pkgs.codex
-    pkgs.python3
     pkgs.codex-acp
   ];
 in {
@@ -28,6 +27,9 @@ in {
         "VIBES_PORT=8081"
         "VIBES_DB_PATH=/workspace/.pi/vibes/vibes.db"
         "VIBES_AGENT_NAME=Codex"
+        "VIBES_DEFAULT_AGENT=acp"
+        "VIBES_PI_ENABLED=false"
+        "CODEX_PATH=${pkgs.codex}/bin/codex"
         "VIBES_ACP_AGENT=${pkgs.codex-acp}/bin/codex-acp"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];

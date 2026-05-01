@@ -17,7 +17,6 @@ in {
     ../../modules/hermes-webui.nix
     ../../modules/plausible.nix
     ../../modules/vibes.nix
-    ../../modules/vibes-go.nix
     ../../modules/vibes-claude.nix
     ../../modules/backup.nix
   ];
@@ -51,7 +50,7 @@ in {
   networking.firewall = {
     enable = true;
     allowedTCPPorts = lib.optionals publicSshBootstrap [ 22 ];
-    interfaces.tailscale0.allowedTCPPorts = [ 22 80 443 8081 8082 8083 ];
+    interfaces.tailscale0.allowedTCPPorts = [ 22 80 443 8081 ];
   };
 
   home-manager = {
