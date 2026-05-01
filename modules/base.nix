@@ -89,6 +89,7 @@ in
     shfmt
     yq-go
     gnumake
+    go_1_26
     zig
 
     # Rust toolchain

@@ -48,11 +48,13 @@ in {
     bun
     nodejs_24
     gh
+    jujutsu
     portless
     hcloud
     ncdu
     gdu
     diskus
+    go_1_26
     ffmpeg
     yt-dlp
     sqlite

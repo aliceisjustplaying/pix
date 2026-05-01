@@ -49,7 +49,7 @@ def replace(path, pattern, repl):
 
 def set_vibes_vendor_hash(hash_value):
     replace(
-        "pkgs/vibes-go.nix",
+        "pkgs/vibes.nix",
         r'vendorHash = "sha256-[^"]+";',
         f'vendorHash = "{hash_value}";',
     )
@@ -112,14 +112,14 @@ vibes_rev = vibes_ref["commit"]["sha"]
 vibes_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 vibes_url = f"https://github.com/rcarmo/vibes/archive/{vibes_rev}.tar.gz"
 vibes_hash = sri_for_url(vibes_url, unpack=True)
-replace("pkgs/vibes-go.nix", r'version = "0\.0\.0-unstable-[^"]+";', f'version = "0.0.0-unstable-{vibes_date}";')
-replace("pkgs/vibes-go.nix", r'rev = "[^"]+";', f'rev = "{vibes_rev}";')
-replace("pkgs/vibes-go.nix", r'hash = "sha256-[^"]+";', f'hash = "{vibes_hash}";')
+replace("pkgs/vibes.nix", r'version = "0\.0\.0-unstable-[^"]+";', f'version = "0.0.0-unstable-{vibes_date}";')
+replace("pkgs/vibes.nix", r'rev = "[^"]+";', f'rev = "{vibes_rev}";')
+replace("pkgs/vibes.nix", r'hash = "sha256-[^"]+";', f'hash = "{vibes_hash}";')
 
-original_vibes = (repo / "pkgs/vibes-go.nix").read_text()
+original_vibes = (repo / "pkgs/vibes.nix").read_text()
 set_vibes_vendor_hash("sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
 build = subprocess.run(
-    ["nix", "build", ".#vibes-go", "--no-link", "--extra-experimental-features", "nix-command flakes"],
+    ["nix", "build", ".#vibes", "--no-link", "--extra-experimental-features", "nix-command flakes"],
     cwd=repo,
     text=True,
     capture_output=True,
@@ -127,9 +127,9 @@ build = subprocess.run(
 output = build.stdout + build.stderr
 match = re.search(r"got:\s+(sha256-[A-Za-z0-9+/=]+)", output)
 if not match:
-    (repo / "pkgs/vibes-go.nix").write_text(original_vibes)
+    (repo / "pkgs/vibes.nix").write_text(original_vibes)
     sys.stderr.write(output)
-    raise RuntimeError("could not determine vibes-go vendorHash")
+    raise RuntimeError("could not determine vibes vendorHash")
 set_vibes_vendor_hash(match.group(1))
-print(f"vibes-go {vibes_rev[:12]}")
+print(f"vibes {vibes_rev[:12]}")
 PY

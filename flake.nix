@@ -58,9 +58,9 @@
       codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
       portless = final.callPackage ./pkgs/portless.nix { };
       vibes = final.callPackage ./pkgs/vibes.nix { };
-      vibes-go = final.callPackage ./pkgs/vibes-go.nix { };
       inherit (unstablePkgs)
         gh
+        jujutsu
         uv
         ;
       bun = unstablePkgs.bun.overrideAttrs (finalAttrs: _oldAttrs: {
@@ -92,7 +92,6 @@
         codex-acp
         portless
         vibes
-        vibes-go
         ;
     };
 
