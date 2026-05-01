@@ -15,8 +15,9 @@ For non-Nix installs:
 This file exists because Anthropic's Claude-Code-style OAuth path rejects a
 few Hermes-native prompt and tool literals with the misleading HTTP 400
 "You're out of extra usage" error. The shim rewrites only the literals that
-were reproduced on the live OAuth path and maps Anthropic-facing aliases back
-to Hermes's real local tool names.
+were reproduced on the live OAuth path, strips Anthropic beta headers that
+are not available on this OAuth subscription, and maps Anthropic-facing
+aliases back to Hermes's real local tool names.
 """
 
 from __future__ import annotations
@@ -32,6 +33,10 @@ _TOOL_ALIASES = {
 }
 
 _REVERSE_TOOL_ALIASES = {value: key for key, value in _TOOL_ALIASES.items()}
+_UNSUPPORTED_ANTHROPIC_BETAS = {
+    "fast-mode-2026-02-01",
+    "context-1m-2025-08-07",
+}
 
 
 def _rewrite_prompt_text(text: str) -> str:
@@ -82,6 +87,34 @@ def _unalias_response_tool_calls(result):
             if isinstance(name, str):
                 tool_call.name = _unalias_tool_name(name)
     return result
+
+
+def _strip_unsupported_anthropic_oauth_fields(result: dict) -> None:
+    extra_body = result.get("extra_body")
+    if isinstance(extra_body, dict):
+        extra_body.pop("speed", None)
+        if not extra_body:
+            result.pop("extra_body", None)
+
+    extra_headers = result.get("extra_headers")
+    if not isinstance(extra_headers, dict):
+        return
+
+    anthropic_beta = extra_headers.get("anthropic-beta")
+    if not isinstance(anthropic_beta, str):
+        return
+
+    betas = [
+        beta.strip()
+        for beta in anthropic_beta.split(",")
+        if beta.strip() and beta.strip() not in _UNSUPPORTED_ANTHROPIC_BETAS
+    ]
+    if betas:
+        extra_headers["anthropic-beta"] = ",".join(betas)
+    else:
+        extra_headers.pop("anthropic-beta", None)
+    if not extra_headers:
+        result.pop("extra_headers", None)
 
 
 def _managed_hermes_venv() -> str | None:
@@ -157,6 +190,8 @@ def _apply() -> None:
         result = original_build_anthropic_kwargs(*args, **kwargs)
         if not kwargs.get("is_oauth", False):
             return result
+
+        _strip_unsupported_anthropic_oauth_fields(result)
 
         system = result.get("system")
         if isinstance(system, list):

@@ -25,6 +25,7 @@ let
     pkgs.ghstack
     pkgs.gnupatch
     pkgs.uv
+    pkgs.bun
     pkgs.nodejs_24
     pkgs.python312
     pkgs.ffmpeg

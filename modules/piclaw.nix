@@ -154,6 +154,9 @@ in {
         "GMAIL_STATE_DIR=/workspace/.pi/gmail-channel"
         "GMAIL_PICLAW_DATA_DIR=/workspace/.piclaw/data"
         "GMAIL_PICLAW_CHAT_JID=web:default"
+        "HERMES_NOTIFY_TARGET=discord:#trinity-home"
+        "HERMES_NOTIFY_PYTHON=/workspace/.hermes/venv/bin/python3"
+        "HERMES_NOTIFY_AGENT_DIR=/workspace/src/hermes-live"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
       ExecStart = "${pkgs.bun}/bin/bun run daemon.ts";
