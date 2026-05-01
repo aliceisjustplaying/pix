@@ -16,8 +16,6 @@ in {
     ../../modules/hermes.nix
     ../../modules/hermes-webui.nix
     ../../modules/plausible.nix
-    ../../modules/vibes.nix
-    ../../modules/vibes-claude.nix
     ../../modules/backup.nix
   ];
 
