@@ -61,6 +61,7 @@
       inherit (unstablePkgs)
         gh
         jujutsu
+        tsshd
         uv
         ;
       bun = unstablePkgs.bun.overrideAttrs (finalAttrs: _oldAttrs: {

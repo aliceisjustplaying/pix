@@ -58,6 +58,7 @@ in {
     ffmpeg
     yt-dlp
     sqlite
+    tsshd
     claude-code
     codex
     python3
