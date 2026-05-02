@@ -49,6 +49,8 @@ in {
     enable = true;
     allowedTCPPorts = lib.optionals publicSshBootstrap [ 22 ];
     interfaces.tailscale0.allowedTCPPorts = [ 22 80 443 8081 ];
+    # tsshd UDP range (pinned in pkgs/tsshd.nix wrapper).
+    interfaces.tailscale0.allowedUDPPortRanges = [ { from = 61001; to = 61100; } ];
   };
 
   home-manager = {

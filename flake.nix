@@ -61,9 +61,9 @@
       inherit (unstablePkgs)
         gh
         jujutsu
-        tsshd
         uv
         ;
+      tsshd = final.callPackage ./pkgs/tsshd.nix { tsshd = unstablePkgs.tsshd; };
       bun = unstablePkgs.bun.overrideAttrs (finalAttrs: _oldAttrs: {
         version = "1.3.13";
         src = final.fetchurl {
