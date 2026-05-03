@@ -14,7 +14,6 @@ let
     };
 
     vendorHash = "sha256-btTWkuLkT2e58TYqe0e/cE/0Try/g8XoahiABSSFaGU=";
-    checkFlags = [ "-skip=^TestQUIC_" ];
   });
 in
 symlinkJoin {
