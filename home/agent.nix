@@ -62,7 +62,6 @@ in {
     python3
     uv
     vibes
-    codex-acp
     agent-browser
   ];
 

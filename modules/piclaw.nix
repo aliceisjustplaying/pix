@@ -3,6 +3,34 @@ let
   agentService = import ../lib/agent-service.nix { inherit pkgs; };
   agentHome = agentService.home;
   tmpl = import ../lib/template.nix;
+  guardedNixosRebuild = lib.hiPrio (pkgs.writeShellScriptBin "nixos-rebuild" ''
+    set -euo pipefail
+
+    real_nixos_rebuild="${pkgs.nixos-rebuild}/bin/nixos-rebuild"
+    cgroup="$(cat /proc/self/cgroup 2>/dev/null || true)"
+
+    if [ "''${PICLAW_NIXOS_REBUILD_DETACHED:-}" = "1" ] \
+      || ! printf '%s\n' "$cgroup" | grep -q '/piclaw.service'; then
+      exec "$real_nixos_rebuild" "$@"
+    fi
+
+    unit_name="pix-rebuild-$(date +%s)"
+    run_systemd=("${pkgs.systemd}/bin/systemd-run")
+    if [ "$(id -u)" -ne 0 ]; then
+      run_systemd=("/run/wrappers/bin/sudo" "''${run_systemd[@]}")
+    fi
+
+    exec "''${run_systemd[@]}" \
+      --quiet \
+      --collect \
+      --service-type=exec \
+      --setenv=PICLAW_NIXOS_REBUILD_DETACHED=1 \
+      --setenv=HOME=/root \
+      --setenv=PATH=/run/wrappers/bin:/run/current-system/sw/bin \
+      --unit "$unit_name" \
+      --description "Detached NixOS rebuild launched from piclaw.service" \
+      "$real_nixos_rebuild" "$@"
+  '');
 
   servicePath = agentService.path [
     pkgs.curl
@@ -27,7 +55,14 @@ let
     pkgs.claude-code
     pkgs.codex
   ];
+  sharpNativeLibraryPath = lib.makeLibraryPath [
+    pkgs.stdenv.cc.cc.lib
+  ];
 in {
+  environment.systemPackages = [
+    guardedNixosRebuild
+  ];
+
   sops.secrets.piclaw-keychain-key = { };
   sops.secrets.piclaw-web-totp-secret = { };
   sops.secrets.piclaw-web-internal-secret = { };
@@ -131,6 +166,9 @@ in {
         "USER=agent"
         "XDG_CONFIG_HOME=${agentHome}/.config"
         "PICLAW_LIVE_ROOT=/workspace/src/piclaw-live"
+        "PICLAW_AGENT_BACKEND=codex-app-server"
+        "PICLAW_STARTUP_WARM_DEFAULT_CHAT=true"
+        "LD_LIBRARY_PATH=${sharpNativeLibraryPath}"
         "PATH=${agentHome}/.local/bin:${agentHome}/.bun/bin:${servicePath}"
       ];
       ExecStart = "${pkgs.bun}/bin/bun runtime/src/index.ts";
