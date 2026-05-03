@@ -13,19 +13,17 @@ let
 
   binFiles = {
     host-queue = binSrc "host-queue" { inherit home; };
-    host-follow = binStatic "host-follow";
     host-result = binStatic "host-result";
     rebuild = binSrc "rebuild" { inherit home workspaceSrc; };
     update = binSrc "update" { inherit home workspaceSrc; };
     rollback = binSrc "rollback" { inherit home workspaceSrc; };
     verify-deploy = binSrc "verify-deploy" { inherit workspaceSrc; };
     pix-update-pins = binStatic "pix-update-pins";
-    prestart = binSrc "prestart" { inherit home; };
-    pstatus = binStatic "pstatus";
-    plogs = binStatic "plogs";
-    backup = binStatic "backup";
+    piclaw-restart = binSrc "piclaw-restart" { inherit home; };
+    piclaw-status = binStatic "piclaw-status";
+    piclaw-logs = binStatic "piclaw-logs";
+    backup = binSrc "backup" { inherit home; };
     hermes = binStatic "hermes";
-    hermes-cli = binStatic "hermes";
   };
 in {
   home.stateVersion = "25.11";

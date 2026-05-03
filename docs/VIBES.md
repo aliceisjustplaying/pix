@@ -49,7 +49,7 @@ Rebuild the host in the normal way:
 
 ```bash
 host-queue vibes-update 'sudo nixos-rebuild switch --flake path:/home/agent/workspace/src/pix#pix'
-host-follow vibes-update-<epoch>
+host-result vibes-update-<epoch> --wait 900
 ```
 
 Useful checks:

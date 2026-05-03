@@ -76,8 +76,7 @@ sudo systemd-run \
   /run/current-system/sw/bin/bash -lc 'printf "%s" "$1" | base64 -d | bash -s -- "$2"' bash "$watcher_b64" "$unit_name"
 
 printf 'queued %s\n' "$unit_name"
-printf 'follow logs with: host-follow %s\n' "$unit_name"
-printf 'check detached result with: host-result %s\n' "$unit_name"
+printf 'check detached result with: host-result %s --wait 900\n' "$unit_name"
 
 sudo systemd-run \
   --quiet \
