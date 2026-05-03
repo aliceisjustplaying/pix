@@ -2,7 +2,7 @@
 
 let
   # Pinned UDP range so the firewall on tailscale0 can allow exactly this.
-  portRange = "61001-61100";
+  portRange = "61000-61999";
 in
 symlinkJoin {
   name = "tsshd-wrapped-${tsshd.version}";
