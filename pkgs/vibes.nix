@@ -2,13 +2,13 @@
 
 buildGo126Module rec {
   pname = "vibes";
-  version = "0.0.0-unstable-2026-05-01";
+  version = "0.0.0-unstable-2026-05-03";
 
   src = fetchFromGitHub {
     owner = "rcarmo";
     repo = "vibes";
-    rev = "52af319ffdd7815c90343a092bdb632518b32fa8";
-    hash = "sha256-pb6GEgwwaoaq12SdSvkrnbPPKIRtbjGXC0KrfZSBH+c=";
+    rev = "dfa6a09433775caa3661aae3a3562f6903462e68";
+    hash = "sha256-tpCzIzQzAUxW6JvG00JJJrm+VRDHHl1y3WI5v3k1HuE=";
   };
 
   vendorHash = "sha256-nCTrtI+bzfTJtGtP/6sBG3ci9/5V4sHacc3IWFtWOlc=";
