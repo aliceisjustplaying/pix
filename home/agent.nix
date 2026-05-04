@@ -88,6 +88,7 @@ in {
       rollback-force = "rollback";
       pix = "cd /workspace/src/pix";
       pclaw = "cd /workspace/src/piclaw-customizations";
+      nm = "cd ~/newmem";
       nfu = "pix-update-pins && rebuild";
       c = "claude --dangerously-skip-permissions";
       c45 = "claude --dangerously-skip-permissions --model claude-opus-4-5";

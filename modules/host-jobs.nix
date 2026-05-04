@@ -9,6 +9,7 @@ let
     git
     nix
     nixos-rebuild
+    openssh
     systemd
     util-linux
   ];
