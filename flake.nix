@@ -57,28 +57,13 @@
       claude-code-acp = final.callPackage ./pkgs/claude-code-acp { };
       codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
       portless = final.callPackage ./pkgs/portless.nix { };
-      vibes = final.callPackage ./pkgs/vibes.nix { };
       inherit (unstablePkgs)
+        bun
         gh
         jujutsu
         uv
         ;
       tsshd = final.callPackage ./pkgs/tsshd.nix { tsshd = unstablePkgs.tsshd; };
-      bun = unstablePkgs.bun.overrideAttrs (finalAttrs: _oldAttrs: {
-        version = "1.3.13";
-        src = final.fetchurl {
-          url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
-          hash = "sha256-cLrkGzkIsKEg4eWMXIrzDnSvrjuNEbDT/djnh937SyI=";
-        };
-        passthru = unstablePkgs.bun.passthru // {
-          sources = unstablePkgs.bun.passthru.sources // {
-            "aarch64-linux" = final.fetchurl {
-              url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";
-              hash = "sha256-cLrkGzkIsKEg4eWMXIrzDnSvrjuNEbDT/djnh937SyI=";
-            };
-          };
-        };
-      });
     };
   in rec {
     packages.${system} = let
@@ -92,7 +77,6 @@
         claude-code-acp
         codex-acp
         portless
-        vibes
         ;
     };
 

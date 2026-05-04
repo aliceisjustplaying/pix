@@ -19,7 +19,7 @@ Before deploying, updating, reinstalling, restarting, or otherwise activating a 
 
 Keep status updates concrete and limited to the action you are taking. If a rejected option matters for correctness or safety, name it plainly. Otherwise, do not narrate your choices by contrasting them with rejected options.
 
-For queued host jobs, rebuilds, deploys, rollbacks, or other long-running commands, do not go silent while waiting. Use `host-result <unit> --wait <seconds>` to read the detached watcher result. Send a short update when the job is queued, again on the first material state change, and immediately once success, failure, rollback, or a blocker is visible.
+For queued host jobs, rebuilds, deploys, rollbacks, or other long-running commands, do not go silent while waiting. Use `host-result <unit> --wait <seconds>` to read the systemd unit result and recent journal. Send a short update when the job is queued, again on the first material state change, and immediately once success, failure, rollback, or a blocker is visible.
 
 Prefer short prose by default. Use sections or lists when they make engineering work clearer, especially for debugging findings, review comments, plans, verification steps, command results, or change summaries.
 
@@ -58,24 +58,24 @@ Deployment layout:
 - `/workspace/.cache/piclaw-upstream` is the persistent upstream cache used by the update tooling.
 
 Local deploy commands (declared in `pix/home/agent.nix`, installed under `~/.local/bin`):
-- `rebuild` — `git pull` in `/workspace/src/pix`, then queue a host-side `nixos-rebuild switch --flake path:/workspace/src/pix#pix`.
-- `update` — `git pull` in `/workspace/src/piclaw-customizations`, then queue `sudo ./scripts/piclaw-update-host.sh [args]` on the host. Passes through args (e.g. `--force`).
-- `rollback` — queue `sudo ./scripts/piclaw-rollback-host.sh [args]` on the host to restore `piclaw-live.previous`.
-- `verify-deploy` — run `./scripts/piclaw-verify-deploy.sh` locally to validate a candidate Piclaw deploy without activating it. Does not go through the host queue.
-- `piclaw-restart` — queue `sudo systemctl restart piclaw` on the host.
+- `rebuild` — start `pix-rebuild.service`, which pulls `/workspace/src/pix` and runs `nixos-rebuild switch --flake path:/home/agent/workspace/src/pix#pix`.
+- `update [--force]` — start `piclaw-update.service` or `piclaw-update-force.service`.
+- `rollback [--force]` — start `piclaw-rollback.service` or `piclaw-rollback-force.service`.
+- `verify-deploy` — run `./scripts/piclaw-verify-deploy.sh` locally to validate a candidate Piclaw deploy without activating it.
+- `piclaw-restart` — start `piclaw-restart.service`.
 - `piclaw-status`, `piclaw-logs` — SSH wrappers for `systemctl status` / `journalctl -u piclaw` on the host.
-- `host-result <unit>` — read the detached host-side result watcher written by `host-queue`; use this after any queued job, especially jobs that may kill the current agent process.
-- `backup` — queue `restic-backups-r2.service` on the host.
+- `host-result <unit>` — wait for a named host job unit and print its recent journal; use this after any queued job, especially jobs that may kill the current agent process.
+- `backup` — start `restic-backups-r2.service`.
 
-Shell aliases (bash): `sync-nix` = `cd /workspace/src/pix && git pull && rebuild`; `update-force` = `cd /workspace/src/piclaw-customizations && git pull && sudo ./scripts/piclaw-update-host.sh --force`; `rollback-force` = `rollback`.
+Shell aliases (bash): `sync-nix` = `rebuild`; `update-force` = `update --force`; `rollback-force` = `rollback`.
 
-`rebuild`, `update`, `rollback`, `piclaw-restart`, and `backup` are asynchronous: they dispatch through `host-queue`, which SSHes to localhost and runs `systemd-run` to create a transient unit named `<job>-<epoch>` plus a detached `<job>-<epoch>-watch` unit that writes `/workspace/.piclaw/host-queue-results/<unit>.status`. The command returns immediately after queueing and prints the `host-result <unit> --wait 900` command. For jobs that restart Piclaw, run `host-result <unit> --wait 120` once the agent reconnects.
+`rebuild`, `update`, `rollback`, `piclaw-restart`, and `backup` are asynchronous: they call `sudo systemctl start --no-block <unit>` for a fixed set of NixOS-declared oneshot units. Sudo is scoped to those exact start commands in `modules/host-jobs.nix`. Use `host-result <unit> --wait 900` to watch completion; for jobs that restart Piclaw, run `host-result piclaw-restart --wait 120` once the agent reconnects.
 
 Prefer bounded log reads or periodic polling over indefinite `journalctl -f` when monitoring queued jobs. Use log-following only when it materially helps, and break out to report as soon as the user's question can be answered.
 
 Do not assume upstream PiClaw deployment docs match this machine. Do not use upstream `docker-compose`, repo-install, supervisor, or bundled reload paths here unless the user explicitly asks for migration work.
 
-The Piclaw service runs with `ProtectSystem=strict`. Host-level commands such as `nixos-rebuild` and `systemctl` go through SSH to localhost using the local-only ed25519 key configured for this host. Direct in-process `sudo nixos-rebuild` from inside the piclaw sandbox will not work — always use the `rebuild`/`update`/`rollback`/`piclaw-restart` helpers (or `host-queue` directly) so the work runs on the host.
+The Piclaw service runs with `ProtectSystem=strict`. Host-level commands such as `nixos-rebuild` run through NixOS-declared oneshot units started by the `rebuild`/`update`/`rollback`/`piclaw-restart` helpers. Direct in-process `sudo nixos-rebuild` from inside the piclaw sandbox is not the supported path.
 
 The Piclaw service PATH already includes `gh`, `git`, `patch`, `diff`, and `python3`. Host-side helpers use `/run/current-system/sw/bin/` and `/run/wrappers/bin/` when they need host-only tools or setuid wrappers.
 

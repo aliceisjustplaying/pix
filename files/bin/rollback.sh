@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-quoted_args=()
-for arg in "$@"; do
-  quoted_args+=("$(printf '%q' "$arg")")
-done
-args_string="${quoted_args[*]}"
-exec @home@/.local/bin/host-queue \
-  piclaw-rollback \
-  "export PATH=@home@/.local/bin:@home@/.bun/bin:/etc/profiles/per-user/agent/bin:/usr/local/bin:/run/wrappers/bin:/run/current-system/sw/bin:\$PATH && cd @workspaceSrc@/piclaw-customizations && sudo ./scripts/piclaw-rollback-host.sh${args_string:+ ${args_string}}"
+case "$*" in
+"")
+	unit="piclaw-rollback.service"
+	;;
+"--force")
+	unit="piclaw-rollback-force.service"
+	;;
+*)
+	echo "usage: rollback [--force]" >&2
+	exit 64
+	;;
+esac
+sudo systemctl start --no-block "$unit"
+printf 'queued %s\n' "$unit"
+printf 'check detached result with: host-result %s --wait 900\n' "$unit"

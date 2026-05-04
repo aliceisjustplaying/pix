@@ -1,7 +1,46 @@
 { pkgs }:
 
-{
+let
   home = "/home/agent";
+  corePathPackages = with pkgs; [
+    bash
+    coreutils
+    findutils
+    git
+    gnugrep
+    gnused
+    jq
+    openssh
+    procps
+    sqlite
+    which
+  ];
+  agentRuntimePackages = with pkgs; [
+    curl
+    diffutils
+    ripgrep
+    fd
+    gnumake
+    tree
+    unzip
+    zip
+    shellcheck
+    shfmt
+    gh
+    ghstack
+    gnupatch
+    bun
+    nodejs_24
+    ffmpeg
+    yt-dlp
+    tmux
+    claude-code
+    codex
+  ];
+
+  makePath = packages: pkgs.lib.makeBinPath (corePathPackages ++ packages);
+in {
+  inherit home;
 
   serviceDefaults = {
     Type = "simple";
@@ -17,18 +56,20 @@
     ReadWritePaths = [ "/home/agent" "/workspace" ];
   };
 
-  path = extraPackages:
-    pkgs.lib.makeBinPath ([
-      pkgs.bash
-      pkgs.coreutils
-      pkgs.findutils
-      pkgs.git
-      pkgs.gnugrep
-      pkgs.gnused
-      pkgs.jq
-      pkgs.openssh
-      pkgs.procps
-      pkgs.sqlite
-      pkgs.which
-    ] ++ extraPackages);
+  path = makePath;
+  runtimePath = extraPackages: makePath (agentRuntimePackages ++ extraPackages);
+
+  env = {
+    extra ? [ ],
+    pathPackages ? [ ],
+    useRuntimePath ? true,
+  }:
+    [
+      "HOME=${home}"
+      "USER=agent"
+      "XDG_CONFIG_HOME=${home}/.config"
+    ]
+    ++ extra
+    ++ pkgs.lib.optional useRuntimePath
+      "PATH=${home}/.local/bin:${home}/.bun/bin:${makePath (agentRuntimePackages ++ pathPackages)}";
 }

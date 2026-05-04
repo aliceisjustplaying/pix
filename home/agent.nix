@@ -12,17 +12,16 @@ let
   binStatic = name: ../files/bin + "/${name}.sh";
 
   binFiles = {
-    host-queue = binSrc "host-queue" { inherit home; };
     host-result = binStatic "host-result";
-    rebuild = binSrc "rebuild" { inherit home workspaceSrc; };
-    update = binSrc "update" { inherit home workspaceSrc; };
-    rollback = binSrc "rollback" { inherit home workspaceSrc; };
+    rebuild = binStatic "rebuild";
+    update = binStatic "update";
+    rollback = binStatic "rollback";
     verify-deploy = binSrc "verify-deploy" { inherit workspaceSrc; };
     pix-update-pins = binStatic "pix-update-pins";
-    piclaw-restart = binSrc "piclaw-restart" { inherit home; };
+    piclaw-restart = binStatic "piclaw-restart";
     piclaw-status = binStatic "piclaw-status";
     piclaw-logs = binStatic "piclaw-logs";
-    backup = binSrc "backup" { inherit home; };
+    backup = binStatic "backup";
     hermes = binStatic "hermes";
   };
 in {
@@ -61,14 +60,11 @@ in {
     codex
     python3
     uv
-    vibes
     agent-browser
   ];
 
-  # SSH-based host commands work from inside piclaw's sandbox: the piclaw
-  # systemd unit runs with ProtectSystem=strict, so commands that write
-  # outside ~/ (nixos-rebuild, systemctl) tunnel through SSH to localhost.
-  # An ed25519 keypair (keys/piclaw-local.pub) is authorized for agent@localhost.
+  # Host commands run through fixed NixOS-declared systemd units. Sudo is
+  # scoped to exact `systemctl start --no-block <unit>` commands.
   home.file = pkgs.lib.mapAttrs'
     (name: source: {
       name = ".local/bin/${name}";
@@ -87,12 +83,12 @@ in {
     enable = true;
     shellAliases = {
       ll = "ls -lah";
-      sync-nix = "cd /workspace/src/pix && git pull && rebuild";
-      update-force = "cd /workspace/src/piclaw-customizations && git pull && sudo ./scripts/piclaw-update-host.sh --force";
+      sync-nix = "rebuild";
+      update-force = "update --force";
       rollback-force = "rollback";
       pix = "cd /workspace/src/pix";
       pclaw = "cd /workspace/src/piclaw-customizations";
-      nfu = "cd /workspace/src/pix && pix-update-pins && rebuild";
+      nfu = "pix-update-pins && rebuild";
       c = "claude --dangerously-skip-permissions";
       c45 = "claude --dangerously-skip-permissions --model claude-opus-4-5";
       c46 = "claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]'";

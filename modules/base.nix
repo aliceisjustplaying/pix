@@ -63,7 +63,10 @@ in
     home = "/home/agent";
     createHome = true;
     shell = pkgs.bashInteractive;
-    extraGroups = [ "wheel" "atd" ];
+    extraGroups = [
+      "wheel"
+      "systemd-journal"
+    ];
   };
 
   environment.enableAllTerminfo = true;
@@ -125,57 +128,6 @@ in
   # Enabling the module installs the client/server and opens
   # UDP 60000-61000 in the firewall.
   programs.mosh.enable = true;
-
-  # at(1) daemon for deferred job scheduling (used by bsky-boost)
-  services.atd.enable = true;
-
-  # cron for bsky-boost scheduled rounds
-  services.cron = {
-    enable = true;
-    systemCronJobs = [
-      "CRON_TZ=Europe/London"
-      "0 10 * * * agent cd /workspace/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 1 >> data/cron.log 2>&1"
-      "0 17 * * * agent cd /workspace/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 2 >> data/cron.log 2>&1"
-      "0 22 * * * agent cd /workspace/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 3 >> data/cron.log 2>&1"
-      "0  2 * * * agent cd /workspace/src/bsky-boost && /etc/profiles/per-user/agent/bin/uv run python bsky_boost.py --round 4 >> data/cron.log 2>&1"
-    ];
-  };
-
-  # Allow running dynamically-linked binaries from outside the Nix store
-  # (needed for Camoufox, Playwright browsers, etc.)
-  programs.nix-ld = {
-    enable = true;
-    libraries = with pkgs; [
-      stdenv.cc.cc.lib
-      gtk3
-      glib
-      dbus-glib
-      alsa-lib
-      nss
-      nspr
-      xorg.libX11
-      xorg.libXcomposite
-      xorg.libXdamage
-      xorg.libXext
-      xorg.libXfixes
-      xorg.libXrandr
-      xorg.libXtst
-      xorg.libXScrnSaver
-      xorg.libxcb
-      xorg.libXi
-      pango
-      cairo
-      atk
-      at-spi2-atk
-      cups.lib
-      libdrm
-      mesa
-      expat
-      gdk-pixbuf
-      fontconfig
-      freetype
-    ];
-  };
 
   programs.git.enable = true;
 }

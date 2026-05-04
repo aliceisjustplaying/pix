@@ -10,30 +10,7 @@ let
   hermesSitecustomize = ../files/hermes/sitecustomize.py;
   tmpl = import ../lib/template.nix;
 
-  servicePath = agentService.path [
-    pkgs.curl
-    pkgs.diffutils
-    pkgs.ripgrep
-    pkgs.fd
-    pkgs.gnumake
-    pkgs.tree
-    pkgs.unzip
-    pkgs.zip
-    pkgs.shellcheck
-    pkgs.shfmt
-    pkgs.gh
-    pkgs.ghstack
-    pkgs.gnupatch
-    pkgs.uv
-    pkgs.bun
-    pkgs.nodejs_24
-    pkgs.python312
-    pkgs.ffmpeg
-    pkgs.yt-dlp
-    pkgs.tmux
-    pkgs.claude-code
-    pkgs.codex
-  ];
+  servicePath = agentService.runtimePath [ pkgs.uv pkgs.python312 ];
 
   hermesBootstrap = pkgs.writeShellScript "hermes-bootstrap" ''
     set -euo pipefail
@@ -142,12 +119,12 @@ in {
     serviceConfig = agentService.serviceDefaults // {
       WorkingDirectory = "/workspace";
       EnvironmentFile = config.sops.templates.hermes-service-env.path;
-      Environment = [
-        "HOME=${agentHome}"
-        "USER=agent"
-        "XDG_CONFIG_HOME=${agentHome}/.config"
-        "PYTHONUNBUFFERED=1"
-      ];
+      Environment = agentService.env {
+        useRuntimePath = false;
+        extra = [
+          "PYTHONUNBUFFERED=1"
+        ];
+      };
       ExecStartPre = hermesBootstrap;
       ExecStart = "${hermesVenv}/bin/hermes gateway run --replace";
       RestartSec = "10s";

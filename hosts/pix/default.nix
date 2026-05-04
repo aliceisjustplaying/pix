@@ -10,6 +10,9 @@ in {
     "${modulesPath}/profiles/qemu-guest.nix"
     ../../disko/pix.nix
     ../../modules/base.nix
+    ../../modules/browser-runtime.nix
+    ../../modules/bsky-boost.nix
+    ../../modules/host-jobs.nix
     ../../modules/tailscale.nix
     ../../modules/cloudflared.nix
     ../../modules/piclaw.nix
@@ -48,7 +51,7 @@ in {
   networking.firewall = {
     enable = true;
     allowedTCPPorts = lib.optionals publicSshBootstrap [ 22 ];
-    interfaces.tailscale0.allowedTCPPorts = [ 22 80 443 8081 ];
+    interfaces.tailscale0.allowedTCPPorts = [ 22 80 443 ];
     # tsshd UDP range. Matches Rootshell tssh's default --port 61000-61999.
     interfaces.tailscale0.allowedUDPPortRanges = [ { from = 61000; to = 61999; } ];
   };
