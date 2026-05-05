@@ -61,6 +61,8 @@
         bun
         gh
         jujutsu
+        mosh
+        tmux
         uv
         ;
       tsshd = final.callPackage ./pkgs/tsshd.nix { tsshd = unstablePkgs.tsshd; };

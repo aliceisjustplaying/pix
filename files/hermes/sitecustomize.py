@@ -33,6 +33,8 @@ _TOOL_ALIASES = {
 }
 
 _REVERSE_TOOL_ALIASES = {value: key for key, value in _TOOL_ALIASES.items()}
+_DYNAMIC_TOOL_ALIASES = {}
+_DYNAMIC_REVERSE_TOOL_ALIASES = {}
 _UNSUPPORTED_ANTHROPIC_BETAS = {
     "fast-mode-2026-02-01",
     "context-1m-2025-08-07",
@@ -72,11 +74,18 @@ def _rewrite_prompt_text(text: str) -> str:
 
 
 def _alias_tool_name(name: str) -> str:
-    return _TOOL_ALIASES.get(name, name)
+    alias = _TOOL_ALIASES.get(name)
+    if alias is None and name.startswith("mcp_"):
+        alias = name[4:]
+    if alias and alias != name:
+        _DYNAMIC_TOOL_ALIASES[name] = alias
+        _DYNAMIC_REVERSE_TOOL_ALIASES[alias] = name
+        return alias
+    return name
 
 
 def _unalias_tool_name(name: str) -> str:
-    return _REVERSE_TOOL_ALIASES.get(name, name)
+    return _REVERSE_TOOL_ALIASES.get(name) or _DYNAMIC_REVERSE_TOOL_ALIASES.get(name, name)
 
 
 def _unalias_response_tool_calls(result):
