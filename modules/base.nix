@@ -86,6 +86,7 @@ in
     fzf
     eza
     delta
+    fastfetch
     just
     direnv
     shellcheck

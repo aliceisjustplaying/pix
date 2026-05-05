@@ -59,6 +59,7 @@
       portless = final.callPackage ./pkgs/portless.nix { };
       inherit (unstablePkgs)
         bun
+        fastfetch
         gh
         jujutsu
         mosh
