@@ -1,5 +1,6 @@
 { config, pkgs, ... }:
 let
+  lib = pkgs.lib;
   home = config.home.homeDirectory;
   workspaceSrc = "/workspace/src";
 
@@ -23,6 +24,114 @@ let
     piclaw-logs = binStatic "piclaw-logs";
     backup = binStatic "backup";
     hermes = binStatic "hermes";
+    amp-login-proxy = binStatic "amp-login-proxy";
+    amp-login-upstream = binStatic "amp-login-upstream";
+  };
+
+  proxyApiKey = "CLI_PROXY_API_KEY";
+  proxyBaseUrl = "http://127.0.0.1:8317";
+  proxyOpenAIBaseUrl = "${proxyBaseUrl}/v1";
+
+  openAIModels =
+    let
+      models = [ "gpt-5.4" "gpt-5.5" ];
+      efforts = [ "none" "low" "medium" "high" "xhigh" ];
+      speeds = [ "standard" "fast" ];
+      titleEffort = effort:
+        if effort == "xhigh" then "XHigh" else lib.toUpper (lib.substring 0 1 effort) + lib.substring 1 (-1) effort;
+      modelFor = model: effort:
+        if effort == "none" then model else "${model}(${effort})";
+      mkModel = model: effort: speed: {
+        model = modelFor model effort;
+        id = "custom:${lib.replaceStrings [ "." ] [ "-" ] (lib.toUpper model)}-${titleEffort effort}-${lib.toUpper speed}-ChatGPT-Pro";
+        baseUrl = proxyOpenAIBaseUrl;
+        apiKey = proxyApiKey;
+        displayName = "${lib.toUpper model} ${titleEffort effort} ${lib.toUpper speed} [ChatGPT Pro OAuth]";
+        noImageSupport = false;
+        provider = "openai";
+      } // lib.optionalAttrs (speed == "fast") {
+        extraArgs = {
+          service_tier = "priority";
+        };
+      };
+    in lib.concatLists (map
+      (model: lib.concatLists (map
+        (effort: map (speed: mkModel model effort speed) speeds)
+        efforts))
+      models);
+
+  claudeModels =
+    let
+      models = [
+        {
+          id = "claude-opus-4-5-20251101";
+          name = "Claude Opus 4.5";
+        }
+        {
+          id = "claude-opus-4-6";
+          name = "Claude Opus 4.6";
+        }
+        {
+          id = "claude-opus-4-7";
+          name = "Claude Opus 4.7";
+        }
+      ];
+      efforts = [ "low" "medium" "high" "xhigh" "max" "auto" ];
+      titleEffort = effort:
+        if effort == "xhigh" then "XHigh" else lib.toUpper (lib.substring 0 1 effort) + lib.substring 1 (-1) effort;
+      mkModel = model: effort: {
+        model = model.id;
+        id = "custom:${model.id}-${effort}-OAuth";
+        baseUrl = proxyBaseUrl;
+        apiKey = proxyApiKey;
+        displayName = "${model.name} ${titleEffort effort} [OAuth]";
+        noImageSupport = false;
+        provider = "anthropic";
+      } // {
+        extraArgs = {
+          thinking = {
+            type = "adaptive";
+          };
+          output_config = {
+            inherit effort;
+          };
+          max_tokens = 64000;
+        };
+      };
+    in lib.concatLists (map
+      (model: map (effort: mkModel model effort) efforts)
+      models);
+
+  factorySettings = {
+    diffMode = "github";
+    enableCustomDroids = true;
+    showTokenUsageIndicator = true;
+    allowBackgroundProcesses = true;
+    includeCoAuthoredByDroid = false;
+    enableDroidShield = false;
+    autonomyLevel = "auto-medium";
+    sessionDefaultSettings = {
+      model = "custom:GPT-5-5-High-FAST-ChatGPT-Pro";
+      reasoningEffort = "high";
+      autonomyMode = "auto-high";
+      specModeReasoningEffort = "max";
+      specModeModel = "custom:claude-opus-4-7-auto-OAuth";
+    };
+    customModels = lib.imap0 (index: model: model // { inherit index; }) (openAIModels ++ claudeModels);
+    terminalColorMode = "light";
+    enabledPlugins = {
+      "core@factory-plugins" = true;
+    };
+    theme = "factory-light";
+  };
+
+  ampSettings = {
+    "amp.url" = proxyBaseUrl;
+    "amp.anthropic.effort" = "max";
+    "amp.anthropic.thinking.enabled" = true;
+    "amp.openai.speed" = true;
+    "amp.experimental.cli.nativeSecretsStorage.enabled" = false;
+    "amp.updates.mode" = "disabled";
   };
 in {
   home.stateVersion = "25.11";
@@ -56,6 +165,9 @@ in {
     yt-dlp
     sqlite
     tsshd
+    droid
+    amp-code
+    cli-proxy-api
     claude-code
     codex
     python3
@@ -75,9 +187,62 @@ in {
     })
     binFiles // {
       ".npmrc".text = "prefix=${home}/.local";
+      ".factory/settings.json".text = builtins.toJSON factorySettings;
+      ".config/amp/settings.json".text = builtins.toJSON ampSettings;
+      ".cli-proxy-api/config.yaml".text = ''
+        host: "127.0.0.1"
+        port: 8317
+
+        tls:
+          enable: false
+          cert: ""
+          key: ""
+
+        auth-dir: "~/.cli-proxy-api"
+
+        api-keys:
+          - "${proxyApiKey}"
+
+        debug: false
+        logging-to-file: true
+        usage-statistics-enabled: true
+
+        remote-management:
+          allow-remote: false
+          secret-key: "${proxyApiKey}"
+          disable-control-panel: false
+
+        quota-exceeded:
+          switch-project: true
+          switch-preview-model: true
+          antigravity-credits: true
+
+        routing:
+          strategy: "round-robin"
+          session-affinity: true
+          session-affinity-ttl: "1h"
+
+        ampcode:
+          upstream-url: "https://ampcode.com"
+          restrict-management-to-localhost: true
+          force-model-mappings: false
+      '';
       ".claude/CLAUDE.md".source = ../files/claude/CLAUDE.md;
       ".codex/AGENTS.md".source = ../files/codex/AGENTS.md;
     };
+
+  systemd.user.services.cli-proxy-api = {
+    Unit = {
+      Description = "CLIProxyAPI local OAuth LLM proxy";
+      After = [ "network-online.target" ];
+    };
+    Service = {
+      ExecStart = "${pkgs.cli-proxy-api}/bin/cli-proxy-api --config ${home}/.cli-proxy-api/config.yaml";
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
+    Install.WantedBy = [ "default.target" ];
+  };
 
   programs.bash = {
     enable = true;
