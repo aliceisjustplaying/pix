@@ -3,6 +3,7 @@ let
   lib = pkgs.lib;
   home = config.home.homeDirectory;
   workspaceSrc = "/workspace/src";
+  tmpl = import ../lib/template.nix;
 
   # Render a script from files/bin/<name>.sh. Pass replacements for the
   # @placeholder@ tokens the file uses (replaceVars errors on unused vars).
@@ -18,7 +19,7 @@ let
     update = binStatic "update";
     rollback = binStatic "rollback";
     verify-deploy = binSrc "verify-deploy" { inherit workspaceSrc; };
-    pix-update-pins = binStatic "pix-update-pins";
+    nfu = binStatic "nfu";
     piclaw-restart = binStatic "piclaw-restart";
     piclaw-status = binStatic "piclaw-status";
     piclaw-logs = binStatic "piclaw-logs";
@@ -102,36 +103,15 @@ let
       (model: map (effort: mkModel model effort) efforts)
       models);
 
-  factorySettings = {
-    diffMode = "github";
-    enableCustomDroids = true;
-    showTokenUsageIndicator = true;
-    allowBackgroundProcesses = true;
-    includeCoAuthoredByDroid = false;
-    enableDroidShield = false;
-    autonomyLevel = "auto-medium";
-    sessionDefaultSettings = {
-      model = "custom:GPT-5-5-High-FAST-ChatGPT-Pro";
-      reasoningEffort = "high";
-      autonomyMode = "auto-high";
-      specModeReasoningEffort = "max";
-      specModeModel = "custom:claude-opus-4-7-auto-OAuth";
-    };
-    customModels = lib.imap0 (index: model: model // { inherit index; }) (openAIModels ++ claudeModels);
-    terminalColorMode = "light";
-    enabledPlugins = {
-      "core@factory-plugins" = true;
-    };
-    theme = "factory-light";
+  customModels = lib.imap0 (index: model: model // { inherit index; }) (openAIModels ++ claudeModels);
+  factorySettings = tmpl ../files/factory/settings.json {
+    customModels = builtins.toJSON customModels;
   };
-
-  ampSettings = {
-    "amp.url" = proxyBaseUrl;
-    "amp.anthropic.effort" = "max";
-    "amp.anthropic.thinking.enabled" = true;
-    "amp.openai.speed" = true;
-    "amp.experimental.cli.nativeSecretsStorage.enabled" = false;
-    "amp.updates.mode" = "disabled";
+  ampSettings = tmpl ../files/amp/settings.json {
+    inherit proxyBaseUrl;
+  };
+  cliProxyApiConfig = tmpl ../files/cli-proxy-api/config.yaml {
+    inherit proxyApiKey;
   };
 in {
   home.stateVersion = "25.11";
@@ -187,46 +167,9 @@ in {
     })
     binFiles // {
       ".npmrc".text = "prefix=${home}/.local";
-      ".factory/settings.json".text = builtins.toJSON factorySettings;
-      ".config/amp/settings.json".text = builtins.toJSON ampSettings;
-      ".cli-proxy-api/config.yaml".text = ''
-        host: "127.0.0.1"
-        port: 8317
-
-        tls:
-          enable: false
-          cert: ""
-          key: ""
-
-        auth-dir: "~/.cli-proxy-api"
-
-        api-keys:
-          - "${proxyApiKey}"
-
-        debug: false
-        logging-to-file: true
-        usage-statistics-enabled: true
-
-        remote-management:
-          allow-remote: false
-          secret-key: "${proxyApiKey}"
-          disable-control-panel: false
-
-        quota-exceeded:
-          switch-project: true
-          switch-preview-model: true
-          antigravity-credits: true
-
-        routing:
-          strategy: "round-robin"
-          session-affinity: true
-          session-affinity-ttl: "1h"
-
-        ampcode:
-          upstream-url: "https://ampcode.com"
-          restrict-management-to-localhost: true
-          force-model-mappings: false
-      '';
+      ".factory/settings.json".text = factorySettings;
+      ".config/amp/settings.json".text = ampSettings;
+      ".cli-proxy-api/config.yaml".text = cliProxyApiConfig;
       ".claude/CLAUDE.md".source = ../files/claude/CLAUDE.md;
       ".codex/AGENTS.md".source = ../files/codex/AGENTS.md;
     };
@@ -254,7 +197,7 @@ in {
       pix = "cd /workspace/src/pix";
       pclaw = "cd /workspace/src/piclaw-customizations";
       nm = "cd ~/newmem";
-      nfu = "pix-update-pins && rebuild";
+      nfur = "nfu && rebuild";
       c = "claude --dangerously-skip-permissions";
       c45 = "claude --dangerously-skip-permissions --model claude-opus-4-5";
       c46 = "claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]'";

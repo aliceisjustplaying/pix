@@ -56,15 +56,11 @@ in {
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = pkgs.writeShellScript "setup-agent-secrets" ''
-        install -m 0400 -o agent -g users \
-          ${config.sops.secrets.github-clone-key.path} \
-          ${agentHome}/.ssh/id_ed25519_github
-
-        install -m 0400 -o agent -g users \
-          ${config.sops.templates.agent-web-search-json.path} \
-          ${agentHome}/.pi/web-search.json
-      '';
+      ExecStart = pkgs.writeShellScript "setup-agent-secrets" (tmpl ../files/piclaw/setup-agent-secrets.sh {
+        inherit agentHome;
+        githubCloneKeyPath = config.sops.secrets.github-clone-key.path;
+        agentWebSearchJsonPath = config.sops.templates.agent-web-search-json.path;
+      });
     };
   };
 

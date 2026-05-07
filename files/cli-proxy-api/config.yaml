@@ -1,0 +1,36 @@
+host: "127.0.0.1"
+port: 8317
+
+tls:
+  enable: false
+  cert: ""
+  key: ""
+
+auth-dir: "~/.cli-proxy-api"
+
+api-keys:
+  - "@proxyApiKey@"
+
+debug: false
+logging-to-file: true
+usage-statistics-enabled: true
+
+remote-management:
+  allow-remote: false
+  secret-key: "@proxyApiKey@"
+  disable-control-panel: false
+
+quota-exceeded:
+  switch-project: true
+  switch-preview-model: true
+  antigravity-credits: true
+
+routing:
+  strategy: "round-robin"
+  session-affinity: true
+  session-affinity-ttl: "1h"
+
+ampcode:
+  upstream-url: "https://ampcode.com"
+  restrict-management-to-localhost: true
+  force-model-mappings: false

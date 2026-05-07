@@ -1,0 +1,8 @@
+{
+  "amp.url": "@proxyBaseUrl@",
+  "amp.anthropic.effort": "max",
+  "amp.anthropic.thinking.enabled": true,
+  "amp.openai.speed": true,
+  "amp.experimental.cli.nativeSecretsStorage.enabled": false,
+  "amp.updates.mode": "disabled"
+}

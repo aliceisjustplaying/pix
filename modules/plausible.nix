@@ -30,10 +30,7 @@
     enable = true;
     email = "aliceisjustplaying@gmail.com";
 
-    virtualHosts."p.mosphere.at".extraConfig = ''
-      encode zstd gzip
-      reverse_proxy 127.0.0.1:8000
-    '';
+    virtualHosts."p.mosphere.at".extraConfig = builtins.readFile ../files/caddy/plausible.caddy;
   };
 
   networking.firewall.allowedTCPPorts = [ 80 443 ];

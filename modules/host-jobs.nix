@@ -3,6 +3,7 @@
 let
   agentHome = "/home/agent";
   workspaceSrc = "/workspace/src";
+  tmpl = import ../lib/template.nix;
   hostPath = with pkgs; [
     bash
     coreutils
@@ -33,60 +34,33 @@ in
 {
   systemd.services.pix-rebuild = hostJob {
     description = "Rebuild Pix NixOS configuration";
-    script = ''
-      set -euo pipefail
-      cd ${workspaceSrc}/pix
-      runuser -u agent -- env HOME=${agentHome} git pull --ff-only
-      nixos-rebuild switch --flake path:${agentHome}/workspace/src/pix#pix
-    '';
+    script = tmpl ../files/host-jobs/pix-rebuild.sh { inherit agentHome workspaceSrc; };
   };
 
   systemd.services.piclaw-update = hostJob {
     description = "Update Piclaw";
-    script = ''
-      set -euo pipefail
-      cd ${workspaceSrc}/piclaw-customizations
-      runuser -u agent -- env HOME=${agentHome} git pull --ff-only
-      ./scripts/piclaw-update-host.sh
-    '';
+    script = tmpl ../files/host-jobs/piclaw-update.sh { inherit agentHome workspaceSrc; };
   };
 
   systemd.services.piclaw-update-force = hostJob {
     description = "Force update Piclaw";
-    script = ''
-      set -euo pipefail
-      cd ${workspaceSrc}/piclaw-customizations
-      runuser -u agent -- env HOME=${agentHome} git pull --ff-only
-      ./scripts/piclaw-update-host.sh --force
-    '';
+    script = tmpl ../files/host-jobs/piclaw-update-force.sh { inherit agentHome workspaceSrc; };
   };
 
   systemd.services.piclaw-rollback = hostJob {
     description = "Rollback Piclaw";
-    script = ''
-      set -euo pipefail
-      cd ${workspaceSrc}/piclaw-customizations
-      ./scripts/piclaw-rollback-host.sh
-    '';
+    script = tmpl ../files/host-jobs/piclaw-rollback.sh { inherit workspaceSrc; };
   };
 
   systemd.services.piclaw-rollback-force = hostJob {
     description = "Force rollback Piclaw";
-    script = ''
-      set -euo pipefail
-      cd ${workspaceSrc}/piclaw-customizations
-      ./scripts/piclaw-rollback-host.sh --force
-    '';
+    script = tmpl ../files/host-jobs/piclaw-rollback-force.sh { inherit workspaceSrc; };
   };
 
   systemd.services.piclaw-restart = hostJob {
     description = "Restart Piclaw";
     timeout = "2min";
-    script = ''
-      set -euo pipefail
-      sleep 2
-      systemctl restart piclaw.service
-    '';
+    script = builtins.readFile ../files/host-jobs/piclaw-restart.sh;
   };
 
   security.sudo.extraRules = [

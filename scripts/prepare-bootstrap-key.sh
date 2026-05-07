@@ -8,7 +8,7 @@ mkdir -p "$(dirname "$HOST_KEY_PATH")"
 mkdir -p "$EXTRA_FILES_DIR/var/lib/sops-nix"
 
 if [[ ! -f "$HOST_KEY_PATH" ]]; then
-  age-keygen -o "$HOST_KEY_PATH"
+	age-keygen -o "$HOST_KEY_PATH"
 fi
 
 install -m 0400 "$HOST_KEY_PATH" "$EXTRA_FILES_DIR/var/lib/sops-nix/key.txt"

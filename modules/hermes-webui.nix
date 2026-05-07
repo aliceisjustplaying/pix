@@ -6,18 +6,12 @@ let
   webuiRepo = "/workspace/src/hermes-webui";
   webuiState = "${hermesHome}/webui";
   port = 8787;
+  tmpl = import ../lib/template.nix;
 
-  bootstrap = pkgs.writeShellScript "hermes-webui-bootstrap" ''
-    set -euo pipefail
-    mkdir -p "${webuiState}" /workspace/src
-    if [ ! -d "${webuiRepo}/.git" ]; then
-      rm -rf "${webuiRepo}"
-      ${pkgs.git}/bin/git clone --depth=1 https://github.com/nesquena/hermes-webui.git "${webuiRepo}"
-    else
-      ${pkgs.git}/bin/git -C "${webuiRepo}" reset --hard HEAD
-      ${pkgs.git}/bin/git -C "${webuiRepo}" pull --ff-only || true
-    fi
-  '';
+  bootstrap = pkgs.writeShellScript "hermes-webui-bootstrap" (tmpl ../files/hermes-webui/bootstrap.sh {
+    inherit webuiRepo webuiState;
+    git = "${pkgs.git}/bin/git";
+  });
 in {
   systemd.tmpfiles.rules = [
     "d ${webuiState} 0700 agent users - -"

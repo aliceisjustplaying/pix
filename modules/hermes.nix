@@ -12,86 +12,25 @@ let
 
   servicePath = agentService.runtimePath [ pkgs.uv pkgs.python312 ];
 
-  hermesBootstrap = pkgs.writeShellScript "hermes-bootstrap" ''
-    set -euo pipefail
-
-    mkdir -p "${hermesHome}" \
-      "${hermesOverrides}" \
-      "${hermesHome}/logs" \
-      "${hermesHome}/sessions" \
-      "${hermesHome}/skills" \
-      "${hermesHome}/pairing" \
-      "${hermesHome}/bin" \
-      "/workspace/src"
-
-    if [ ! -d "${hermesRepo}/.git" ]; then
-      rm -rf "${hermesRepo}"
-      git clone --depth=1 https://github.com/NousResearch/hermes-agent.git "${hermesRepo}"
-    fi
-
-    install -m 600 "${hermesSitecustomize}" "${hermesOverrides}/sitecustomize.py"
-
-    cat > "${hermesHome}/bin/hermes-live" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-export HERMES_HOME="${hermesHome}"
-export PYTHONPATH="${hermesOverrides}"''${PYTHONPATH:+:$PYTHONPATH}
-exec "${hermesVenv}/bin/hermes" "$@"
-EOF
-    chmod 700 "${hermesHome}/bin/hermes-live"
-
-    if [ ! -f "${hermesHome}/config.yaml" ]; then
-      cat > "${hermesHome}/config.yaml" <<'EOF'
-model:
-  default: claude-opus-4-6
-  provider: anthropic
-terminal:
-  backend: local
-  cwd: /workspace
-EOF
-      chmod 600 "${hermesHome}/config.yaml"
-    fi
-
-    if [ ! -f "${hermesHome}/.env" ]; then
-      api_server_key="$(${pkgs.coreutils}/bin/head -c 32 /dev/urandom | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.coreutils}/bin/tr -d ' \n')"
-      cat > "${hermesHome}/.env" <<EOF
-API_SERVER_ENABLED=true
-API_SERVER_HOST=127.0.0.1
-API_SERVER_PORT=8084
-API_SERVER_KEY=$api_server_key
-CAMOFOX_URL=http://127.0.0.1:9377
-EOF
-      chmod 600 "${hermesHome}/.env"
-    fi
-
-    rev="$(git -C "${hermesRepo}" rev-parse HEAD)"
-    stamp="${hermesHome}/.install-rev"
-
-    if [ ! -x "${hermesVenv}/bin/hermes" ] || [ ! -f "$stamp" ] || [ "$(cat "$stamp")" != "$rev" ]; then
-      rm -rf "${hermesVenv}"
-      ${pkgs.uv}/bin/uv venv "${hermesVenv}" --python ${pkgs.python312}/bin/python3.12
-      (
-        cd "${hermesRepo}"
-        export UV_PROJECT_ENVIRONMENT="${hermesVenv}"
-        ${pkgs.uv}/bin/uv sync \
-          --extra messaging \
-          --extra cron \
-          --extra cli \
-          --extra pty \
-          --extra honcho \
-          --extra mcp \
-          --extra acp
-      )
-      printf '%s\n' "$rev" > "$stamp"
-      chmod 600 "$stamp"
-    fi
-
-    mkdir -p "${hermesSitePackages}"
-    cat > "${hermesSitePackages}/hermes-home-overrides.pth" <<EOF
-${hermesOverrides}
-EOF
-    chmod 600 "${hermesSitePackages}/hermes-home-overrides.pth"
-  '';
+  hermesLive = pkgs.writeText "hermes-live" (tmpl ../files/hermes/hermes-live.sh {
+    inherit hermesHome hermesOverrides hermesVenv;
+  });
+  hermesEnvTemplate = ../files/hermes/env.template;
+  hermesPth = pkgs.writeText "hermes-home-overrides.pth" (tmpl ../files/hermes/hermes-home-overrides.pth {
+    inherit hermesOverrides;
+  });
+  hermesBootstrap = pkgs.writeShellScript "hermes-bootstrap" (tmpl ../files/hermes/bootstrap.sh {
+    inherit hermesHome hermesOverrides hermesRepo hermesVenv hermesSitePackages;
+    hermesSitecustomize = toString hermesSitecustomize;
+    hermesConfig = toString ../files/hermes/config.yaml;
+    hermesEnvTemplate = toString hermesEnvTemplate;
+    hermesLive = toString hermesLive;
+    hermesPth = toString hermesPth;
+    coreutilsBin = "${pkgs.coreutils}/bin";
+    gnusedBin = "${pkgs.gnused}/bin";
+    python = "${pkgs.python312}/bin/python3.12";
+    uv = "${pkgs.uv}/bin/uv";
+  });
 in {
   sops.templates.hermes-service-env = {
     restartUnits = [ "hermes-gateway.service" ];

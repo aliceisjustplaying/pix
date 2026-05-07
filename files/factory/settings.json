@@ -1,0 +1,22 @@
+{
+  "diffMode": "github",
+  "enableCustomDroids": true,
+  "showTokenUsageIndicator": true,
+  "allowBackgroundProcesses": true,
+  "includeCoAuthoredByDroid": false,
+  "enableDroidShield": false,
+  "autonomyLevel": "auto-medium",
+  "sessionDefaultSettings": {
+    "model": "custom:GPT-5-5-High-FAST-ChatGPT-Pro",
+    "reasoningEffort": "high",
+    "autonomyMode": "auto-high",
+    "specModeReasoningEffort": "max",
+    "specModeModel": "custom:claude-opus-4-7-auto-OAuth"
+  },
+  "customModels": @customModels@,
+  "terminalColorMode": "light",
+  "enabledPlugins": {
+    "core@factory-plugins": true
+  },
+  "theme": "factory-light"
+}

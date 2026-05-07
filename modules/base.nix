@@ -3,9 +3,7 @@ let
   wranglerLatest = pkgs.writeShellApplication {
     name = "wrangler";
     runtimeInputs = [ pkgs.nodejs ];
-    text = ''
-      exec npm exec --yes wrangler@4.85.0 -- "$@"
-    '';
+    text = builtins.readFile ../files/bin/wrangler.sh;
   };
 in
 {
