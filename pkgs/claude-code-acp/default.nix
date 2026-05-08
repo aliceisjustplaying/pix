@@ -17,7 +17,7 @@ buildNpmPackage rec {
     cp ${./package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-KqsZrSFjENwYnVhHiBgbfES+dw7WlGhX0V0yrzwBhIU=";
+  npmDepsHash = "sha256-Y183jdY+i8Y0bUpAku61V9AvzeaAjPVgJIbmKaYpSBU=";
 
   # Tarball already ships pre-compiled dist/, no build step needed.
   dontNpmBuild = true;
