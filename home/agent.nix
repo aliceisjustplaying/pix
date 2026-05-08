@@ -118,8 +118,13 @@ in {
   programs.home-manager.enable = true;
 
   home.sessionVariables = {
+    __EGL_VENDOR_LIBRARY_DIRS = "/run/opengl-driver/share/glvnd/egl_vendor.d";
     EDITOR = "vim";
+    LIBGL_DRIVERS_PATH = "/run/opengl-driver/lib/dri";
     PAGER = "less -FR";
+    PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+    PLAYWRIGHT_HOST_PLATFORM_OVERRIDE = "ubuntu-24.04";
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
   };
 
   home.sessionPath = [
@@ -154,6 +159,8 @@ in {
     python3
     uv
     agent-browser
+    playwright-driver
+    playwright-test
   ];
 
   # Host commands run through fixed NixOS-declared systemd units. Sudo is

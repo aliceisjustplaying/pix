@@ -1,6 +1,8 @@
 { pkgs, ... }:
 
 {
+  hardware.graphics.enable = true;
+
   programs.nix-ld = {
     enable = true;
     libraries = with pkgs; [
