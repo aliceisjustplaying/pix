@@ -36,6 +36,7 @@ let
     tmux
     claude-code
     codex
+    codex-acp
   ];
 
   makePath = packages: pkgs.lib.makeBinPath (corePathPackages ++ packages);

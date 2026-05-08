@@ -150,6 +150,7 @@ in {
     cli-proxy-api
     claude-code
     codex
+    codex-acp
     python3
     uv
     agent-browser
