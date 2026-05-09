@@ -26,6 +26,16 @@
     };
   };
 
+  services.clickhouse.extraServerConfig = ''
+    <clickhouse>
+      <trace_log remove="remove" />
+      <metric_log remove="remove" />
+      <asynchronous_metric_log remove="remove" />
+      <query_metric_log remove="remove" />
+      <processors_profile_log remove="remove" />
+    </clickhouse>
+  '';
+
   services.caddy = {
     enable = true;
     email = "aliceisjustplaying@gmail.com";

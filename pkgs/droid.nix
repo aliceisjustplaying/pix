@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   pname = "droid";
-  version = "0.121.0";
+  version = "0.122.0";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@factory/cli-linux-arm64/-/cli-linux-arm64-${version}.tgz";
-    hash = "sha512-A/PIH3G0AMEgIPIZDFMxE5fQ/Dx4L6fkWgwSpyDiGMwdMNAVeFbaES2BBBaMg493bvYbMm6EE3pUgxtI8R68JA==";
+    hash = "sha512-YUVkMIysmJJkpYzsmAJxASGIAErCu+NwlmaqJLmBwQ5e6GAI11YvmHx0w02ZC4IrZdTwNc+4iku0EatHKBc3jg==";
   };
 
   sourceRoot = "package";

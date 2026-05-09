@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   pname = "sourcegraph-amp";
-  version = "0.0.1778185482-gf00656";
+  version = "0.0.1778328768-gb9a37d";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@sourcegraph/amp/-/amp-${version}.tgz";
-    hash = "sha512-XmxWYHBKVb50PIc+wKGe4S7mNqW1QSFqm6/mkwsLnwOP6iO72sObcsLwTTd/ilNJ/alXQ8+sDz2tIU0ErqmEkA==";
+    hash = "sha512-PICKuGbQp8Yd+Bm63hpXKWWgVB3vpqiCNGmW0r2lHNBClIHOlWyycY+D0YF0akwcM2a/sdi37o2Cle4YcY7vJA==";
   };
 
   sourceRoot = "package";
