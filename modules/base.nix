@@ -33,6 +33,20 @@ in
   };
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.blacklistedKernelModules = [
+    "esp4"
+    "esp6"
+    "ipcomp4"
+    "ipcomp6"
+    "rxrpc"
+  ];
+  boot.extraModprobeConfig = ''
+    install esp4 /bin/false
+    install esp6 /bin/false
+    install ipcomp4 /bin/false
+    install ipcomp6 /bin/false
+    install rxrpc /bin/false
+  '';
   boot.tmp.cleanOnBoot = true;
 
   swapDevices = [
