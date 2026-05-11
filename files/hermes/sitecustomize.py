@@ -288,7 +288,7 @@ def _apply() -> None:
     if not getattr(hermes_main, "_pix_update_venv_patch_applied", False):
         original_install_python_dependencies = hermes_main._install_python_dependencies_with_optional_fallback
 
-        def wrapped_install_python_dependencies(install_cmd_prefix, *, env=None):
+        def wrapped_install_python_dependencies(install_cmd_prefix, *, env=None, **kwargs):
             fixed_env = dict(env or {})
             managed_venv = _managed_hermes_venv()
             project_venv = str(hermes_main.PROJECT_ROOT / "venv")
@@ -300,9 +300,13 @@ def _apply() -> None:
                 fixed_env["VIRTUAL_ENV"] = managed_venv
                 fixed_env.setdefault("UV_PROJECT_ENVIRONMENT", managed_venv)
 
+            # Forward any additional kwargs (e.g. ``group="all"`` introduced
+            # upstream in Hermes #23394) so this wrapper stays compatible with
+            # future signature additions without another patch round-trip.
             return original_install_python_dependencies(
                 install_cmd_prefix,
                 env=fixed_env if fixed_env else env,
+                **kwargs,
             )
 
         hermes_main._install_python_dependencies_with_optional_fallback = wrapped_install_python_dependencies
