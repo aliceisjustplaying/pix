@@ -34,6 +34,7 @@ in
 {
   systemd.services.pix-rebuild = hostJob {
     description = "Rebuild Pix NixOS configuration";
+    timeout = "60min";
     script = tmpl ../files/host-jobs/pix-rebuild.sh { inherit agentHome workspaceSrc; };
   };
 
