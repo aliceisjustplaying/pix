@@ -2,21 +2,21 @@
 
 buildNpmPackage rec {
   pname = "codex-acp";
-  version = "0.0.43";
+  version = "0.0.44";
 
   inherit nodejs_24;
   nodejs = nodejs_24;
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@agentclientprotocol/codex-acp/-/codex-acp-${version}.tgz";
-    hash = "sha512-F2KtiDssyKRIUHblTxuVXPerOOKEQ0BNL9/lehi+0rCaEYANL1LbOOKdMqbMvWnNb8cIMMk+v/RMx/n+dI9iOw==";
+    hash = "sha512-iHzFWKzJ0Z8I6yJCkuLZ+nb9mF2WYmfTcHFFvc7sU/awBsQmVBmpSOXOpZ+IK2Dy9cR3iRoML/B2/Wq2/zKBCA==";
   };
 
   postPatch = ''
     cp ${./codex-acp-package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-0UWv4WWOJSHP0fzChLxGf/pzG6kX8lhnUOBI8sQW3lA=";
+  npmDepsHash = "sha256-y6+s0cmoNeAMJvzmzPpF1mdZZblDXN2M+YrmF0wm3TQ=";
 
   dontNpmBuild = true;
 
