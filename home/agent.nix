@@ -150,6 +150,7 @@ in {
     yt-dlp
     sqlite
     tsshd
+    zellij
     droid
     amp-code
     cli-proxy-api

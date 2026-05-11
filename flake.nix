@@ -68,6 +68,7 @@
         mosh
         tmux
         uv
+        zellij
         ;
       tsshd = final.callPackage ./pkgs/tsshd.nix { tsshd = unstablePkgs.tsshd; };
     };
