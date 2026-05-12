@@ -63,6 +63,7 @@
       inherit (unstablePkgs)
         bun
         fastfetch
+        gdu
         gh
         jujutsu
         mosh
