@@ -2,7 +2,8 @@
 
 let
   # Pinned UDP range so the firewall on tailscale0 can allow exactly this.
-  portRange = "61000-61999";
+  # Starts at 61001 to avoid overlapping mosh (60000-61000).
+  portRange = "61001-61999";
   pinnedTsshd = tsshd.overrideAttrs (finalAttrs: _oldAttrs: {
     version = "0.1.8";
 

@@ -2,7 +2,7 @@
 
 let
   home = "/home/agent";
-  corePathPackages = with pkgs; [
+  agentPath = with pkgs; [
     bash
     coreutils
     findutils
@@ -14,8 +14,6 @@ let
     procps
     sqlite
     which
-  ];
-  agentRuntimePackages = with pkgs; [
     curl
     diffutils
     ripgrep
@@ -39,7 +37,7 @@ let
     codex-acp
   ];
 
-  makePath = packages: pkgs.lib.makeBinPath (corePathPackages ++ packages);
+  makePath = extra: pkgs.lib.makeBinPath (agentPath ++ extra);
 in {
   inherit home;
 
@@ -57,14 +55,15 @@ in {
     ReadWritePaths = [ "/home/agent" "/workspace" ];
   };
 
-  path = makePath;
-  runtimePath = extraPackages: makePath (agentRuntimePackages ++ extraPackages);
+  runtimePath = makePath;
 
   env = {
     extra ? [ ],
     pathPackages ? [ ],
     useRuntimePath ? true,
   }:
+    assert pkgs.lib.assertMsg (useRuntimePath || pathPackages == [ ])
+      "agent-service.env: pathPackages was set but useRuntimePath = false, so it would be silently dropped";
     [
       "HOME=${home}"
       "USER=agent"
@@ -72,5 +71,5 @@ in {
     ]
     ++ extra
     ++ pkgs.lib.optional useRuntimePath
-      "PATH=${home}/.local/bin:${home}/.bun/bin:${makePath (agentRuntimePackages ++ pathPackages)}";
+      "PATH=${home}/.local/bin:${home}/.bun/bin:${makePath pathPackages}";
 }

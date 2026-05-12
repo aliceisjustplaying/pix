@@ -27,18 +27,18 @@ in {
 
     serviceConfig = agentService.serviceDefaults // {
       WorkingDirectory = "/workspace";
-      Environment = [
-        "HOME=${agentHome}"
-        "USER=agent"
-        "PYTHONUNBUFFERED=1"
-        "HERMES_HOME=${hermesHome}"
-        "HERMES_WEBUI_HOST=0.0.0.0"
-        "HERMES_WEBUI_PORT=${toString port}"
-        "HERMES_WEBUI_STATE_DIR=${webuiState}"
-        "HERMES_WEBUI_AGENT_DIR=/workspace/src/hermes-live"
-        "HERMES_WEBUI_PYTHON=${hermesHome}/venv/bin/python"
-        "HERMES_WEBUI_DEFAULT_WORKSPACE=${agentHome}"
-      ];
+      Environment = agentService.env {
+        extra = [
+          "PYTHONUNBUFFERED=1"
+          "HERMES_HOME=${hermesHome}"
+          "HERMES_WEBUI_HOST=0.0.0.0"
+          "HERMES_WEBUI_PORT=${toString port}"
+          "HERMES_WEBUI_STATE_DIR=${webuiState}"
+          "HERMES_WEBUI_AGENT_DIR=/workspace/src/hermes-live"
+          "HERMES_WEBUI_PYTHON=${hermesHome}/venv/bin/python"
+          "HERMES_WEBUI_DEFAULT_WORKSPACE=${agentHome}"
+        ];
+      };
       ExecStartPre = bootstrap;
       ExecStart = "${hermesHome}/venv/bin/python ${webuiRepo}/server.py";
       RestartSec = "10s";

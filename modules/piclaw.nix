@@ -74,6 +74,7 @@ in {
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
+    unitConfig.ConditionPathExists = "/workspace/src/camofox-browser/server.js";
 
     serviceConfig = {
       Type = "simple";

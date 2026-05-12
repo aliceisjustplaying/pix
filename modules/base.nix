@@ -32,6 +32,9 @@ in
       nix
     ];
     serviceConfig.Type = "oneshot";
+    # `nix-store --optimise` is intentionally absent here: `nix.optimise.automatic`
+    # already runs it on its own timer. We only want extra GC pressure when the
+    # disk is actually filling up, not extra hardlink churn.
     script = ''
       set -euo pipefail
 
@@ -45,11 +48,10 @@ in
 
       echo "root has only $available bytes free; running Nix garbage collection"
       nix-collect-garbage --delete-older-than 7d
-      nix-store --optimise
 
       available_after="$(df -PB1 / | awk 'NR == 2 { print $4 }')"
       if [ "$available_after" -lt "$min_free" ]; then
-        echo "root still has only $available_after bytes free after cleanup"
+        echo "root still has only $available_after bytes free after cleanup (floor: $min_free)" >&2
         exit 1
       fi
 

@@ -67,36 +67,20 @@ in
   security.sudo.extraRules = [
     {
       users = [ "agent" ];
-      commands = [
-        {
-          command = "/run/current-system/sw/bin/systemctl start --no-block pix-rebuild.service";
+      commands = map
+        (unit: {
+          command = "/run/current-system/sw/bin/systemctl start --no-block ${unit}.service";
           options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl start --no-block piclaw-update.service";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl start --no-block piclaw-update-force.service";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl start --no-block piclaw-rollback.service";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl start --no-block piclaw-rollback-force.service";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl start --no-block piclaw-restart.service";
-          options = [ "NOPASSWD" ];
-        }
-        {
-          command = "/run/current-system/sw/bin/systemctl start --no-block restic-backups-r2.service";
-          options = [ "NOPASSWD" ];
-        }
-      ];
+        })
+        [
+          "pix-rebuild"
+          "piclaw-update"
+          "piclaw-update-force"
+          "piclaw-rollback"
+          "piclaw-rollback-force"
+          "piclaw-restart"
+          "restic-backups-r2"
+        ];
     }
   ];
 }

@@ -1,8 +1,5 @@
-{ lib, modulesPath, ... }:
+{ modulesPath, ... }:
 let
-  # Set this to false after Tailscale works and you have verified SSH over the tailnet.
-  publicSshBootstrap = false;
-
   operatorKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+aS2lsR/vsc46amWdsUXGEFuEARJaz3yGAFtVePQuE operator";
   pixKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIASGKGmqo6Inrjo5Vy1z9iS4NKPB6kX8nXiluyjJ8bMe pix.mosphere.at";
 in {
@@ -50,10 +47,9 @@ in {
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = lib.optionals publicSshBootstrap [ 22 ];
     interfaces.tailscale0.allowedTCPPorts = [ 22 80 443 ];
-    # tsshd UDP range. Matches Rootshell tssh's default --port 61000-61999.
-    interfaces.tailscale0.allowedUDPPortRanges = [ { from = 61000; to = 61999; } ];
+    # tsshd UDP range. Starts at 61001 to avoid overlapping mosh (60000-61000).
+    interfaces.tailscale0.allowedUDPPortRanges = [ { from = 61001; to = 61999; } ];
   };
 
   home-manager = {
