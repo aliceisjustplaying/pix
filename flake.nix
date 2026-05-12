@@ -59,7 +59,7 @@
       cli-proxy-api = final.callPackage ./pkgs/cli-proxy-api.nix { };
       codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
       droid = final.callPackage ./pkgs/droid.nix { };
-      portless = final.callPackage ./pkgs/portless.nix { };
+      portless = final.callPackage ./pkgs/portless { };
       inherit (unstablePkgs)
         bun
         fastfetch
@@ -73,14 +73,17 @@
         ;
       tsshd = final.callPackage ./pkgs/tsshd.nix { tsshd = unstablePkgs.tsshd; };
     };
-  in rec {
-    packages.${system} = let
-      pkgs = import nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-        overlays = [ hostOverlay ];
-      };
-    in {
+    pkgs = import nixpkgs {
+      inherit system;
+      config.allowUnfree = true;
+      overlays = [
+        claude-code.overlays.default
+        codex-cli.overlays.default
+        hostOverlay
+      ];
+    };
+  in {
+    packages.${system} = {
       inherit (pkgs)
         amp-code
         claude-code-acp
@@ -95,14 +98,7 @@
       inherit system;
       specialArgs = { inherit inputs; };
       modules = [
-        {
-          nixpkgs.config.allowUnfree = true;
-          nixpkgs.overlays = [
-            claude-code.overlays.default
-            codex-cli.overlays.default
-            hostOverlay
-          ];
-        }
+        { nixpkgs.pkgs = pkgs; }
         disko.nixosModules.disko
         sops-nix.nixosModules.sops
         home-manager.nixosModules.home-manager

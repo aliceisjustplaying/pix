@@ -4,7 +4,6 @@ buildNpmPackage rec {
   pname = "codex-acp";
   version = "0.0.44";
 
-  inherit nodejs_24;
   nodejs = nodejs_24;
 
   src = fetchurl {

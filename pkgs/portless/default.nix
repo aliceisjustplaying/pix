@@ -10,6 +10,9 @@
   sudo,
 }:
 
+let
+  runtimePath = lib.makeBinPath [ openssl lsof avahi tailscale sudo ];
+in
 stdenvNoCC.mkDerivation rec {
   pname = "portless";
   version = "0.13.0";
@@ -33,29 +36,14 @@ stdenvNoCC.mkDerivation rec {
       --replace-fail 'server.listen(proxyPort, () => {' \
         'server.listen(proxyPort, process.env.PORTLESS_BIND_HOST || undefined, () => {'
 
-    cat > "$out/bin/portless" <<EOF
-    #!${stdenvNoCC.shell}
-    export PATH="${lib.makeBinPath [ openssl lsof avahi tailscale sudo ]}:\$PATH"
-
-    if [ -z "\''${PORTLESS_LAN_IP:-}" ]; then
-      portless_tailscale_ip="\$(tailscale ip -4 2>/dev/null | head -n 1 || true)"
-      if [ -n "\$portless_tailscale_ip" ]; then
-        export PORTLESS_LAN_IP="\$portless_tailscale_ip"
-      fi
-    fi
-
-    if [ -n "\''${PORTLESS_LAN_IP:-}" ]; then
-      export PORTLESS_LAN="\''${PORTLESS_LAN:-1}"
-      export PORTLESS_TLD="\''${PORTLESS_TLD:-local}"
-      export PORTLESS_HTTPS="\''${PORTLESS_HTTPS:-0}"
-    fi
-
-    if [ -n "\''${PORTLESS_LAN_IP:-}" ] && [ -z "\''${PORTLESS_BIND_HOST:-}" ]; then
-      export PORTLESS_BIND_HOST="\$PORTLESS_LAN_IP"
-    fi
-
-    exec ${nodejs_24}/bin/node "$out/libexec/portless/dist/cli.js" "\$@"
-    EOF
+    # Render the wrapper at install time so @libexec@ can resolve to *this*
+    # derivation's $out (a separate `replaceVars` derivation would point at
+    # its own store path instead).
+    substitute ${./wrapper.sh} "$out/bin/portless" \
+      --subst-var-by shell ${stdenvNoCC.shell} \
+      --subst-var-by runtimePath ${lib.escapeShellArg runtimePath} \
+      --subst-var-by node ${nodejs_24}/bin/node \
+      --subst-var-by libexec "$out/libexec/portless"
     chmod +x "$out/bin/portless"
 
     runHook postInstall

@@ -12,7 +12,7 @@
 #       * portless        (npm: portless,                           sha256)
 #
 # Excluded on purpose:
-#   - tsshd is firewall-pinned (UDP 61000-61999) and lives inside overrideAttrs;
+#   - tsshd is firewall-pinned (UDP 61001-61999) and lives inside overrideAttrs;
 #     bump it manually.
 #
 # Validates the result with `nix build` of every package before exiting.
@@ -47,8 +47,14 @@ nix_field() {
 # Replace the single `<field> = "...";` assignment in a .nix file.
 # Fails fast when the match count isn't exactly 1.
 replace_field() {
-	local file=$1 field=$2 new=$3 count
-	count=$(grep -c -E "^[[:space:]]*${field} = \"[^\"]+\";" "$file" || true)
+	local file=$1 field=$2 new=$3 count rc
+	[[ -f $file ]] || die "$file: no such file"
+	# grep -c returns 0 with matches, 1 with none, 2+ on real error. We tolerate
+	# 0 and 1 here (the count==1 check below is what enforces correctness) but
+	# fail loud on rc>=2 so a busted regex or unreadable file doesn't silently
+	# become "0 matches".
+	count=$(grep -c -E "^[[:space:]]*${field} = \"[^\"]+\";" "$file") && rc=0 || rc=$?
+	[[ $rc -le 1 ]] || die "$file: grep failed (rc=$rc) reading field '${field}'"
 	[[ $count -eq 1 ]] || die "$file: expected exactly one '${field}' line, got $count"
 	sed -i -E "s|^([[:space:]]*)${field} = \"[^\"]+\";|\\1${field} = \"${new}\";|" "$file"
 }
@@ -105,15 +111,14 @@ regen_lockfile() {
 	local npm_pkg=$1 version=$2 dest=$3 url tmp
 	url=$(npm_tarball_url "$npm_pkg" "$version")
 	tmp=$(mktemp -d)
+	trap 'rm -rf "$tmp"' RETURN
+	curl -fsSL "$url" -o "$tmp/pkg.tgz"
+	tar -xzf "$tmp/pkg.tgz" -C "$tmp"
 	(
-		set -euo pipefail
-		curl -fsSL "$url" -o "$tmp/pkg.tgz"
-		tar -xzf "$tmp/pkg.tgz" -C "$tmp"
 		cd "$tmp/package"
 		npm install --min-release-age=0 --package-lock-only --ignore-scripts --no-audit --no-fund --silent
-		cp package-lock.json "$repo/$dest"
 	)
-	rm -rf "$tmp"
+	cp "$tmp/package/package-lock.json" "$repo/$dest"
 }
 
 # npm package with an externally bundled package-lock.json (buildNpmPackage
@@ -160,7 +165,7 @@ main() {
 	update_npm pkgs/droid.nix '@factory/cli-linux-arm64' sha512
 
 	log "portless"
-	update_npm pkgs/portless.nix portless sha256
+	update_npm pkgs/portless/default.nix portless sha256
 
 	log "claude-code-acp"
 	update_npm_with_lockfile claude-code-acp \
