@@ -1,5 +1,6 @@
 { pkgs, ... }:
 let
+  gib = size: size * 1024 * 1024 * 1024;
   wranglerLatest = pkgs.writeShellApplication {
     name = "wrangler";
     runtimeInputs = [ pkgs.nodejs ];
@@ -10,16 +11,61 @@ in
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
+    min-free = gib 10;
+    max-free = gib 20;
     trusted-users = [ "root" "@wheel" ];
   };
 
   nix.gc = {
     automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 14d";
+    dates = "daily";
+    options = "--delete-older-than 7d";
   };
 
   nix.optimise.automatic = true;
+
+  systemd.services.nix-disk-guard = {
+    description = "Run Nix garbage collection when root disk space is low";
+    path = with pkgs; [
+      coreutils
+      gawk
+      nix
+    ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      set -euo pipefail
+
+      min_free=${toString (gib 12)}
+      available="$(df -PB1 / | awk 'NR == 2 { print $4 }')"
+
+      if [ "$available" -ge "$min_free" ]; then
+        echo "root has $available bytes free; no cleanup needed"
+        exit 0
+      fi
+
+      echo "root has only $available bytes free; running Nix garbage collection"
+      nix-collect-garbage --delete-older-than 7d
+      nix-store --optimise
+
+      available_after="$(df -PB1 / | awk 'NR == 2 { print $4 }')"
+      if [ "$available_after" -lt "$min_free" ]; then
+        echo "root still has only $available_after bytes free after cleanup"
+        exit 1
+      fi
+
+      echo "root has $available_after bytes free after cleanup"
+    '';
+  };
+
+  systemd.timers.nix-disk-guard = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "15min";
+      OnUnitActiveSec = "30min";
+      AccuracySec = "5min";
+      Persistent = true;
+    };
+  };
 
   boot.loader = {
     efi.canTouchEfiVariables = false;
