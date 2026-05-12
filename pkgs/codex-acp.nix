@@ -16,7 +16,7 @@ buildNpmPackage rec {
     cp ${./codex-acp-package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-1VpnhxZ3lzxZ6lhcyh0EUplZ6F3ZMSa3a3Vi1s5ElPo=";
+  npmDepsHash = "sha256-CWPb3btg+Zjw0xLIWWRFkeZZVJQjM17LnNcIMDi7Q3Y=";
 
   dontNpmBuild = true;
 
