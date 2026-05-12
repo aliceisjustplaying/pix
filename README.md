@@ -79,6 +79,7 @@ These commands are installed for `agent` under `~/.local/bin` by Home Manager. T
 - `backup` — start `restic-backups-r2.service`.
 - `host-result <unit> --wait <seconds>` — wait for a queued host job and print recent journal output.
 - `verify-deploy` — run the PiClaw deploy verifier locally without activating a candidate.
+- `dependency-freshness` — fail if checked Nix flake/fetcher pins are newer than 24 hours; npm, Bun, uv, and Cargo use native or registry-level age-gate config.
 - `piclaw-status`, `piclaw-logs` — SSH wrappers for `systemctl status` / `journalctl -u piclaw`.
 - `nfu` — update Nix flake inputs with repo-specific helper logic.
 - `hermes` — wrapper for the live Hermes install under `/workspace/.hermes`.

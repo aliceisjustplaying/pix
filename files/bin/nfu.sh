@@ -16,6 +16,9 @@
 #     bump it manually.
 #
 # Validates the result with `nix build` of every package before exiting.
+# npm, Bun, and uv have native resolver age gates in user config. This script
+# still refuses Nix/GitHub pins newer than 24 hours unless explicitly
+# bypassed with PIX_ALLOW_FRESH_DEPS=1 and PIX_FRESH_DEPS_REASON=...
 # Pair with `rebuild` (or use the `nfur` alias) to actually deploy.
 
 set -euo pipefail
@@ -107,7 +110,7 @@ regen_lockfile() {
 		curl -fsSL "$url" -o "$tmp/pkg.tgz"
 		tar -xzf "$tmp/pkg.tgz" -C "$tmp"
 		cd "$tmp/package"
-		npm install --package-lock-only --ignore-scripts --no-audit --no-fund --silent
+		npm install --min-release-age=0 --package-lock-only --ignore-scripts --no-audit --no-fund --silent
 		cp package-lock.json "$repo/$dest"
 	)
 	rm -rf "$tmp"
@@ -173,6 +176,9 @@ main() {
 
 	log "cli-proxy-api"
 	update_go_github cli-proxy-api pkgs/cli-proxy-api.nix router-for-me CLIProxyAPI
+
+	log "checking dependency freshness"
+	./scripts/check-dependency-freshness.py
 
 	log "validating builds"
 	nix "${NIX_FLAGS[@]}" build \

@@ -1,0 +1,18 @@
+[registries.menhera-cooldown]
+index = "sparse+https://index.crates.menhera.org/1d/"
+
+[registry]
+default = "menhera-cooldown"
+
+[source.crates-io]
+replace-with = "menhera-cooldown"
+
+[source.menhera-cooldown]
+registry = "sparse+https://index.crates.menhera.org/1d/"
+
+[alias]
+publish-crates-io = [
+  "publish",
+  "--config",
+  "registry.default = \"crates-io\"",
+]

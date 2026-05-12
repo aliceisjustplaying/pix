@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import re
+import sys
+import urllib.parse
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+DEFAULT_MIN_AGE_HOURS = 24
+EXEMPT_RE = re.compile(r"(claude|codex)", re.IGNORECASE)
+NPM_REGISTRY = "https://registry.npmjs.org"
+
+
+class Registry:
+    def __init__(self):
+        self._cache = {}
+
+    def json(self, url):
+        if url not in self._cache:
+            request = urllib.request.Request(url, headers={"Accept": "application/json"})
+            with urllib.request.urlopen(request, timeout=20) as response:
+                self._cache[url] = json.load(response)
+        return self._cache[url]
+
+
+def parse_rfc3339(value):
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    return datetime.fromisoformat(value).astimezone(timezone.utc)
+
+
+def age_hours(dt, now):
+    return (now - dt).total_seconds() / 3600
+
+
+def is_exempt(*parts):
+    return any(EXEMPT_RE.search(str(part or "")) for part in parts)
+
+
+def npm_publish_time(registry, package, version):
+    encoded = urllib.parse.quote(package, safe="@")
+    metadata = registry.json(f"{NPM_REGISTRY}/{encoded}")
+    published = metadata.get("time", {}).get(version)
+    if not published:
+        raise RuntimeError(f"npm:{package}@{version}: missing publish time")
+    return parse_rfc3339(published)
+
+
+def iter_nix_npm_fetches(repo):
+    version_re = re.compile(r'^\s*version = "([^"]+)";', re.MULTILINE)
+    url_re = re.compile(r'https://registry\.npmjs\.org/([^"\s]+)/-/[^"\s]+-\$\{version\}\.tgz')
+    for path in sorted((repo / "pkgs").glob("*.nix")):
+        rel = path.relative_to(repo).as_posix()
+        text = path.read_text(encoding="utf-8")
+        version_match = version_re.search(text)
+        url_match = url_re.search(text)
+        if not version_match or not url_match:
+            continue
+        version = version_match.group(1)
+        package = urllib.parse.unquote(url_match.group(1))
+        yield {
+            "kind": "nix-npm",
+            "name": f"{package}@{version}",
+            "source": rel,
+            "exempt": is_exempt(rel, package),
+            "published": lambda registry, p=package, v=version: npm_publish_time(registry, p, v),
+        }
+
+
+def iter_flake_inputs(repo):
+    lock_path = repo / "flake.lock"
+    if not lock_path.exists():
+        return
+    with lock_path.open(encoding="utf-8") as f:
+        lock = json.load(f)
+    for name, node in lock.get("nodes", {}).items():
+        locked = node.get("locked", {})
+        last_modified = locked.get("lastModified")
+        if not isinstance(last_modified, int):
+            continue
+        owner = locked.get("owner")
+        repo_name = locked.get("repo")
+        rev = locked.get("rev", "")
+        label = name
+        if owner and repo_name:
+            label = f"{name} ({owner}/{repo_name}@{rev[:12]})"
+        yield {
+            "kind": "flake",
+            "name": label,
+            "source": "flake.lock",
+            "exempt": is_exempt(name, owner, repo_name),
+            "published": lambda _registry, lm=last_modified: datetime.fromtimestamp(lm, timezone.utc),
+        }
+
+
+def nix_attr(text, field):
+    match = re.search(rf'^\s*{re.escape(field)} = "([^"]+)";', text, re.MULTILINE)
+    return match.group(1) if match else None
+
+
+def iter_nix_github_fetches(repo):
+    owner_re = re.compile(r'^\s*owner = "([^"]+)";', re.MULTILINE)
+    repo_re = re.compile(r'^\s*repo = "([^"]+)";', re.MULTILINE)
+    for path in sorted((repo / "pkgs").glob("*.nix")):
+        rel = path.relative_to(repo).as_posix()
+        text = path.read_text(encoding="utf-8")
+        if "fetchFromGitHub" not in text:
+            continue
+        owner_match = owner_re.search(text)
+        repo_match = repo_re.search(text)
+        version = nix_attr(text, "version")
+        if not owner_match or not repo_match or not version:
+            continue
+        owner = owner_match.group(1)
+        repo_name = repo_match.group(1)
+        rev = f"v{version}"
+        yield {
+            "kind": "nix-github",
+            "name": f"{owner}/{repo_name}@{rev}",
+            "source": rel,
+            "exempt": is_exempt(rel, owner, repo_name),
+            "published": lambda registry, o=owner, r=repo_name, ref=rev: github_commit_time(registry, o, r, ref),
+        }
+
+
+def github_commit_time(registry, owner, repo_name, ref):
+    metadata = registry.json(f"https://api.github.com/repos/{owner}/{repo_name}/commits/{ref}")
+    date = metadata.get("commit", {}).get("committer", {}).get("date")
+    if not date:
+        raise RuntimeError(f"github:{owner}/{repo_name}@{ref}: missing commit date")
+    return parse_rfc3339(date)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Block dependency pins that are too new.")
+    parser.add_argument("--repo", default=".", help="repository root")
+    parser.add_argument(
+        "--min-age-hours",
+        type=float,
+        default=float(os.environ.get("PIX_DEPENDENCY_MIN_AGE_HOURS", DEFAULT_MIN_AGE_HOURS)),
+    )
+    parser.add_argument(
+        "--allow-fresh",
+        action="store_true",
+        default=bool(os.environ.get("PIX_ALLOW_FRESH_DEPS")),
+        help="report fresh dependencies but exit successfully",
+    )
+    parser.add_argument(
+        "--reason",
+        default=os.environ.get("PIX_FRESH_DEPS_REASON", ""),
+        help="reason for allowing fresh dependencies",
+    )
+    args = parser.parse_args()
+
+    if args.allow_fresh and not args.reason:
+        print("fresh dependency bypass requires --reason or PIX_FRESH_DEPS_REASON", file=sys.stderr)
+        return 2
+
+    repo = Path(args.repo).resolve()
+    registry = Registry()
+    now = datetime.now(timezone.utc)
+    fresh = []
+    checked = 0
+    exempt = 0
+
+    entries = []
+    entries.extend(iter_flake_inputs(repo))
+    entries.extend(iter_nix_npm_fetches(repo))
+    entries.extend(iter_nix_github_fetches(repo))
+
+    seen = set()
+    for entry in entries:
+        key = (entry["kind"], entry["name"], entry["source"])
+        if key in seen:
+            continue
+        seen.add(key)
+        if entry["exempt"]:
+            exempt += 1
+            continue
+        checked += 1
+        try:
+            published = entry["published"](registry)
+        except Exception as exc:
+            print(f"freshness check failed for {entry['source']} {entry['name']}: {exc}", file=sys.stderr)
+            return 2
+        hours = age_hours(published, now)
+        if hours < args.min_age_hours:
+            fresh.append((entry, published, hours))
+
+    if fresh:
+        print(f"dependencies newer than {args.min_age_hours:g}h:")
+        for entry, published, hours in fresh:
+            print(
+                f"- {entry['source']}: {entry['name']} "
+                f"published {published.isoformat()} ({hours:.1f}h old)"
+            )
+        if args.allow_fresh:
+            print(f"fresh dependency bypassed: {args.reason}")
+            return 0
+        return 1
+
+    print(f"dependency freshness ok: checked {checked}, exempted {exempt}, floor {args.min_age_hours:g}h")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

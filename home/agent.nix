@@ -20,6 +20,7 @@ let
     rollback = binStatic "rollback";
     verify-deploy = binSrc "verify-deploy" { inherit workspaceSrc; };
     nfu = binStatic "nfu";
+    dependency-freshness = binStatic "dependency-freshness";
     piclaw-restart = binStatic "piclaw-restart";
     piclaw-status = binStatic "piclaw-status";
     piclaw-logs = binStatic "piclaw-logs";
@@ -175,7 +176,13 @@ in {
       };
     })
     binFiles // {
-      ".npmrc".text = "prefix=${home}/.local";
+      ".npmrc".text = ''
+        prefix=${home}/.local
+        min-release-age=1
+      '';
+      ".bunfig.toml".source = ../files/bunfig.toml;
+      ".cargo/config.toml".source = ../files/cargo/config.toml;
+      ".config/uv/uv.toml".source = ../files/uv/uv.toml;
       ".factory/settings.json".text = factorySettings;
       ".config/amp/settings.json".text = ampSettings;
       ".cli-proxy-api/config.yaml".text = cliProxyApiConfig;
