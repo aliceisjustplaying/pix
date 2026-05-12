@@ -64,8 +64,10 @@ Local deploy commands (declared in `pix/home/agent.nix`, installed under `~/.loc
 - `piclaw-status`, `piclaw-logs` — SSH wrappers for `systemctl status` / `journalctl -u piclaw` on the host.
 - `host-result <unit>` — wait for a named host job unit and print its recent journal; use this after any queued job, especially jobs that may kill the current agent process.
 - `backup` — start `restic-backups-r2.service`.
+- `dependency-freshness` — check Nix flake/fetcher pins for minimum age and registry/API verification.
+- `nfu` — update flake inputs and pinned package wrappers, then run freshness and package-build validation.
 
-Shell aliases (bash): `sync-nix` = `rebuild`; `update-force` = `update --force`; `rollback-force` = `rollback`.
+Shell aliases (bash): `sync-nix` = `rebuild`; `update-force` = `update --force`; `rollback-force` = `rollback --force`.
 
 `rebuild`, `update`, `rollback`, `piclaw-restart`, and `backup` are asynchronous: they call `sudo systemctl start --no-block <unit>` for a fixed set of NixOS-declared oneshot units. Sudo is scoped to those exact start commands in `modules/host-jobs.nix`. Use `host-result <unit> --wait 900` to watch completion; for jobs that restart Piclaw, run `host-result piclaw-restart --wait 120` once the agent reconnects.
 

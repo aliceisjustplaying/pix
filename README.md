@@ -10,11 +10,11 @@ This repo owns the host/platform layer: NixOS modules, Home Manager config for t
 - `hosts/pix/default.nix` — host composition, firewall, SSH policy, Tailscale/Cloudflare/PiClaw/Hermes/Plausible imports.
 - `disko/pix.nix` — one-disk layout for nixos-anywhere installs.
 - `modules/` — NixOS modules for base OS, browser runtime, Tailscale, Cloudflare Tunnel, PiClaw, Hermes, Hermes WebUI, host jobs, bsky boost cron, Plausible, and restic backups.
-- `home/agent.nix` — Home Manager config for `agent`: packages, shell aliases, helper commands, Factory/Amp/CLI proxy settings, Git/SSH, and tmux.
+- `home/agent.nix`, `home/agent/` — Home Manager entry point and focused modules for `agent`: packages, shell aliases, helper commands, model/tool settings, Git/SSH, tmux, and user services.
 - `lib/` — shared Nix helpers, including agent service defaults and template rendering.
 - `pkgs/` — local package definitions/wrappers for Amp, CLIProxyAPI, Codex ACP, Claude Code ACP, Droid, Portless, and tsshd.
 - `files/` — rendered runtime files: helper scripts, service bootstraps, prompt/config overlays, cron entries, SOPS templates, Caddy config, and tool settings.
-- `scripts/` — install/bootstrap scripts (`deploy.sh`, `prepare-bootstrap-key.sh`).
+- `scripts/` — bootstrap and validation scripts, including dependency freshness checks.
 - `secrets/`, `.sops.yaml`, `keys/` — SOPS policy, encrypted runtime secrets, bootstrap key material, and local public keys.
 - `INSTALL.md` — first-deploy and day-2 runbook.
 - `SECRETS-CHECKLIST.md` — required SOPS secret inventory and generation notes.
@@ -26,7 +26,7 @@ Nix owns the host/platform layer:
 
 - NixOS stable `25.11` on `aarch64-linux`, latest kernel, bootloader, swap, journald policy, base packages, and garbage collection.
 - The `agent` user, `/workspace` symlink, `/workspace/src`, `/workspace/.pi`, `/workspace/.hermes`, and service state directories.
-- SSH access policy: public SSH is disabled after bootstrap; admin access is via Tailscale. Tailnet firewall allows SSH plus selected internal web ports.
+- SSH access policy: public SSH is disabled after bootstrap; admin access is via Tailscale. Tailnet firewall allows SSH, selected internal web ports, and tsshd UDP `61001-61999`.
 - Cloudflare Tunnel for `pix.mosphere.at` → local PiClaw on `127.0.0.1:8080`.
 - `piclaw.service`, running from `/workspace/src/piclaw-live` via Bun. The live checkout is managed by `piclaw-customizations`.
 - `hermes-gateway.service`, bootstrapping `/workspace/src/hermes-live` into `/workspace/.hermes/venv` and running `hermes gateway run --replace`.
@@ -79,13 +79,15 @@ These commands are installed for `agent` under `~/.local/bin` by Home Manager. T
 - `backup` — start `restic-backups-r2.service`.
 - `host-result <unit> --wait <seconds>` — wait for a queued host job and print recent journal output.
 - `verify-deploy` — run the PiClaw deploy verifier locally without activating a candidate.
-- `dependency-freshness` — fail if checked Nix flake/fetcher pins are newer than 24 hours; npm, Bun, uv, and Cargo use native or registry-level age-gate config.
+- `dependency-freshness` — fail if checked Nix flake/fetcher pins are newer than 24 hours or cannot be verified. Fresh dependency bypasses require an explicit reason and do not bypass verification errors.
 - `piclaw-status`, `piclaw-logs` — SSH wrappers for `systemctl status` / `journalctl -u piclaw`.
-- `nfu` — update Nix flake inputs with repo-specific helper logic.
+- `nfu` — update flake inputs and pinned package wrappers, run dependency freshness checks, and build the exported package set.
 - `hermes` — wrapper for the live Hermes install under `/workspace/.hermes`.
 - `amp-login-proxy`, `amp-login-upstream` — Amp OAuth login helpers for proxied/upstream flows.
 
 Any action that activates a new host or PiClaw runtime (`rebuild`, `update`, `rollback`, `piclaw-restart`, `backup`, direct systemd starts, etc.) should be approved in the current conversation before running.
+
+Shell aliases: `sync-nix` = `rebuild`, `update-force` = `update --force`, `rollback-force` = `rollback --force`.
 
 ## Key defaults
 
@@ -100,6 +102,7 @@ Any action that activates a new host or PiClaw runtime (`rebuild`, `update`, `ro
 - The Piclaw service runs with `ProtectSystem=strict`; host-level changes go through declared host job units.
 - Browser/UI validation uses `agent-browser`; Chromium and browser runtime libraries are provided by Nix.
 - Persistent host/agent tooling should be added to Nix/Home Manager here, not installed with one-off package-manager commands.
+- npm/pnpm/Bun/uv/Cargo dependency installs use release-age gates from managed config; `nfu` also checks Nix flake/fetcher pins before building packages.
 
 ## Backups
 
