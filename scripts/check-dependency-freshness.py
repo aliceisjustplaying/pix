@@ -11,7 +11,10 @@ from pathlib import Path
 
 
 DEFAULT_MIN_AGE_HOURS = 24
-EXEMPT_RE = re.compile(r"(claude|codex)", re.IGNORECASE)
+# Anchored: identifier must start with claude/codex, allowing an npm scope first.
+# We deliberately do NOT match file paths — "pkgs/claude-utils-fork.nix" should
+# not exempt an unrelated package.
+EXEMPT_RE = re.compile(r"^(@[^/]+/)?(claude|codex)", re.IGNORECASE)
 NPM_REGISTRY = "https://registry.npmjs.org"
 
 
@@ -50,10 +53,18 @@ def npm_publish_time(registry, package, version):
     return parse_rfc3339(published)
 
 
+def iter_package_nix(repo):
+    # Picks up both pkgs/<name>.nix and pkgs/<name>/default.nix so subdir
+    # packages (e.g. claude-code-acp, portless) aren't silently skipped.
+    pkgs_dir = repo / "pkgs"
+    yield from sorted(pkgs_dir.glob("*.nix"))
+    yield from sorted(pkgs_dir.glob("*/default.nix"))
+
+
 def iter_nix_npm_fetches(repo):
     version_re = re.compile(r'^\s*version = "([^"]+)";', re.MULTILINE)
     url_re = re.compile(r'https://registry\.npmjs\.org/([^"\s]+)/-/[^"\s]+-\$\{version\}\.tgz')
-    for path in sorted((repo / "pkgs").glob("*.nix")):
+    for path in iter_package_nix(repo):
         rel = path.relative_to(repo).as_posix()
         text = path.read_text(encoding="utf-8")
         version_match = version_re.search(text)
@@ -66,7 +77,7 @@ def iter_nix_npm_fetches(repo):
             "kind": "nix-npm",
             "name": f"{package}@{version}",
             "source": rel,
-            "exempt": is_exempt(rel, package),
+            "exempt": is_exempt(package),
             "published": lambda registry, p=package, v=version: npm_publish_time(registry, p, v),
         }
 
@@ -105,7 +116,7 @@ def nix_attr(text, field):
 def iter_nix_github_fetches(repo):
     owner_re = re.compile(r'^\s*owner = "([^"]+)";', re.MULTILINE)
     repo_re = re.compile(r'^\s*repo = "([^"]+)";', re.MULTILINE)
-    for path in sorted((repo / "pkgs").glob("*.nix")):
+    for path in iter_package_nix(repo):
         rel = path.relative_to(repo).as_posix()
         text = path.read_text(encoding="utf-8")
         if "fetchFromGitHub" not in text:
@@ -122,7 +133,7 @@ def iter_nix_github_fetches(repo):
             "kind": "nix-github",
             "name": f"{owner}/{repo_name}@{rev}",
             "source": rel,
-            "exempt": is_exempt(rel, owner, repo_name),
+            "exempt": is_exempt(owner, repo_name),
             "published": lambda registry, o=owner, r=repo_name, ref=rev: github_commit_time(registry, o, r, ref),
         }
 
@@ -164,6 +175,7 @@ def main():
     registry = Registry()
     now = datetime.now(timezone.utc)
     fresh = []
+    errors = []
     checked = 0
     exempt = 0
 
@@ -185,11 +197,20 @@ def main():
         try:
             published = entry["published"](registry)
         except Exception as exc:
-            print(f"freshness check failed for {entry['source']} {entry['name']}: {exc}", file=sys.stderr)
-            return 2
+            print(
+                f"freshness check failed for {entry['source']} {entry['name']}: {exc}",
+                file=sys.stderr,
+            )
+            errors.append(entry)
+            continue
         hours = age_hours(published, now)
         if hours < args.min_age_hours:
             fresh.append((entry, published, hours))
+
+    if errors:
+        print("dependencies could not be verified:", file=sys.stderr)
+        for entry in errors:
+            print(f"- {entry['source']}: {entry['name']}", file=sys.stderr)
 
     if fresh:
         print(f"dependencies newer than {args.min_age_hours:g}h:")
@@ -198,6 +219,9 @@ def main():
                 f"- {entry['source']}: {entry['name']} "
                 f"published {published.isoformat()} ({hours:.1f}h old)"
             )
+    if fresh or errors:
+        if errors:
+            return 2
         if args.allow_fresh:
             print(f"fresh dependency bypassed: {args.reason}")
             return 0
