@@ -24,6 +24,12 @@
         identitiesOnly = true;
         extraOptions.StrictHostKeyChecking = "accept-new";
       };
+      "tangled.org" = {
+        user = "git";
+        identityFile = "~/.ssh/id_ed25519_github";
+        identitiesOnly = true;
+        extraOptions.StrictHostKeyChecking = "accept-new";
+      };
       "localhost" = {
         user = "agent";
         identityFile = "~/.ssh/id_ed25519_local";
