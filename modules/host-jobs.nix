@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 let
   agentHome = "/home/agent";
@@ -35,7 +35,10 @@ in
   systemd.services.pix-rebuild = hostJob {
     description = "Rebuild Pix NixOS configuration";
     timeout = "60min";
-    script = tmpl ../files/host-jobs/pix-rebuild.sh { inherit agentHome workspaceSrc; };
+    script = tmpl ../files/host-jobs/pix-rebuild.sh {
+      inherit agentHome workspaceSrc;
+      flakeAttr = config.networking.hostName;
+    };
   };
 
   systemd.services.piclaw-update = hostJob {

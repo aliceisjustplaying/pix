@@ -8,7 +8,7 @@
 #       * claude-code-acp (npm: @zed-industries/claude-code-acp,    sha256, +lockfile)
 #       * cli-proxy-api   (github: router-for-me/CLIProxyAPI,       Go vendorHash)
 #       * codex-acp       (npm: @agentclientprotocol/codex-acp,     sha512, +lockfile)
-#       * droid           (npm: @factory/cli-linux-arm64,           sha512)
+#       * droid           (npm: @factory/cli-linux-{arm64,x64},     sha512)
 #       * portless        (npm: portless,                           sha256)
 #
 # Excluded on purpose:
@@ -91,6 +91,20 @@ update_npm() {
 	log "$(basename "$nix_file" .nix): $cur -> $new"
 }
 
+update_droid() {
+	local nix_file=pkgs/droid.nix cur new arm64_url x64_url arm64_sri x64_sri
+	cur=$(nix_field "$nix_file" version)
+	new=$(npm_latest_version '@factory/cli-linux-arm64')
+	arm64_url=$(npm_tarball_url '@factory/cli-linux-arm64' "$new")
+	x64_url=$(npm_tarball_url '@factory/cli-linux-x64' "$new")
+	arm64_sri=$(sri_for_url "$arm64_url" sha512)
+	x64_sri=$(sri_for_url "$x64_url" sha512)
+	replace_field "$nix_file" version "$new"
+	replace_field "$nix_file" droidArm64Hash "$arm64_sri"
+	replace_field "$nix_file" droidX64Hash "$x64_sri"
+	log "droid: $cur -> $new"
+}
+
 # Refresh `npmDepsHash` by building with a known-bad placeholder and scraping
 # the "got:" hash mismatch line. Re-runnable.
 fix_build_hash() {
@@ -162,7 +176,7 @@ main() {
 	update_npm pkgs/amp.nix '@sourcegraph/amp' sha512
 
 	log "droid"
-	update_npm pkgs/droid.nix '@factory/cli-linux-arm64' sha512
+	update_droid
 
 	log "portless"
 	update_npm pkgs/portless/default.nix portless sha256
