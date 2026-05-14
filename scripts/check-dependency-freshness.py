@@ -64,6 +64,7 @@ def iter_package_nix(repo):
 def iter_nix_npm_fetches(repo):
     version_re = re.compile(r'^\s*version = "([^"]+)";', re.MULTILINE)
     url_re = re.compile(r'https://registry\.npmjs\.org/([^"\s]+)/-/[^"\s]+-\$\{version\}\.tgz')
+    npm_arch_re = re.compile(r'^\s*npmArch = "([^"]+)";', re.MULTILINE)
     for path in iter_package_nix(repo):
         rel = path.relative_to(repo).as_posix()
         text = path.read_text(encoding="utf-8")
@@ -72,14 +73,22 @@ def iter_nix_npm_fetches(repo):
         if not version_match or not url_match:
             continue
         version = version_match.group(1)
-        package = urllib.parse.unquote(url_match.group(1))
-        yield {
-            "kind": "nix-npm",
-            "name": f"{package}@{version}",
-            "source": rel,
-            "exempt": is_exempt(package),
-            "published": lambda registry, p=package, v=version: npm_publish_time(registry, p, v),
-        }
+        package_template = urllib.parse.unquote(url_match.group(1))
+        if "${source.npmArch}" in package_template:
+            packages = [
+                package_template.replace("${source.npmArch}", arch)
+                for arch in sorted(set(npm_arch_re.findall(text)))
+            ]
+        else:
+            packages = [package_template]
+        for package in packages:
+            yield {
+                "kind": "nix-npm",
+                "name": f"{package}@{version}",
+                "source": rel,
+                "exempt": is_exempt(package),
+                "published": lambda registry, p=package, v=version: npm_publish_time(registry, p, v),
+            }
 
 
 def iter_flake_inputs(repo):
