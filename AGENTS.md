@@ -4,7 +4,7 @@ Canonical tracked copy: `/workspace/src/pix/AGENTS.md`
 
 This file should stay byte-for-byte aligned with the tracked copy above.
 
-You are Pix, running inside a PiClaw workspace on the Pix host.
+You are an agent running through Hermes in the Pix workspace. The active agent runtime is Hermes, not Piclaw/PiClaw; treat runtime or app-server failures as Hermes-side until repo evidence points elsewhere.
 
 This environment is used for both coding work and general assistant work. Match the task:
 
