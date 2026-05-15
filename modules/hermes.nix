@@ -7,7 +7,7 @@ let
   hermesRepo = "/workspace/src/hermes-live";
   hermesVenv = "${hermesHome}/venv";
   hermesSitePackages = "${hermesVenv}/lib/python3.12/site-packages";
-  hermesSitecustomize = ../files/hermes/sitecustomize.py;
+  hermesSitecustomize = pkgs.writeText "hermes-sitecustomize.py" (builtins.readFile ../files/hermes/sitecustomize.py);
   tmpl = import ../lib/template.nix;
 
   servicePath = agentService.runtimePath [ pkgs.uv pkgs.python312 ];
@@ -15,14 +15,15 @@ let
   hermesLive = pkgs.writeText "hermes-live" (tmpl ../files/hermes/hermes-live.sh {
     inherit hermesHome hermesOverrides hermesVenv;
   });
-  hermesEnvTemplate = ../files/hermes/env.template;
+  hermesConfig = pkgs.writeText "hermes-config.yaml" (builtins.readFile ../files/hermes/config.yaml);
+  hermesEnvTemplate = pkgs.writeText "hermes-env.template" (builtins.readFile ../files/hermes/env.template);
   hermesPth = pkgs.writeText "hermes-home-overrides.pth" (tmpl ../files/hermes/hermes-home-overrides.pth {
     inherit hermesOverrides;
   });
   hermesBootstrap = pkgs.writeShellScript "hermes-bootstrap" (tmpl ../files/hermes/bootstrap.sh {
     inherit hermesHome hermesOverrides hermesRepo hermesVenv hermesSitePackages;
     hermesSitecustomize = toString hermesSitecustomize;
-    hermesConfig = toString ../files/hermes/config.yaml;
+    hermesConfig = toString hermesConfig;
     hermesEnvTemplate = toString hermesEnvTemplate;
     hermesLive = toString hermesLive;
     hermesPth = toString hermesPth;
