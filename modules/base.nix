@@ -1,6 +1,10 @@
-{ pkgs, ... }:
+{ inputs, pkgs, ... }:
 let
   gib = size: size * 1024 * 1024 * 1024;
+  kernelPkgs = import inputs.kernel-nixpkgs {
+    system = pkgs.stdenv.hostPlatform.system;
+    config.allowUnfree = true;
+  };
   wranglerLatest = pkgs.writeShellApplication {
     name = "wrangler";
     runtimeInputs = [ pkgs.nodejs ];
@@ -80,7 +84,7 @@ in
     timeout = 1;
   };
 
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = kernelPkgs.linuxPackages_latest;
   boot.blacklistedKernelModules = [
     "esp4"
     "esp6"

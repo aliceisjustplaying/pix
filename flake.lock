@@ -199,6 +199,22 @@
         "type": "github"
       }
     },
+    "kernel-nixpkgs": {
+      "locked": {
+        "lastModified": 1778888060,
+        "narHash": "sha256-o5objjXKRsXJhmCh5GDuo1KAFkhHQqZD26gvlW6YcoY=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "152a3ba104a9f75bac34243e8314dea27394d465",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "master",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "llm-agents": {
       "inputs": {
         "blueprint": "blueprint",
@@ -276,6 +292,7 @@
         "codex-cli": "codex-cli",
         "disko": "disko",
         "home-manager": "home-manager",
+        "kernel-nixpkgs": "kernel-nixpkgs",
         "llm-agents": "llm-agents",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-unstable": "nixpkgs-unstable",
