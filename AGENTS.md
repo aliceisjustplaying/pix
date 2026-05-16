@@ -1,94 +1,51 @@
-# Pix
+# Workspace
 
-Canonical tracked copy: `/workspace/src/pix/AGENTS.md`
+You're on a Hermes-hosted NixOS box managed by the `pix` flake. **Piclaw and Hermes both run here side by side** — Piclaw is a chat-app frontend, Hermes is the agent gateway. **Treat both as off-limits unless the user explicitly says they're working on one.** This is no longer primarily a Piclaw box.
 
-This file should stay byte-for-byte aligned with the tracked copy above.
+Canonical tracked copy: `/workspace/src/pix/AGENTS.md`. Keep `/workspace/AGENTS.md` byte-for-byte aligned.
 
-You are an agent running through Hermes in the Pix workspace. The active agent runtime is Hermes, not Piclaw/PiClaw; treat runtime or app-server failures as Hermes-side until repo evidence points elsewhere.
+## Don't (without explicit per-turn approval)
 
-This environment is used for both coding work and general assistant work. Match the task:
+- Touch piclaw, hermes, hermes-webui, or their service files / configs.
+- Run host-job commands: `rebuild`, `update`, `rollback`, `piclaw-restart`, `backup`. Same for any direct `sudo nixos-rebuild` or service restart.
+- Delete `/workspace/.piclaw/store/messages.db`. Ever.
+- Stack untested patches in any deploy patch tree — each patch must pass `git apply --check`, a clean build, and a smoke test before the next one. When a patch makes things worse, bisect, don't layer. `.rej` / `.orig` files are debris.
+- Install host tooling ad hoc (`nix profile install`, `brew`, `apt`). Persistent tools go through `/workspace/src/pix` and the `rebuild` path.
+- Open PRs.
 
-- For coding, debugging, or config changes, act like a coding agent. Read the relevant files first, make concrete changes, verify results, and be explicit about risks or missing validation.
-- For general questions, research, or admin tasks, answer directly and use tools when they help.
+## Host commands (`~/.local/bin`)
 
-## Working rules
+All async — they call `sudo systemctl start --no-block <unit>` and return immediately. Poll with `host-result`.
 
-Before deploying, updating, reinstalling, restarting, or otherwise activating a new Piclaw build or runtime change, get explicit user approval in the current conversation. This includes `update`, `rebuild`, `piclaw-update.sh`, `nixos-rebuild`, service restarts, `piclaw-restart`, `exit_process`, and any equivalent deploy or restart path. You may inspect code, edit files, build locally for validation, and explain the intended deploy path without approval.
+- `rebuild` → `pix-rebuild.service` → `nixos-rebuild switch --flake path:/home/agent/workspace/src/pix#pix`.
+- `update [--force]`, `rollback [--force]` → piclaw-update / piclaw-rollback services.
+- `piclaw-restart`, `piclaw-status`, `piclaw-logs` — piclaw service control.
+- `backup` → `restic-backups-r2.service`.
+- `host-result <unit> [--wait <s>]` — read recent journal of a queued unit. Use after any async job, especially ones that may kill the calling agent.
+- `verify-deploy` — local piclaw deploy validation (no activation).
+- `dependency-freshness`, `nfu` — flake/pin checks and updates.
 
-Keep status updates concrete and limited to the action you are taking. If a rejected option matters for correctness or safety, name it plainly. Otherwise, do not narrate your choices by contrasting them with rejected options.
+Aliases: `sync-nix`=`rebuild`, `update-force`=`update --force`, `rollback-force`=`rollback --force`.
 
-For queued host jobs, rebuilds, deploys, rollbacks, or other long-running commands, do not go silent while waiting. Use `host-result <unit> --wait <seconds>` to read the systemd unit result and recent journal. Send a short update when the job is queued, again on the first material state change, and immediately once success, failure, rollback, or a blocker is visible.
+## Paths
 
-Prefer short prose by default. Use sections or lists when they make engineering work clearer, especially for debugging findings, review comments, plans, verification steps, command results, or change summaries.
+- `/workspace` → symlink to `/home/agent/workspace`. For Nix `path:` inputs, prefer the real `/home/agent/workspace/...` path.
+- `/workspace/src/pix` — NixOS host config, home-manager, secrets, service defs. Authoritative.
+- `/workspace/src/piclaw-customizations` — Piclaw prompt overlay, patches, app deploy flow.
+- `/workspace/src/piclaw-live` (live), `piclaw-live.previous` (rollback target), `piclaw-fork` (upstream PR work).
+- `/workspace/src/hermes-live`, `/workspace/src/hermes-webui`, `/workspace/.hermes/` — Hermes runtime. Off-limits unless asked.
+- `/workspace/.piclaw/`, `/workspace/.pi/` — persistent state.
+- `/workspace/notes/reference/nixos-gotchas.md` — known NixOS pitfalls (setuid wrappers, Playwright, Bun global state).
 
-Be direct and specific. Avoid filler, canned enthusiasm, and overexplaining. Say when you are unsure.
+## Browser tooling
 
-Deploy results get one line: version, patch count, health status. Do not list every file changed or every check performed unless the user asks. Do not end messages with menus of next-step options; do the obvious next thing or stop. Do not explain what was not changed unless it is safety-relevant.
+Two tools, two jobs:
 
-When the user reports a bug or disagrees with a diagnosis, verify their claim before arguing. Check timestamps, session state, and file mtimes first.
+- **Ad-hoc UI verification** (clicking around, taking a screenshot, checking a CSS regression, manual exploratory) → `agent-browser`. Start with `agent-browser skills get core --full` for the command surface.
+- **Smoke tests / repeatable checks** → Playwright. **Browsers ARE installed on this host — via Nix.** If Playwright says browsers are missing or fails to launch Chromium, the bundled binary is failing to resolve shared libs; **do not `npx playwright install`**. Use the Nix-provided bundle: `nix build nixpkgs#playwright-driver.browsers -o /tmp/playwright-browsers` and point Playwright at it (project-specific env var, e.g. `PICLAW_PLAYWRIGHT_EXECUTABLE_PATH` for piclaw). Full incantation in `/workspace/notes/reference/nixos-gotchas.md`.
 
-## Patch discipline
+Don't reach for screenshots-by-hand when `agent-browser` will do; don't write a one-off Playwright test for a single manual check.
 
-Never stack untested patches. Each patch must pass at minimum: `git apply --check`, a clean build, and a manual or automated smoke test before the next patch starts. If no automated test exists for the affected area, say so and describe how you verified instead.
+## Signing
 
-When a patch makes things worse, stop and bisect. Do not layer another fix on top. Revert to the last known-good state, understand the failure, then try one thing at a time.
-
-The deploy patch stack uses strict `git apply`. Treat `.rej` / `.orig` files as debris.
-
-Do not use ad hoc package installs for persistent host or agent tooling on this machine. For tools that should remain available, change the NixOS or Home Manager config in `/workspace/src/pix`, validate it, and use the normal rebuild path. Do not treat `nix profile install`, `brew install`, `apt install`, or similar one-off installs as the real install method here.
-
-## Host facts
-
-- Canonical workspace: `/workspace`
-- Persistent state: `/workspace/.piclaw` and `/workspace/.pi`
-- Never delete `/workspace/.piclaw/store/messages.db`
-- `/workspace` is the canonical agent-facing path, but on this host it resolves through a symlink to `/home/agent/workspace`. When invoking Nix flakes directly with `path:` inputs, prefer the real `/home/agent/workspace/...` path if the `/workspace` form causes path-resolution issues.
-- Do not create temporary worktrees just to dodge unrelated dirty files in `/workspace/src/pix` unless the user explicitly asks for that isolation or it is required for correctness.
-
-Authoritative repos:
-- `/workspace/src/pix` controls the NixOS host, Home Manager config, secrets, and `piclaw.service`.
-- `/workspace/src/piclaw-customizations` controls the Piclaw prompt overlay, patches, extensions, and app deployment flow.
-
-Deployment layout:
-- `/workspace/src/piclaw-live` is the live checkout used by `piclaw.service`.
-- `/workspace/src/piclaw-live.previous` is the rollback target from the last successful app update.
-- `/workspace/src/piclaw-fork` is for clean upstream Piclaw work and PRs.
-- `/workspace/.cache/piclaw-upstream` is the persistent upstream cache used by the update tooling.
-
-Local deploy commands (declared in `pix/home/agent.nix`, installed under `~/.local/bin`):
-- `rebuild` — start `pix-rebuild.service`, which pulls `/workspace/src/pix` and runs `nixos-rebuild switch --flake path:/home/agent/workspace/src/pix#pix`.
-- `update [--force]` — start `piclaw-update.service` or `piclaw-update-force.service`.
-- `rollback [--force]` — start `piclaw-rollback.service` or `piclaw-rollback-force.service`.
-- `verify-deploy` — run `./scripts/piclaw-verify-deploy.sh` locally to validate a candidate Piclaw deploy without activating it.
-- `piclaw-restart` — start `piclaw-restart.service`.
-- `piclaw-status`, `piclaw-logs` — SSH wrappers for `systemctl status` / `journalctl -u piclaw` on the host.
-- `host-result <unit>` — wait for a named host job unit and print its recent journal; use this after any queued job, especially jobs that may kill the current agent process.
-- `backup` — start `restic-backups-r2.service`.
-- `dependency-freshness` — check Nix flake/fetcher pins for minimum age and registry/API verification.
-- `nfu` — update flake inputs and pinned package wrappers, then run freshness and package-build validation.
-
-Shell aliases (bash): `sync-nix` = `rebuild`; `update-force` = `update --force`; `rollback-force` = `rollback --force`.
-
-`rebuild`, `update`, `rollback`, `piclaw-restart`, and `backup` are asynchronous: they call `sudo systemctl start --no-block <unit>` for a fixed set of NixOS-declared oneshot units. Sudo is scoped to those exact start commands in `modules/host-jobs.nix`. Use `host-result <unit> --wait 900` to watch completion; for jobs that restart Piclaw, run `host-result piclaw-restart --wait 120` once the agent reconnects.
-
-Prefer bounded log reads or periodic polling over indefinite `journalctl -f` when monitoring queued jobs. Use log-following only when it materially helps, and break out to report as soon as the user's question can be answered.
-
-Do not assume upstream PiClaw deployment docs match this machine. Do not use upstream `docker-compose`, repo-install, supervisor, or bundled reload paths here unless the user explicitly asks for migration work.
-
-The Piclaw service runs with `ProtectSystem=strict`. Host-level commands such as `nixos-rebuild` run through NixOS-declared oneshot units started by the `rebuild`/`update`/`rollback`/`piclaw-restart` helpers. Direct in-process `sudo nixos-rebuild` from inside the piclaw sandbox is not the supported path.
-
-The Piclaw service PATH already includes `gh`, `git`, `patch`, `diff`, and `python3`. Host-side helpers use `/run/current-system/sw/bin/` and `/run/wrappers/bin/` when they need host-only tools or setuid wrappers.
-
-See `/workspace/notes/reference/nixos-gotchas.md` for known NixOS-specific pitfalls (setuid wrappers, Playwright browsers, Bun global state, etc.).
-
-## Browser verification
-
-Use `agent-browser` for browser/UI verification. Start with `agent-browser skills get core --full` when command details are needed, then use `agent-browser open`, `snapshot`, `find`, `hover`, `click`, `screenshot`, and related commands for local app checks.
-
-The deploy patch stack is verified and applied with strict `git apply`, not fuzzy GNU `patch`. Treat any `.rej` or `.orig` file in a candidate tree as leftover debris from an old or manual patch attempt.
-
-When a UI-affecting change is deployed, prefer automated Playwright verification over manual screenshot exchange. The localhost E2E auth bootstrap endpoint exists for this purpose.
-
-Do not open PRs without explicit user approval. Every PR must be tested via a full `update` cycle on the live host before submission.
-
-Sign GitHub messages as `Pix (PiClaw, <MODEL_NAME>)`. Always call `get_model_state` to read the actual model string before signing.
+When signing PRs or PR comments, use `[Agent] in [Harness] (<MODEL_NAME>)` — e.g. `Codex in Hermes (gpt-5.5)`, `Claude in Claude Code (claude-opus-4-7)`. Models self-identify unreliably; if a CLI flag, env var, or settings entry exposes the model authoritatively, query it before signing.
