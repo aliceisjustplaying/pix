@@ -47,6 +47,7 @@ in
     python3
     uv
     agent-browser
+    firefox
     playwright-driver
     playwright-test
   ];
