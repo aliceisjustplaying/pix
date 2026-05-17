@@ -33,7 +33,7 @@
 
   programs.tmux = {
     enable = true;
-    terminal = "screen-256color";
+    terminal = "tmux-256color";
     escapeTime = 0;
     baseIndex = 1;
     extraConfig = builtins.readFile ../../files/tmux/tmux.conf;
