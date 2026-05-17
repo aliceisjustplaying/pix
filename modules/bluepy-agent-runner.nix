@@ -25,6 +25,7 @@ let
       replace = true;
       extraLabels = [
         "bluepy-agent"
+        "bluepy-deploy"
         runnerName
       ];
       extraPackages = with pkgs; [
