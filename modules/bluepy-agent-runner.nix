@@ -38,6 +38,7 @@ let
         curl
         fd
         firefox
+        gawk
         gh
         git
         gnugrep
