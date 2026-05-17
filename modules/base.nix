@@ -119,6 +119,13 @@ in
 
   services.journald.extraConfig = builtins.readFile ../files/journald/journald.conf;
 
+  systemd.coredump.extraConfig = ''
+    Storage=none
+    ProcessSizeMax=0
+    ExternalSizeMax=0
+    JournalSizeMax=0
+  '';
+
   security.sudo.wheelNeedsPassword = false;
 
   users.users.agent = {
