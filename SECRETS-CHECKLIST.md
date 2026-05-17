@@ -107,6 +107,28 @@ Where it goes:
 What it is:
 - a Cloudflare API token for DNS management from the server
 
+### Local-only: Bluepy GitHub runner token
+What it is:
+- a fine-grained GitHub PAT used only to register the `bluepy-agent` self-hosted runner
+
+Required access:
+- repository: `aliceisjustplaying/bluepy`
+- permission: read/write access to repository self-hosted runners
+
+Where it goes:
+- `/home/agent/.config/github-runner/bluepy-token` on the VPS
+- one line, no trailing newline
+
+Install:
+
+```bash
+install -d -m 700 /home/agent/.config/github-runner
+printf '%s' '<token>' > /home/agent/.config/github-runner/bluepy-token
+chown -R agent:users /home/agent/.config/github-runner
+chmod 600 /home/agent/.config/github-runner/bluepy-token
+sudo systemctl restart github-runner-bluepy-agent-{1,2,3}.service
+```
+
 How to create it:
 - Cloudflare dashboard → My Profile → API Tokens → Create Token
 - use "Create Custom Token"
