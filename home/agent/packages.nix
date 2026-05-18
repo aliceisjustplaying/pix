@@ -25,6 +25,7 @@ in
   home.packages = with pkgs; [
     bun
     nodejs_24
+    google-cloud-sdk
     gh
     jujutsu
     portless

@@ -85,9 +85,9 @@ Shared config imports the same service stack for both host targets:
 
 ## Agent User Tooling
 
-Home Manager installs Bun, Node 24, Go 1.26, Python, uv, GitHub CLI, jj, tmux,
-zellij, `agent-browser`, Firefox, Playwright, media tools, `tsshd`, and the
-local packages exported by this flake. It also renders:
+Home Manager installs Bun, Node 24, Go 1.26, Python, uv, GitHub CLI, Google
+Cloud CLI, jj, tmux, zellij, `agent-browser`, Firefox, Playwright, media tools,
+`tsshd`, and the local packages exported by this flake. It also renders:
 
 - package-manager freshness gates: npm `min-release-age`, Bun/pnpm `minimumReleaseAge`, uv `exclude-newer`, and Cargo through the Menhera 1d proxy.
 - Amp, Factory/Droid, and CLIProxyAPI model config from `home/agent/model-catalog.nix`.
