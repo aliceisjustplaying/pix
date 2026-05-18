@@ -13,7 +13,16 @@ let
   servicePath = agentService.runtimePath [ pkgs.uv pkgs.python312 ];
   hermesLibraryPath = lib.makeLibraryPath [
     pkgs.stdenv.cc.cc.lib
+    pkgs.krb5
+    pkgs.openssl
+    pkgs.icu70
+    pkgs.lz4
+    pkgs.readline
+    pkgs.xz
+    pkgs.zlib
+    pkgs.zstd
   ];
+  hermesTimezonePath = "${pkgs.tzdata}/share/zoneinfo";
 
   hermesLive = pkgs.writeText "hermes-live" (tmpl ../files/hermes/hermes-live.sh {
     inherit hermesHome hermesOverrides hermesVenv;
@@ -43,7 +52,7 @@ in {
   sops.templates.hermes-service-env = {
     restartUnits = [ "hermes-gateway.service" ];
     content = tmpl ../files/sops/hermes-service.env {
-      inherit hermesHome hermesOverrides agentHome servicePath hermesLibraryPath;
+      inherit hermesHome hermesOverrides agentHome servicePath hermesLibraryPath hermesTimezonePath;
       gogKeyringPassword = config.sops.placeholder.gog-keyring-password;
     };
   };
@@ -56,6 +65,8 @@ in {
     "d ${hermesHome}/skills 0700 agent users - -"
     "d ${hermesHome}/pairing 0700 agent users - -"
     "d /workspace/src 0755 agent users - -"
+    "d /usr/share 0755 root root - -"
+    "L+ /usr/share/zoneinfo - - - - ${pkgs.tzdata}/share/zoneinfo"
   ];
 
   systemd.services."hermes-gateway" = {

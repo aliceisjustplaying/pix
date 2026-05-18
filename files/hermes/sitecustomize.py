@@ -170,7 +170,47 @@ def _patch_system_gateway_restart(hermes_main) -> None:
     subprocess._pix_system_gateway_restart_patch_applied = True
 
 
+def _patch_hindsight_embedded_postgres() -> None:
+    try:
+        import hindsight_api.pg0 as hindsight_pg0
+    except Exception:
+        return
+
+    embedded_postgres = getattr(hindsight_pg0, "EmbeddedPostgres", None)
+    original_get_pg0 = getattr(embedded_postgres, "_get_pg0", None)
+    if not callable(original_get_pg0):
+        return
+    if getattr(embedded_postgres, "_pix_pg0_config_patch_applied", False):
+        return
+
+    def wrapped_get_pg0(self):
+        if self._pg0 is None:
+            try:
+                from pg0 import Pg0
+            except ImportError:
+                return original_get_pg0(self)
+
+            config = {
+                "log_timezone": "UTC0",
+                "timezone": "UTC0",
+            }
+            self._pg0 = Pg0(
+                name=self.name,
+                username=self.username,
+                password=self.password,
+                database=self.database,
+                **({"port": self.port} if self.port is not None else {}),
+                config=config,
+            )
+        return self._pg0
+
+    embedded_postgres._get_pg0 = wrapped_get_pg0
+    embedded_postgres._pix_pg0_config_patch_applied = True
+
+
 def _apply() -> None:
+    _patch_hindsight_embedded_postgres()
+
     try:
         import agent.prompt_builder as prompt_builder
         import agent.anthropic_adapter as anthropic_adapter
