@@ -125,9 +125,9 @@
         hostModule = ./hosts/pix/default.nix;
       };
 
-      pix-amd64 = mkNixosConfiguration {
+      pix2 = mkNixosConfiguration {
         system = "x86_64-linux";
-        hostModule = ./hosts/pix-amd64/default.nix;
+        hostModule = ./hosts/pix2/default.nix;
       };
     };
   };

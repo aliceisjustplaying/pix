@@ -1,8 +1,8 @@
 # pix
 
 NixOS host configuration for the Pix machines. The active production host is
-`pix.mosphere.at`; the repo also carries a prepared `pix-amd64` target for a
-future x86_64 migration.
+`pix.mosphere.at`; the repo also carries `pix2` for the x86_64 Hetzner
+migration.
 
 This repo owns the host/platform layer: NixOS modules, Home Manager config for
 the `agent` user, SOPS-managed secrets, systemd services, local helper
@@ -14,7 +14,7 @@ and mutable runtime state live under `/workspace` and are only wired here.
 | Target | System | Host module | Notes |
 | --- | --- | --- | --- |
 | `.#nixosConfigurations.pix` | `aarch64-linux` | `hosts/pix/default.nix` | Current ARM production host, hostname `pix` |
-| `.#nixosConfigurations.pix-amd64` | `x86_64-linux` | `hosts/pix-amd64/default.nix` | Prepared migration target, hostname `pix-amd64`, disk forced to `/dev/vda` |
+| `.#nixosConfigurations.pix2` | `x86_64-linux` | `hosts/pix2/default.nix` | Hetzner x86_64 migration target, hostname `pix2` |
 
 Package exports are built for both `aarch64-linux` and `x86_64-linux`:
 `amp-code`, `claude-code-acp`, `cli-proxy-api`, `codex-acp`, `droid`,
@@ -24,14 +24,14 @@ Package exports are built for both `aarch64-linux` and `x86_64-linux`:
 
 - `flake.nix` / `flake.lock` - inputs, overlays, host package set, package exports, and NixOS targets.
 - `hosts/common/default.nix` - shared host composition, SSH policy, firewall, SOPS defaults, Home Manager wiring, and common imports.
-- `hosts/pix/`, `hosts/pix-amd64/` - host-specific hostname and disk overrides.
+- `hosts/pix/`, `hosts/pix2/` - host-specific host identities.
 - `disko/pix.nix` - one-disk layout used by nixos-anywhere.
 - `modules/` - NixOS modules for base OS, browser runtime, Tailscale, Cloudflare Tunnel, PiClaw, Hermes, Hermes WebUI, Plausible, backups, host jobs, bsky cron, and Bluepy GitHub runners.
 - `home/agent/` - Home Manager modules for packages, shell aliases, dotfiles, model/tool config, Git, SSH, tmux, and the user-level CLIProxyAPI service.
 - `files/` - rendered scripts, service bootstraps, CLI config templates, SOPS templates, Caddy config, and package-manager settings.
 - `pkgs/` - local package definitions/wrappers for Amp, Claude Code ACP, CLIProxyAPI, Codex ACP, Droid, Gog, Portless, and wrapped `tsshd`.
 - `scripts/` - deployment, bootstrap-key, and dependency validation helpers.
-- `docs/pix-amd64-migration.md` - x86_64 migration checklist.
+- `docs/pix2-migration.md` - x86_64 migration checklist.
 - `INSTALL.md`, `SECRETS-CHECKLIST.md`, `AGENTS.md` - install, secret, and agent runbooks.
 
 ## Managed Host Surface
@@ -155,12 +155,12 @@ First install uses `scripts/deploy.sh` with nixos-anywhere:
 
 ```bash
 scripts/deploy.sh <server-ip>
-scripts/deploy.sh --host pix-amd64 <server-ip>
+scripts/deploy.sh --host pix2 <server-ip>
 ```
 
 `scripts/prepare-bootstrap-key.sh` creates the SOPS host age key material for
 nixos-anywhere extra files. See `INSTALL.md` for first deploy and
-`docs/pix-amd64-migration.md` for the x86_64 migration runbook.
+`docs/pix2-migration.md` for the x86_64 migration runbook.
 
 ## Web Push
 

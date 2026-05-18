@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
 	cat >&2 <<'USAGE'
-usage: scripts/deploy.sh [--host pix|pix-amd64] <server-ip>
+usage: scripts/deploy.sh [--host pix|pix2] <server-ip>
 
 The one-argument form deploys the current ARM host: scripts/deploy.sh <server-ip>
 USAGE
@@ -46,7 +46,7 @@ case "$host" in
 pix)
 	kexec_arch="aarch64"
 	;;
-pix-amd64)
+pix2)
 	kexec_arch="x86_64"
 	;;
 *)
