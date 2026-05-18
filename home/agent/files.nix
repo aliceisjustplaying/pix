@@ -4,6 +4,17 @@ let
   home = config.home.homeDirectory;
   workspaceSrc = "/workspace/src";
   tmpl = import ../../lib/template.nix;
+  hermesLibraryPath = pkgs.lib.makeLibraryPath [
+    pkgs.stdenv.cc.cc.lib
+    pkgs.krb5
+    pkgs.openssl
+    pkgs.icu70
+    pkgs.lz4
+    pkgs.readline
+    pkgs.xz
+    pkgs.zlib
+    pkgs.zstd
+  ];
 
   proxyApiKey = "CLI_PROXY_API_KEY";
   proxyBaseUrl = "http://127.0.0.1:8317";
@@ -34,7 +45,7 @@ let
     piclaw-status = binStatic "piclaw-status";
     piclaw-logs = binStatic "piclaw-logs";
     backup = binStatic "backup";
-    hermes = binStatic "hermes";
+    hermes = binSrc "hermes" { inherit hermesLibraryPath; };
     amp-login-proxy = binStatic "amp-login-proxy";
     amp-login-upstream = binStatic "amp-login-upstream";
   };
