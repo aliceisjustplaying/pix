@@ -12,7 +12,7 @@ This assumes:
 ## Prerequisites on the Mac
 
 - Nix (Determinate installer): `curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install`
-- Homebrew packages: `brew install age sops`
+- Homebrew packages: `brew install age jq sops`
 - `hcloud` CLI authenticated with your Hetzner project
 - `gh` CLI authenticated with the GitHub account that owns the repo
 
@@ -65,12 +65,22 @@ nix flake lock
 
 ## Set up Cloudflare Tunnel routing (one-time)
 
-Add the ingress rule via API (replace email, global key, account ID, and tunnel ID):
+Load the Cloudflare fields from SOPS:
 
 ```bash
-curl -X PUT "https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/cfd_tunnel/<TUNNEL_ID>/configurations" \
-  -H "X-Auth-Email: <CLOUDFLARE_EMAIL>" \
-  -H "X-Auth-Key: <CLOUDFLARE_GLOBAL_KEY>" \
+CF_EMAIL="$(sops --decrypt --extract '["alice-cloudflare"]["email"]' secrets/secrets.yaml)"
+CF_GLOBAL_KEY="$(sops --decrypt --extract '["alice-cloudflare"]["global-key"]' secrets/secrets.yaml)"
+CF_ACCOUNT_ID="$(sops --decrypt --extract '["alice-cloudflare"]["account-id"]' secrets/secrets.yaml)"
+CF_ZONE_ID="$(sops --decrypt --extract '["alice-cloudflare"]["zone-id"]' secrets/secrets.yaml)"
+CF_TUNNEL_ID="$(sops --decrypt --extract '["cloudflared-tunnel-token"]' secrets/secrets.yaml | base64 -D | jq -r '.t')"
+```
+
+Add the ingress rule via API:
+
+```bash
+curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/cfd_tunnel/${CF_TUNNEL_ID}/configurations" \
+  -H "X-Auth-Email: ${CF_EMAIL}" \
+  -H "X-Auth-Key: ${CF_GLOBAL_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "config": {
@@ -82,17 +92,15 @@ curl -X PUT "https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/cfd_tunn
   }'
 ```
 
-Add or update the DNS CNAME (find the zone ID first with `curl ... /zones?name=mosphere.at`):
+Add or update the DNS CNAME:
 
 ```bash
-curl -X POST "https://api.cloudflare.com/client/v4/zones/<ZONE_ID>/dns_records" \
-  -H "X-Auth-Email: <CLOUDFLARE_EMAIL>" \
-  -H "X-Auth-Key: <CLOUDFLARE_GLOBAL_KEY>" \
+curl -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/dns_records" \
+  -H "X-Auth-Email: ${CF_EMAIL}" \
+  -H "X-Auth-Key: ${CF_GLOBAL_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"type":"CNAME","name":"pix","content":"<TUNNEL_ID>.cfargotunnel.com","proxied":true}'
+  -d "{\"type\":\"CNAME\",\"name\":\"pix\",\"content\":\"${CF_TUNNEL_ID}.cfargotunnel.com\",\"proxied\":true}"
 ```
-
-The tunnel ID and account ID can be extracted from the tunnel token: `echo '<token>' | base64 -d`.
 
 ## Deploy NixOS
 
@@ -117,7 +125,7 @@ systemctl status tailscaled tailscaled-autoconnect cloudflared --no-pager
 sudo tailscale status
 ```
 
-`piclaw.service` will not start yet — that's expected. It waits for `/usr/local/bin/piclaw` which doesn't exist until the first update.
+`piclaw.service` will not start yet - that's expected. It waits for `/workspace/src/piclaw-live/runtime/src/index.ts`, which does not exist until the first Piclaw update.
 
 ## Clone repos on the server
 
@@ -153,14 +161,14 @@ cd /workspace/src/pix && git remote set-url origin git@github.com:<YOU>/pix.git
 Deploy the first live checkout and start the service from source:
 
 ```bash
-cd /workspace/src/piclaw-customizations
-./scripts/piclaw-update.sh --force
+update --force
+host-result piclaw-update-force.service --wait 900
 ```
 
 Verify:
 
 ```bash
-systemctl status piclaw --no-pager
+systemctl status piclaw.service --no-pager
 curl -s http://localhost:8080 | head -5
 ```
 
@@ -207,11 +215,11 @@ rebuild
 ### Update Piclaw
 
 ```bash
-cd /workspace/src/piclaw-customizations
-./scripts/piclaw-update.sh
+update
+host-result piclaw-update.service --wait 900
 ```
 
-Use `--force` to skip version check, `--dry-run` to compare versions without installing, `--no-restart` if the caller handles restart.
+Use `update --force` to queue `piclaw-update-force.service`.
 
 Host-level helper tooling now includes:
 
