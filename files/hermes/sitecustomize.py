@@ -25,6 +25,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import subprocess
+import ctypes.util
 
 
 _TOOL_ALIASES = {
@@ -39,6 +40,30 @@ _UNSUPPORTED_ANTHROPIC_BETAS = {
     "fast-mode-2026-02-01",
     "context-1m-2025-08-07",
 }
+
+
+def _patch_find_library_for_nixos_opus() -> None:
+    if getattr(ctypes.util, "_pix_opus_find_library_patch_applied", False):
+        return
+
+    original_find_library = ctypes.util.find_library
+
+    def wrapped_find_library(name: str):
+        result = original_find_library(name)
+        if result or name != "opus":
+            return result
+
+        for lib_dir in os.environ.get("LD_LIBRARY_PATH", "").split(":"):
+            if not lib_dir:
+                continue
+            for candidate in ("libopus.so.0", "libopus.so"):
+                path = Path(lib_dir) / candidate
+                if path.exists():
+                    return str(path)
+        return result
+
+    ctypes.util.find_library = wrapped_find_library
+    ctypes.util._pix_opus_find_library_patch_applied = True
 
 
 def _rewrite_prompt_text(text: str) -> str:
@@ -171,6 +196,8 @@ def _patch_system_gateway_restart(hermes_main) -> None:
 
 
 def _apply() -> None:
+    _patch_find_library_for_nixos_opus()
+
     try:
         import agent.prompt_builder as prompt_builder
         import agent.anthropic_adapter as anthropic_adapter
