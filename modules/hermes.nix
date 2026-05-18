@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 let
   agentService = import ../lib/agent-service.nix { inherit pkgs; };
   agentHome = agentService.home;
@@ -11,6 +11,9 @@ let
   tmpl = import ../lib/template.nix;
 
   servicePath = agentService.runtimePath [ pkgs.uv pkgs.python312 ];
+  hermesLibraryPath = lib.makeLibraryPath [
+    pkgs.stdenv.cc.cc.lib
+  ];
 
   hermesLive = pkgs.writeText "hermes-live" (tmpl ../files/hermes/hermes-live.sh {
     inherit hermesHome hermesOverrides hermesVenv;
@@ -40,7 +43,7 @@ in {
   sops.templates.hermes-service-env = {
     restartUnits = [ "hermes-gateway.service" ];
     content = tmpl ../files/sops/hermes-service.env {
-      inherit hermesHome hermesOverrides agentHome servicePath;
+      inherit hermesHome hermesOverrides agentHome servicePath hermesLibraryPath;
       gogKeyringPassword = config.sops.placeholder.gog-keyring-password;
     };
   };
