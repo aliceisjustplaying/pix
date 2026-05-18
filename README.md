@@ -44,7 +44,7 @@ Shared config imports the same service stack for both host targets:
 - Tailscale with `tag:pix`, DNS acceptance disabled, and a 30s autoconnect timeout.
 - OpenSSH locked to `agent`, no passwords, no root login, no X11 forwarding, firewall closed except declared ports.
 - Cloudflare Tunnel from the configured token.
-- PiClaw service from `/workspace/src/piclaw-live`, with env rendered from SOPS.
+- PiClaw service from `/workspace/src/piclaw-live`, served by Caddy at `https://pix.mosphere.at`, with env rendered from SOPS.
 - AgentMemory service on loopback, backed by the pinned `iii` runtime and wired into Hermes as the external memory provider plus MCP server.
 - Hermes gateway from `/workspace/src/hermes-live`, bootstrapped into `/workspace/.hermes/venv`.
 - Hermes WebUI from `/workspace/src/hermes-webui`, using `/workspace/.hermes/webui`.

@@ -41,6 +41,7 @@
     email = "aliceisjustplaying@gmail.com";
 
     virtualHosts."p.mosphere.at".extraConfig = builtins.readFile ../files/caddy/plausible.caddy;
+    virtualHosts."pix.mosphere.at".extraConfig = builtins.readFile ../files/caddy/piclaw.caddy;
   };
 
   networking.firewall.allowedTCPPorts = [ 80 443 ];
