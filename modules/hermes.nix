@@ -32,13 +32,16 @@ let
   hermesPth = pkgs.writeText "hermes-home-overrides.pth" (tmpl ../files/hermes/hermes-home-overrides.pth {
     inherit hermesOverrides;
   });
+  agentmemoryMemoryProvider = pkgs.writeText "agentmemory-memory-provider.py" (builtins.readFile ../files/hermes/agentmemory-memory-provider.py);
+  agentmemoryMcp = "${pkgs.agentmemory}/bin/agentmemory-mcp";
   hermesBootstrap = pkgs.writeShellScript "hermes-bootstrap" (tmpl ../files/hermes/bootstrap.sh {
-    inherit hermesHome hermesOverrides hermesRepo hermesVenv hermesSitePackages;
+    inherit hermesHome hermesOverrides hermesRepo hermesVenv hermesSitePackages agentmemoryMcp;
     hermesSitecustomize = toString hermesSitecustomize;
     hermesConfig = toString hermesConfig;
     hermesEnvTemplate = toString hermesEnvTemplate;
     hermesLive = toString hermesLive;
     hermesPth = toString hermesPth;
+    agentmemoryMemoryProvider = toString agentmemoryMemoryProvider;
     coreutilsBin = "${pkgs.coreutils}/bin";
     gnusedBin = "${pkgs.gnused}/bin";
     python = "${pkgs.python312}/bin/python3.12";
@@ -64,15 +67,49 @@ in {
     "d ${hermesHome}/sessions 0700 agent users - -"
     "d ${hermesHome}/skills 0700 agent users - -"
     "d ${hermesHome}/pairing 0700 agent users - -"
+    "d /home/agent/.agentmemory 0700 agent users - -"
     "d /workspace/src 0755 agent users - -"
     "d /usr/share 0755 root root - -"
     "L+ /usr/share/zoneinfo - - - - ${pkgs.tzdata}/share/zoneinfo"
   ];
 
+  systemd.services."agentmemory" = {
+    description = "AgentMemory persistent memory service";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+
+    serviceConfig = agentService.serviceDefaults // {
+      WorkingDirectory = "/workspace";
+      Environment = agentService.env {
+        pathPackages = [ pkgs.agentmemory pkgs.iii pkgs.nodejs_24 pkgs.which pkgs.curl pkgs.procps ];
+        extra = [
+          "AGENTMEMORY_III_VERSION=0.11.2"
+          "AGENTMEMORY_URL=http://127.0.0.1:3111"
+          "AGENTMEMORY_VIEWER_URL=http://127.0.0.1:3113"
+          "AGENTMEMORY_AUTO_COMPRESS=true"
+          "AGENTMEMORY_INJECT_CONTEXT=false"
+          "EMBEDDING_PROVIDER=local"
+          "III_REST_PORT=3111"
+          "III_STREAMS_PORT=3112"
+          "III_ENGINE_URL=ws://127.0.0.1:49134"
+          "OPENAI_API_KEY=CLI_PROXY_API_KEY"
+          "OPENAI_BASE_URL=http://127.0.0.1:8317/v1"
+          "OPENAI_MODEL=anthropic/claude-haiku-4.5"
+        ];
+      };
+      ExecStart = "${pkgs.agentmemory}/bin/agentmemory --port 3111";
+      ExecStop = "${pkgs.agentmemory}/bin/agentmemory stop --force";
+      RestartSec = "10s";
+      TimeoutStartSec = "2min";
+      TimeoutStopSec = "30s";
+    };
+  };
+
   systemd.services."hermes-gateway" = {
     description = "Hermes Agent Gateway";
-    after = [ "network-online.target" "agent-secrets.service" "camofox.service" ];
-    wants = [ "network-online.target" "agent-secrets.service" "camofox.service" ];
+    after = [ "network-online.target" "agent-secrets.service" "camofox.service" "agentmemory.service" ];
+    wants = [ "network-online.target" "agent-secrets.service" "camofox.service" "agentmemory.service" ];
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig = agentService.serviceDefaults // {

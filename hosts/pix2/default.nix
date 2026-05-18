@@ -15,6 +15,7 @@
 
   systemd.services = {
     agent-secrets.wantedBy = lib.mkForce [ ];
+    agentmemory.wantedBy = lib.mkForce [ ];
     atd.wantedBy = lib.mkForce [ ];
     camofox.wantedBy = lib.mkForce [ ];
     caddy.wantedBy = lib.mkForce [ ];
