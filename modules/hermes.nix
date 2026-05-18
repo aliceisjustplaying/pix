@@ -34,6 +34,7 @@ let
   });
   agentmemoryMemoryProvider = pkgs.writeText "agentmemory-memory-provider.py" (builtins.readFile ../files/hermes/agentmemory-memory-provider.py);
   agentmemoryMcp = "${pkgs.agentmemory}/bin/agentmemory-mcp";
+  agentmemoryBootstrap = pkgs.writeShellScript "agentmemory-bootstrap" (builtins.readFile ../files/hermes/agentmemory-bootstrap.sh);
   hermesBootstrap = pkgs.writeShellScript "hermes-bootstrap" (tmpl ../files/hermes/bootstrap.sh {
     inherit hermesHome hermesOverrides hermesRepo hermesVenv hermesSitePackages agentmemoryMcp;
     hermesSitecustomize = toString hermesSitecustomize;
@@ -80,6 +81,8 @@ in {
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig = agentService.serviceDefaults // {
+      Type = "oneshot";
+      RemainAfterExit = true;
       WorkingDirectory = "/workspace";
       Environment = agentService.env {
         pathPackages = [ pkgs.agentmemory pkgs.iii pkgs.nodejs_24 pkgs.which pkgs.curl pkgs.procps ];
@@ -98,9 +101,9 @@ in {
           "OPENAI_MODEL=anthropic/claude-haiku-4.5"
         ];
       };
+      ExecStartPre = agentmemoryBootstrap;
       ExecStart = "${pkgs.agentmemory}/bin/agentmemory --port 3111";
       ExecStop = "${pkgs.agentmemory}/bin/agentmemory stop --force";
-      RestartSec = "10s";
       TimeoutStartSec = "2min";
       TimeoutStopSec = "30s";
     };
