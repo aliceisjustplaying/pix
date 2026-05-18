@@ -16,6 +16,7 @@ let
     pkgs.krb5
     pkgs.openssl
     pkgs.icu70
+    pkgs.libopus
     pkgs.lz4
     pkgs.readline
     pkgs.xz
