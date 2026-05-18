@@ -17,6 +17,9 @@ in {
   sops.secrets.github-clone-key = {
     restartUnits = [ "agent-secrets.service" ];
   };
+  sops.secrets.gog-oauth-client-json = {
+    restartUnits = [ "agent-secrets.service" ];
+  };
 
   sops.templates.piclaw-env = {
     restartUnits = [ "piclaw.service" ];
@@ -40,6 +43,7 @@ in {
     "d ${agentHome}/workspace 0750 agent users - -"
     "d ${agentHome}/.local 0755 agent users - -"
     "d ${agentHome}/.local/bin 0755 agent users - -"
+    "d ${agentHome}/.config/gog 0700 agent users - -"
     "d ${agentHome}/.pi 0700 agent users - -"
     "d ${agentHome}/.ssh 0700 agent users - -"
     "d /usr/local/bin 0755 root root - -"
@@ -58,6 +62,7 @@ in {
       ExecStart = pkgs.writeShellScript "setup-agent-secrets" (tmpl ../files/piclaw/setup-agent-secrets.sh {
         inherit agentHome;
         githubCloneKeyPath = config.sops.secrets.github-clone-key.path;
+        gogOAuthClientJsonPath = config.sops.secrets.gog-oauth-client-json.path;
         agentWebSearchJsonPath = config.sops.templates.agent-web-search-json.path;
       });
     };

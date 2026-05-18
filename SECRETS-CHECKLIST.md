@@ -103,7 +103,22 @@ Then:
 Where it goes:
 - `secrets/secrets.yaml` under `github-clone-key`
 
-### 8. `cloudflare-api-token`
+### 8. `gog-oauth-client-json`
+What it is:
+- the OAuth Desktop client JSON downloaded from Google Cloud for Gog
+
+Where it goes:
+- `secrets/secrets.yaml` under `gog-oauth-client-json`
+- rendered by `agent-secrets.service` to `/home/agent/.config/gog/oauth-client.json`
+
+Import:
+
+```bash
+jq -Rs . /path/to/client_secret.json |
+  sops set --value-stdin secrets/secrets.yaml '["gog-oauth-client-json"]'
+```
+
+### 9. `cloudflare-api-token`
 What it is:
 - a Cloudflare API token for DNS management from the server
 
