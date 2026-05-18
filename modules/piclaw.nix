@@ -12,7 +12,6 @@ in {
   sops.secrets.piclaw-web-totp-secret = { };
   sops.secrets.piclaw-web-internal-secret = { };
   sops.secrets.exa-api-key = { };
-  sops.secrets.cloudflare-api-token = { };
 
   sops.secrets.github-clone-key = {
     restartUnits = [ "agent-secrets.service" ];
@@ -27,7 +26,6 @@ in {
       piclawKeychainKey = config.sops.placeholder.piclaw-keychain-key;
       piclawWebTotpSecret = config.sops.placeholder.piclaw-web-totp-secret;
       piclawWebInternalSecret = config.sops.placeholder.piclaw-web-internal-secret;
-      cloudflareApiToken = config.sops.placeholder.cloudflare-api-token;
     };
   };
 

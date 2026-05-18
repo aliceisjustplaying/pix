@@ -53,7 +53,7 @@ Create and encrypt `secrets/secrets.yaml`:
 sops secrets/secrets.yaml
 ```
 
-Required secrets: `tailscale-auth-key`, `cloudflared-tunnel-token`, `piclaw-keychain-key`, `piclaw-web-totp-secret`, `piclaw-web-internal-secret`, `exa-api-key`, `github-clone-key`, `cloudflare-api-token`, `restic-password`, `r2-access-key-id`, `r2-secret-access-key`. See `SECRETS-CHECKLIST.md` for how to generate each one.
+Required secrets: `tailscale-auth-key`, `cloudflared-tunnel-token`, `piclaw-keychain-key`, `piclaw-web-totp-secret`, `piclaw-web-internal-secret`, `exa-api-key`, `github-clone-key`, `alice-cloudflare`, `restic-password`, `r2-access-key-id`, `r2-secret-access-key`. See `SECRETS-CHECKLIST.md` for how to generate each one.
 
 **Back up both age keys** (`~/.config/sops/age/keys.txt` and `secrets/age/pix-host.key`) to a password manager. These cannot be recovered.
 
@@ -65,11 +65,12 @@ nix flake lock
 
 ## Set up Cloudflare Tunnel routing (one-time)
 
-Add the ingress rule via API (replace token, account ID, and tunnel ID):
+Add the ingress rule via API (replace email, global key, account ID, and tunnel ID):
 
 ```bash
 curl -X PUT "https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/cfd_tunnel/<TUNNEL_ID>/configurations" \
-  -H "Authorization: Bearer <CLOUDFLARE_API_TOKEN>" \
+  -H "X-Auth-Email: <CLOUDFLARE_EMAIL>" \
+  -H "X-Auth-Key: <CLOUDFLARE_GLOBAL_KEY>" \
   -H "Content-Type: application/json" \
   -d '{
     "config": {
@@ -85,7 +86,8 @@ Add or update the DNS CNAME (find the zone ID first with `curl ... /zones?name=m
 
 ```bash
 curl -X POST "https://api.cloudflare.com/client/v4/zones/<ZONE_ID>/dns_records" \
-  -H "Authorization: Bearer <CLOUDFLARE_API_TOKEN>" \
+  -H "X-Auth-Email: <CLOUDFLARE_EMAIL>" \
+  -H "X-Auth-Key: <CLOUDFLARE_GLOBAL_KEY>" \
   -H "Content-Type: application/json" \
   -d '{"type":"CNAME","name":"pix","content":"<TUNNEL_ID>.cfargotunnel.com","proxied":true}'
 ```

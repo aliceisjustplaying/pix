@@ -133,9 +133,20 @@ jq -Rs . /home/agent/.config/gogcli/keyring-password |
   sops set --value-stdin secrets/secrets.yaml '["gog-keyring-password"]'
 ```
 
-### 10. `cloudflare-api-token`
+### 10. `alice-cloudflare`
 What it is:
-- a Cloudflare API token for DNS management from the server
+- Cloudflare Global API Key access data for `aliceisjustplaying@gmail.com`
+- this is account-wide and cannot be permission-scoped inside Cloudflare
+- stored for manual/emergency use; it is not rendered into service environments
+
+Fields:
+- `email`
+- `account-id`
+- `zone-id`
+- `global-key`
+
+Where it goes:
+- `secrets/secrets.yaml` under `alice-cloudflare`
 
 ### Local-only: Bluepy GitHub runner token
 What it is:
@@ -159,16 +170,7 @@ chmod 600 /home/agent/.config/github-runner/bluepy-token
 sudo systemctl restart github-runner-bluepy-agent-{1,2,3}.service
 ```
 
-How to create it:
-- Cloudflare dashboard → My Profile → API Tokens → Create Token
-- use "Create Custom Token"
-- permissions: Account / Cloudflare Tunnel / Edit, Zone / DNS / Edit
-- scope zone to `mosphere.at`
-
-Where it goes:
-- `secrets/secrets.yaml` under `cloudflare-api-token`
-
-### 9. `restic-password`
+### 12. `restic-password`
 What it is:
 - the encryption password for the restic backup repository on Cloudflare R2
 
@@ -183,7 +185,7 @@ Where it goes:
 
 **Back this up** to a password manager. Without it, backups cannot be restored.
 
-### 10. `r2-access-key-id`
+### 13. `r2-access-key-id`
 What it is:
 - the S3-compatible Access Key ID for the Cloudflare R2 backup bucket
 
@@ -195,7 +197,7 @@ How to create it:
 Where it goes:
 - `secrets/secrets.yaml` under `r2-access-key-id`
 
-### 11. `r2-secret-access-key`
+### 14. `r2-secret-access-key`
 What it is:
 - the S3-compatible Secret Access Key paired with the R2 Access Key ID above
 
@@ -207,7 +209,7 @@ Where it goes:
 
 ## Required bootstrap key material
 
-### 12. Operator age key
+### 15. Operator age key
 What it is:
 - the age key used on your Mac to edit and decrypt the SOPS file
 
@@ -221,7 +223,7 @@ age-keygen -y ~/.config/sops/age/keys.txt
 
 Use the printed public recipient in `.sops.yaml` (at the repo root).
 
-### 13. Host age key
+### 16. Host age key
 What it is:
 - the server-side age key that lets the fresh host decrypt `secrets/secrets.yaml` on first boot
 
