@@ -47,6 +47,7 @@ in
     codex
     codex-acp
     python3
+    todoist
     uv
     agent-browser
     firefox

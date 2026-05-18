@@ -76,6 +76,7 @@
             jujutsu
             mosh
             tmux
+            todoist
             uv
             zellij
             ;
