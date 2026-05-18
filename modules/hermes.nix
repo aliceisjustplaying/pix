@@ -33,10 +33,15 @@ let
     uv = "${pkgs.uv}/bin/uv";
   });
 in {
+  sops.secrets.gog-keyring-password = {
+    restartUnits = [ "hermes-gateway.service" ];
+  };
+
   sops.templates.hermes-service-env = {
     restartUnits = [ "hermes-gateway.service" ];
     content = tmpl ../files/sops/hermes-service.env {
       inherit hermesHome hermesOverrides agentHome servicePath;
+      gogKeyringPassword = config.sops.placeholder.gog-keyring-password;
     };
   };
 

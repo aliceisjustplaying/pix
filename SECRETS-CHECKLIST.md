@@ -118,7 +118,22 @@ jq -Rs . /path/to/client_secret.json |
   sops set --value-stdin secrets/secrets.yaml '["gog-oauth-client-json"]'
 ```
 
-### 9. `cloudflare-api-token`
+### 9. `gog-keyring-password`
+What it is:
+- the password for Gog's file keyring backend
+
+Where it goes:
+- `secrets/secrets.yaml` under `gog-keyring-password`
+- rendered into `hermes-gateway.service` as `GOG_KEYRING_PASSWORD`
+
+Import:
+
+```bash
+jq -Rs . /home/agent/.config/gogcli/keyring-password |
+  sops set --value-stdin secrets/secrets.yaml '["gog-keyring-password"]'
+```
+
+### 10. `cloudflare-api-token`
 What it is:
 - a Cloudflare API token for DNS management from the server
 
