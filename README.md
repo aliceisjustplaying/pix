@@ -1,129 +1,167 @@
-# pix.mosphere.at
+# pix
 
-NixOS host configuration for `pix.mosphere.at`, a Hetzner ARM64 VPS that runs PiClaw, Hermes, agent tooling, and supporting services.
+NixOS host configuration for the Pix machines. The active production host is
+`pix.mosphere.at`; the repo also carries a prepared `pix-amd64` target for a
+future x86_64 migration.
 
-This repo owns the host/platform layer: NixOS modules, Home Manager config for the `agent` user, SOPS-managed secrets, systemd services, local helper commands, and Nix package wrappers used on the box. Application patching/deployment for PiClaw lives in [`piclaw-customizations`](https://github.com/aliceisjustplaying/piclaw-customizations), not here.
+This repo owns the host/platform layer: NixOS modules, Home Manager config for
+the `agent` user, SOPS-managed secrets, systemd services, local helper
+commands, package wrappers, and first-deploy scripts. Application source trees
+and mutable runtime state live under `/workspace` and are only wired here.
+
+## Flake Targets
+
+| Target | System | Host module | Notes |
+| --- | --- | --- | --- |
+| `.#nixosConfigurations.pix` | `aarch64-linux` | `hosts/pix/default.nix` | Current ARM production host, hostname `pix` |
+| `.#nixosConfigurations.pix-amd64` | `x86_64-linux` | `hosts/pix-amd64/default.nix` | Prepared migration target, hostname `pix-amd64`, disk forced to `/dev/vda` |
+
+Package exports are built for both `aarch64-linux` and `x86_64-linux`:
+`amp-code`, `claude-code-acp`, `cli-proxy-api`, `codex-acp`, `droid`,
+`gogcli`, and `portless`.
 
 ## Layout
 
-- `flake.nix` / `flake.lock` — top-level flake, pinned Nix inputs, host overlay, and exported local packages.
-- `hosts/pix/default.nix` — host composition, firewall, SSH policy, Tailscale/Cloudflare/PiClaw/Hermes/Plausible imports.
-- `disko/pix.nix` — one-disk layout for nixos-anywhere installs.
-- `modules/` — NixOS modules for base OS, browser runtime, Tailscale, Cloudflare Tunnel, PiClaw, Hermes, Hermes WebUI, host jobs, bsky boost cron, Plausible, and restic backups.
-- `home/agent.nix`, `home/agent/` — Home Manager entry point and focused modules for `agent`: packages, shell aliases, helper commands, model/tool settings, Git/SSH, tmux, and user services.
-- `lib/` — shared Nix helpers, including agent service defaults and template rendering.
-- `pkgs/` — local package definitions/wrappers for Amp, CLIProxyAPI, Codex ACP, Claude Code ACP, Droid, Gog, Portless, and tsshd.
-- `files/` — rendered runtime files: helper scripts, service bootstraps, prompt/config overlays, cron entries, SOPS templates, Caddy config, and tool settings.
-- `scripts/` — bootstrap and validation scripts, including dependency freshness checks.
-- `secrets/`, `.sops.yaml`, `keys/` — SOPS policy, encrypted runtime secrets, bootstrap key material, and local public keys.
-- `INSTALL.md` — first-deploy and day-2 runbook.
-- `SECRETS-CHECKLIST.md` — required SOPS secret inventory and generation notes.
-- `AGENTS.md` — Pix-specific operating rules for agents working in this repo.
+- `flake.nix` / `flake.lock` - inputs, overlays, host package set, package exports, and NixOS targets.
+- `hosts/common/default.nix` - shared host composition, SSH policy, firewall, SOPS defaults, Home Manager wiring, and common imports.
+- `hosts/pix/`, `hosts/pix-amd64/` - host-specific hostname and disk overrides.
+- `disko/pix.nix` - one-disk layout used by nixos-anywhere.
+- `modules/` - NixOS modules for base OS, browser runtime, Tailscale, Cloudflare Tunnel, PiClaw, Hermes, Hermes WebUI, Plausible, backups, host jobs, bsky cron, and Bluepy GitHub runners.
+- `home/agent/` - Home Manager modules for packages, shell aliases, dotfiles, model/tool config, Git, SSH, tmux, and the user-level CLIProxyAPI service.
+- `files/` - rendered scripts, service bootstraps, CLI config templates, SOPS templates, Caddy config, and package-manager settings.
+- `pkgs/` - local package definitions/wrappers for Amp, Claude Code ACP, CLIProxyAPI, Codex ACP, Droid, Gog, Portless, and wrapped `tsshd`.
+- `scripts/` - deployment, bootstrap-key, and dependency validation helpers.
+- `docs/pix-amd64-migration.md` - x86_64 migration checklist.
+- `INSTALL.md`, `SECRETS-CHECKLIST.md`, `AGENTS.md` - install, secret, and agent runbooks.
 
-## What Nix manages
+## Managed Host Surface
 
-Nix owns the host/platform layer:
+Shared config imports the same service stack for both host targets:
 
-- NixOS stable `25.11` on `aarch64-linux`, latest kernel, bootloader, swap, journald policy, base packages, and garbage collection.
-- The `agent` user, `/workspace` symlink, `/workspace/src`, `/workspace/.pi`, `/workspace/.hermes`, and service state directories.
-- SSH access policy: public SSH is disabled after bootstrap; admin access is via Tailscale. Tailnet firewall allows SSH, selected internal web ports, and tsshd UDP `61001-61999`.
-- Cloudflare Tunnel for `pix.mosphere.at` → local PiClaw on `127.0.0.1:8080`.
-- `piclaw.service`, running from `/workspace/src/piclaw-live` via Bun. The live checkout is managed by `piclaw-customizations`.
-- `hermes-gateway.service`, bootstrapping `/workspace/src/hermes-live` into `/workspace/.hermes/venv` and running `hermes gateway run --replace`.
-- `hermes-webui.service`, serving `nesquena/hermes-webui` on Tailscale port `8787`.
-- `camofox.service`, running the Camofox browser API from `/workspace/src/camofox-browser` when present.
-- Plausible Analytics for `https://p.mosphere.at`, fronted by Caddy on public ports 80/443.
-- Daily encrypted restic backups of `/workspace` to Cloudflare R2, alongside Hetzner automatic backups.
-- Cron/`atd` support for bsky boost jobs.
-- Host job systemd units for rebuild/update/rollback/restart/backup operations, with narrow sudo rules for the `agent` user.
-- Agent CLI tooling: Bun, Node 24, Go, Python/uv, GitHub CLI, jj, tsshd, `agent-browser`, Amp, Droid, Gog, Claude Code, Codex, CLIProxyAPI, Codex ACP, Claude Code ACP, Portless, media/browser utilities, and local helper scripts.
+- Base OS on NixOS `25.11`, with `nix-command`/flakes, daily GC, automatic store optimisation, disk-pressure GC guard, zram, 8 GiB swapfile, latest kernel from `kernel-nixpkgs`, journald/coredump limits, and common CLI tooling.
+- `agent` user with passwordless wheel sudo, SSH keys, `/workspace -> /home/agent/workspace`, `/workspace/src`, `/workspace/.hermes`, and other service state directories.
+- Tailscale with `tag:pix`, DNS acceptance disabled, and a 30s autoconnect timeout.
+- OpenSSH locked to `agent`, no passwords, no root login, no X11 forwarding, firewall closed except declared ports.
+- Cloudflare Tunnel from the configured token.
+- PiClaw service from `/workspace/src/piclaw-live`, with env rendered from SOPS.
+- Hermes gateway from `/workspace/src/hermes-live`, bootstrapped into `/workspace/.hermes/venv`.
+- Hermes WebUI from `/workspace/src/hermes-webui`, using `/workspace/.hermes/webui`.
+- Plausible on `https://p.mosphere.at`, backed by PostgreSQL, ClickHouse, and Caddy.
+- Restic backups of `/workspace` to Cloudflare R2, daily with 7d/4w/3m retention.
+- Camofox browser API from `/workspace/src/camofox-browser` when that checkout exists.
+- Bluepy GitHub runners `bluepy-agent-1..3` when `/home/agent/.config/github-runner/bluepy-token` exists.
+- bsky boost cron jobs and `atd`.
 
-## What Nix does not manage
+## Ports
 
-- PiClaw application patch stack, upstream sync, prompt overlay, extensions, and deploy validation: owned by `/workspace/src/piclaw-customizations`.
-- The running PiClaw live checkout: `/workspace/src/piclaw-live`.
-- Clean upstream PiClaw PR work: `/workspace/src/piclaw-fork`.
-- Hermes source checkout: `/workspace/src/hermes-live`.
-- Hermes mutable state, skills, sessions, pairing data, and venv contents under `/workspace/.hermes`.
-- Camofox browser source checkout under `/workspace/src/camofox-browser`.
-- OAuth/login/session state for Claude, Codex, Amp, Factory/Droid, and related tools.
-
-## Runtime paths and ports
-
-| Thing | Path / address | Owner |
+| Port | Scope | Owner |
 | --- | --- | --- |
-| Canonical workspace | `/workspace` → `/home/agent/workspace` | Nix tmpfiles |
-| Pix repo | `/workspace/src/pix` | this repo |
-| PiClaw live checkout | `/workspace/src/piclaw-live` | `piclaw-customizations` deploy flow |
-| PiClaw rollback target | `/workspace/src/piclaw-live.previous` | `piclaw-customizations` deploy flow |
-| Upstream PiClaw fork checkout | `/workspace/src/piclaw-fork` | manual/PR work |
-| Hermes checkout | `/workspace/src/hermes-live` | Hermes update flow |
-| Hermes home/state | `/workspace/.hermes` | Hermes service/runtime |
-| PiClaw state | `/workspace/.piclaw` | PiClaw runtime |
-| PiClaw HTTP | `127.0.0.1:8080`, public via `pix.mosphere.at` | `piclaw.service` + Cloudflare Tunnel |
-| Hermes WebUI | `0.0.0.0:8787`, Tailscale only | `hermes-webui.service` |
-| Plausible | `127.0.0.1:8000`, public via `p.mosphere.at` | Plausible + Caddy |
-| Camofox API | port `9377` | `camofox.service` |
+| `22/tcp` | Tailscale only | SSH |
+| `80/tcp`, `443/tcp` | Public and Tailscale | Caddy/Plausible plus host web entrypoints |
+| `8787/tcp` | Tailscale only | Hermes WebUI |
+| `61001-61999/udp` | Tailscale only | Wrapped `tsshd` |
+| `127.0.0.1:8080` | Local | PiClaw |
+| `127.0.0.1:8084` | Local | Hermes API server |
+| `127.0.0.1:8317` | Local user service | CLIProxyAPI |
+| `127.0.0.1:8000` | Local | Plausible |
+| `9377/tcp` | Service process | Camofox API |
 
-## Day-to-day commands on the host
+## Runtime Paths
 
-These commands are installed for `agent` under `~/.local/bin` by Home Manager. The mutating commands enqueue fixed systemd units; they do not run ad hoc privileged commands directly.
+| Path | Owner |
+| --- | --- |
+| `/workspace/src/pix` | this repo |
+| `/workspace/src/piclaw-customizations` | PiClaw patch/deploy flow |
+| `/workspace/src/piclaw-live` | running PiClaw checkout |
+| `/workspace/src/piclaw-live.previous` | PiClaw rollback target |
+| `/workspace/src/piclaw-fork` | upstream PiClaw PR work |
+| `/workspace/src/hermes-live` | Hermes source checkout |
+| `/workspace/src/hermes-webui` | Hermes WebUI checkout |
+| `/workspace/src/camofox-browser` | optional Camofox checkout |
+| `/workspace/.piclaw` | PiClaw mutable state |
+| `/workspace/.hermes` | Hermes home, venv, logs, sessions, skills, pairing, WebUI state |
+| `/workspace/github-runners/bluepy-agent-*` | Bluepy runner work directories |
+| `/workspace/agent-worktrees/bluepy` | Bluepy runner agent worktrees |
 
-- `rebuild` / `sync-nix` — pull `/workspace/src/pix` and start `pix-rebuild.service`, which runs `nixos-rebuild switch --flake path:/home/agent/workspace/src/pix#pix`.
-- `update` / `update --force` — start `piclaw-update.service` or `piclaw-update-force.service`.
-- `rollback` / `rollback --force` — start `piclaw-rollback.service` or `piclaw-rollback-force.service`.
-- `piclaw-restart` — start `piclaw-restart.service`.
-- `backup` — start `restic-backups-r2.service`.
-- `host-result <unit> --wait <seconds>` — wait for a queued host job and print recent journal output.
-- `verify-deploy` — run the PiClaw deploy verifier locally without activating a candidate.
-- `dependency-freshness` — fail if checked Nix flake/fetcher pins are newer than 24 hours or cannot be verified. Fresh dependency bypasses require an explicit reason and do not bypass verification errors.
-- `piclaw-status`, `piclaw-logs` — SSH wrappers for `systemctl status` / `journalctl -u piclaw`.
-- `nfu` — update flake inputs and pinned package wrappers, run dependency freshness checks, and build the exported package set.
-- `hermes` — wrapper for the live Hermes install under `/workspace/.hermes`.
-- `amp-login-proxy`, `amp-login-upstream` — Amp OAuth login helpers for proxied/upstream flows.
+## Agent User Tooling
 
-Any action that activates a new host or PiClaw runtime (`rebuild`, `update`, `rollback`, `piclaw-restart`, `backup`, direct systemd starts, etc.) should be approved in the current conversation before running.
+Home Manager installs Bun, Node 24, Go 1.26, Python, uv, GitHub CLI, jj, tmux,
+zellij, `agent-browser`, Firefox, Playwright, media tools, `tsshd`, and the
+local packages exported by this flake. It also renders:
 
-Shell aliases: `sync-nix` = `rebuild`, `update-force` = `update --force`, `rollback-force` = `rollback --force`.
+- package-manager freshness gates: npm `min-release-age`, Bun/pnpm `minimumReleaseAge`, uv `exclude-newer`, and Cargo through the Menhera 1d proxy.
+- Amp, Factory/Droid, and CLIProxyAPI model config from `home/agent/model-catalog.nix`.
+- Claude and Codex agent instruction files.
+- Git and SSH defaults for GitHub, Tangled, and localhost host-job access.
+- shell aliases for host jobs, Pix/PiClaw navigation, Hermes, Claude, Codex, tmux, and zellij.
 
-## Key defaults
+The user-level `cli-proxy-api.service` runs
+`cli-proxy-api --config ~/.cli-proxy-api/config.yaml` and serves OAuth-backed
+model proxy traffic on `127.0.0.1:8317`.
 
-- Flake target: `nixosConfigurations.pix` for `aarch64-linux`.
-- Nixpkgs: `nixos-25.11`, with selected tools pulled from `nixpkgs-unstable`.
-- Public hostname: `pix.mosphere.at`.
-- Tailscale hostname/address: `pix.tailec2dc.ts.net` / `100.74.251.100`.
-- PiClaw binds locally on `127.0.0.1:8080` and is published by Cloudflare Tunnel.
-- Web Push uses `PICLAW_WEB_PUSH_VAPID_SUBJECT=https://pix.mosphere.at` so Apple Home Screen web apps accept outbound VAPID JWTs.
-- Notification source markers (`[Local]`, `[Web Push]`) stay hidden by default; set `PICLAW_WEB_NOTIFICATION_DEBUG_LABELS=1` only while debugging delivery routing.
-- PiClaw uses the `codex-app-server` backend by default.
-- The Piclaw service runs with `ProtectSystem=strict`; host-level changes go through declared host job units.
-- Browser/UI validation uses `agent-browser`; Chromium and browser runtime libraries are provided by Nix.
-- Persistent host/agent tooling should be added to Nix/Home Manager here, not installed with one-off package-manager commands.
-- npm/pnpm/Bun/uv/Cargo dependency installs use release-age gates from managed config; `nfu` also checks Nix flake/fetcher pins before building packages.
+## Host Commands
 
-## Backups
+Home Manager installs these wrappers under `~/.local/bin`. Mutating wrappers
+queue NixOS-declared systemd units with narrow sudo rules, then return
+immediately. Use `host-result` to wait and inspect logs.
 
-- **Hetzner automatic backups** — full-disk rolling snapshots, enabled outside Nix via Hetzner.
-- **Restic to Cloudflare R2** — daily encrypted `/workspace` backups, excluding caches and rebuildable checkouts, with 7d/4w/3m retention. See `modules/backup.nix`.
+| Command | Unit / behavior |
+| --- | --- |
+| `rebuild`, `sync-nix` | queue `pix-rebuild.service`; pulls `/workspace/src/pix`, then `nixos-rebuild switch --flake path:/home/agent/workspace/src/pix#<hostname>` |
+| `update`, `update-force` | queue `piclaw-update.service` / `piclaw-update-force.service` |
+| `rollback`, `rollback-force` | queue `piclaw-rollback.service` / `piclaw-rollback-force.service` |
+| `piclaw-restart` | queue `piclaw-restart.service` |
+| `backup` | queue `restic-backups-r2.service` |
+| `host-result <unit> --wait <seconds>` | wait for a host-job unit and print recent journal |
+| `verify-deploy` | run PiClaw deploy verification from `/workspace/src/piclaw-customizations` |
+| `dependency-freshness` | run `scripts/check-dependency-freshness.py` |
+| `nfu` | update flake inputs and local package pins, run freshness checks, and build exported packages |
+| `nfur` | shell alias for `nfu && rebuild` |
+| `piclaw-status`, `piclaw-logs` | SSH wrappers around service status/logs |
+| `hermes`, `h`, `ht` | run Hermes from `/workspace/.hermes` |
+| `amp-login-proxy`, `amp-login-upstream` | Amp login helpers for proxy/upstream modes |
 
-Manual backup on the host:
+Host activation commands should be approved in the current conversation before
+running.
+
+## Updates And Freshness
+
+`nfu` is the tracked updater for this repo. It handles flake inputs plus local
+package pins for Amp, Claude Code ACP, CLIProxyAPI, Codex ACP, Droid, Gog, and
+Portless, then validates the exported package set with `nix build`.
+
+The default freshness floor is 24 hours. Nix flake/fetcher pins are checked by
+`scripts/check-dependency-freshness.py`; npm/Bun/pnpm/uv/Cargo have managed
+resolver gates. Temporary bypasses require both `PIX_ALLOW_FRESH_DEPS=1` and a
+`PIX_FRESH_DEPS_REASON`.
+
+## Boundaries
+
+Nix manages platform wiring, not app source or mutable user/session state:
+
+- PiClaw patch stack and deploy logic live in `/workspace/src/piclaw-customizations`.
+- PiClaw, Hermes, Hermes WebUI, and Camofox checkouts are mutable runtime/source checkouts under `/workspace/src`.
+- Hermes sessions, pairing data, skills, venv, and logs live under `/workspace/.hermes`.
+- OAuth/login/session state for Claude, Codex, Amp, Factory/Droid, Gog, and related tools is not declared here.
+- GitHub runner registration tokens are expected at `/home/agent/.config/github-runner/bluepy-token`.
+
+## Deploy And Migration
+
+First install uses `scripts/deploy.sh` with nixos-anywhere:
 
 ```bash
-backup
-host-result restic-backups-r2 --wait 900
+scripts/deploy.sh <server-ip>
+scripts/deploy.sh --host pix-amd64 <server-ip>
 ```
 
-## First deploy and secrets
+`scripts/prepare-bootstrap-key.sh` creates the SOPS host age key material for
+nixos-anywhere extra files. See `INSTALL.md` for first deploy and
+`docs/pix-amd64-migration.md` for the x86_64 migration runbook.
 
-See [`INSTALL.md`](INSTALL.md) for the A-to-Z install runbook and day-2 operations.
-See [`SECRETS-CHECKLIST.md`](SECRETS-CHECKLIST.md) for required SOPS secrets and bootstrap key material.
+## Web Push
 
-## Web Push note
-
-For iPhone Safari PWA / Home Screen notifications, PiClaw must advertise a real public VAPID subject. The placeholder fallback used by upstream code, `mailto:notifications@localhost.invalid`, is sufficient for local development but Apple Push rejects it in production with `403 {"reason":"BadJwtToken"}`.
-
-On this host the service env is rendered from [`modules/piclaw.nix`](modules/piclaw.nix), and the correct subject is pinned to `https://pix.mosphere.at`. If iPhone subscriptions appear in `/workspace/.piclaw/web-push/subscriptions.json` but no pushes arrive, verify this env var first.
-
-Optional debug env:
-
-- `PICLAW_WEB_NOTIFICATION_DEBUG_LABELS=1` — show `[Local]` / `[Web Push]` suffixes in notification titles while validating routing. Default is off.
+PiClaw’s service env is rendered from `files/sops/piclaw.env`. The VAPID
+subject is pinned to `https://pix.mosphere.at` because Apple Home Screen web
+apps reject placeholder `mailto:` subjects. Notification source labels are off
+by default; set `PICLAW_WEB_NOTIFICATION_DEBUG_LABELS=1` only while debugging
+delivery routing.
