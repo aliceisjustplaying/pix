@@ -11,7 +11,7 @@
   # full service definitions in the system closure, but do not auto-start
   # services that would publish routes, join external backends, or mutate shared
   # production state.
-  networking.firewall.allowedTCPPorts = lib.mkForce [ 22 ];
+  networking.firewall.allowedTCPPorts = lib.mkForce [ ];
 
   systemd.services = {
     agent-secrets.wantedBy = lib.mkForce [ ];
