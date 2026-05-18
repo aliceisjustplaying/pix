@@ -78,20 +78,26 @@ in {
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
-    unitConfig.ConditionPathExists = "/workspace/src/camofox-browser/server.js";
 
     serviceConfig = {
       Type = "simple";
       User = "agent";
       Group = "users";
-      WorkingDirectory = "/workspace/src/camofox-browser";
+      WorkingDirectory = agentHome;
       Environment = [
         "HOME=${agentHome}"
         "NODE_ENV=production"
+        "CAMOFOX_HOST=127.0.0.1"
         "CAMOFOX_PORT=9377"
-        "PATH=${lib.makeBinPath [ pkgs.nodejs_24 pkgs.yt-dlp pkgs.coreutils pkgs.bash ]}"
+        "CAMOFOX_CRASH_REPORT_ENABLED=false"
+        "CAMOFOX_PROFILE_DIR=${agentHome}/.camofox/profiles"
+        "CAMOFOX_COOKIES_DIR=${agentHome}/.camofox/cookies"
+        "CAMOFOX_TRACES_DIR=${agentHome}/.camofox/traces"
+        "XDG_CACHE_HOME=${agentHome}/.cache"
+        "PATH=${lib.makeBinPath [ pkgs.camofox-browser pkgs.nodejs_24 pkgs.yt-dlp pkgs.coreutils pkgs.bash ]}"
       ];
-      ExecStart = "${pkgs.nodejs_24}/bin/node server.js";
+      ExecStartPre = "${pkgs.camofox-browser}/lib/node_modules/@askjo/camofox-browser/node_modules/.bin/camoufox-js fetch";
+      ExecStart = "${lib.getExe pkgs.camofox-browser}";
       Restart = "on-failure";
       RestartSec = "5s";
     };

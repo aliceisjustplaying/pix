@@ -17,8 +17,9 @@ and mutable runtime state live under `/workspace` and are only wired here.
 | `.#nixosConfigurations.pix2` | `x86_64-linux` | `hosts/pix2/default.nix` | Hetzner x86_64 migration target, hostname `pix2` |
 
 Package exports are built for both `aarch64-linux` and `x86_64-linux`:
-`agentmemory`, `amp-code`, `claude-code-acp`, `cli-proxy-api`, `codex-acp`,
-`droid`, `gogcli`, `iii`, `portless`, `tirith`, and `vet-run`.
+`agentmemory`, `amp-code`, `camofox-browser`, `claude-code-acp`,
+`cli-proxy-api`, `codex-acp`, `droid`, `gogcli`, `iii`, `portless`, `tirith`,
+and `vet-run`.
 
 ## Layout
 
@@ -49,7 +50,7 @@ Shared config imports the same service stack for both host targets:
 - Hermes WebUI from `/workspace/src/hermes-webui`, using `/workspace/.hermes/webui`.
 - Plausible on `https://p.mosphere.at`, backed by PostgreSQL, ClickHouse, and Caddy.
 - Restic backups of `/workspace` to Cloudflare R2, daily with 7d/4w/3m retention.
-- Camofox browser API from `/workspace/src/camofox-browser` when that checkout exists.
+- Camofox browser API from the pinned Nix package `pkgs.camofox-browser`.
 - Bluepy GitHub runners `bluepy-agent-1..3` when `/home/agent/.config/github-runner/bluepy-token` exists.
 - bsky boost cron jobs and `atd`.
 
@@ -82,7 +83,8 @@ Shared config imports the same service stack for both host targets:
 | `/workspace/src/piclaw-fork` | upstream PiClaw PR work |
 | `/workspace/src/hermes-live` | Hermes source checkout |
 | `/workspace/src/hermes-webui` | Hermes WebUI checkout |
-| `/workspace/src/camofox-browser` | optional Camofox checkout |
+| `/home/agent/.cache/camoufox` | Camoufox browser binary cache, populated by `camofox.service` |
+| `/home/agent/.camofox` | Camofox browser profiles, cookies, and traces |
 | `/workspace/.piclaw` | PiClaw mutable state |
 | `/workspace/.hermes` | Hermes home, venv, logs, sessions, skills, pairing, WebUI state |
 | `/home/agent/.agentmemory` | AgentMemory state, config, pidfile, snapshots, and local memory data |
