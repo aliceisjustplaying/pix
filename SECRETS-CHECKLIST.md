@@ -207,9 +207,16 @@ How to create it:
 Where it goes:
 - `secrets/secrets.yaml` under `r2-secret-access-key`
 
+### 15. `todoist-api-token`
+What it is:
+- the Todoist API token for CLI/API access
+
+Where it goes:
+- `secrets/secrets.yaml` under `todoist-api-token`
+
 ## Required bootstrap key material
 
-### 15. Operator age key
+### 16. Operator age key
 What it is:
 - the age key used on your Mac to edit and decrypt the SOPS file
 
@@ -223,7 +230,7 @@ age-keygen -y ~/.config/sops/age/keys.txt
 
 Use the printed public recipient in `.sops.yaml` (at the repo root).
 
-### 16. Host age key
+### 17. Host age key
 What it is:
 - the server-side age key that lets the fresh host decrypt `secrets/secrets.yaml` on first boot
 
