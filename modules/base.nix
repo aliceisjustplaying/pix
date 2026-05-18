@@ -19,6 +19,7 @@ in
     max-free = gib 20;
     trusted-users = [ "root" "@wheel" ];
   };
+  nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
 
   nix.gc = {
     automatic = true;

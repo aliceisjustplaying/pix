@@ -45,4 +45,6 @@
     nix-optimise.wantedBy = lib.mkForce [ ];
     restic-backups-r2.wantedBy = lib.mkForce [ ];
   };
+
+  systemd.targets.postgresql.wantedBy = lib.mkForce [ ];
 }

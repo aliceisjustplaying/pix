@@ -41,6 +41,8 @@ in {
     "d ${agentHome}/workspace 0750 agent users - -"
     "d ${agentHome}/.local 0755 agent users - -"
     "d ${agentHome}/.local/bin 0755 agent users - -"
+    "d ${agentHome}/.config 0700 agent users - -"
+    "z ${agentHome}/.config 0700 agent users - -"
     "d ${agentHome}/.config/gog 0700 agent users - -"
     "d ${agentHome}/.pi 0700 agent users - -"
     "d ${agentHome}/.ssh 0700 agent users - -"

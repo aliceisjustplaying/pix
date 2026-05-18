@@ -160,7 +160,9 @@ scripts/deploy.sh --host pix2 <server-ip>
 
 `scripts/prepare-bootstrap-key.sh` creates the SOPS host age key material for
 nixos-anywhere extra files. See `INSTALL.md` for first deploy and
-`docs/pix2-migration.md` for the x86_64 migration runbook.
+`docs/pix2-migration.md` for the x86_64 migration runbook. The `pix2` host
+configuration intentionally boots in staging mode until cutover: SSH stays
+available, while production services and tunnels are not auto-started.
 
 ## Web Push
 

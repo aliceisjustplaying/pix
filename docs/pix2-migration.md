@@ -59,6 +59,11 @@ The private key and `.nixos-anywhere-extra` are gitignored. Do not commit them.
 
 ## Install pix2
 
+`pix2` boots in staging mode until cutover: only SSH is exposed publicly, and
+production-facing services, tunnels, runners, cron jobs, backups, and Tailscale
+are not wanted by `multi-user.target`. This lets the host build the full system
+closure without publishing routes or touching shared production services.
+
 From this repo:
 
 ```bash
@@ -78,7 +83,18 @@ Expected:
 
 - hostname is `pix2`
 - architecture is `x86_64`
+- public listening sockets are limited to SSH
+- Piclaw, Hermes, Caddy, Cloudflare Tunnel, Plausible, ClickHouse, runners, backups, cron, atd, and Tailscale are inactive
 - `pix-rebuild.service` rebuilds `.#pix2`
+
+To prebuild on `pix2` without starting the production stack:
+
+```bash
+ssh agent@<server-ip> 'cd /home/agent/workspace/src/pix && nixos-rebuild build --flake .#pix2'
+```
+
+Do not run `nixos-rebuild switch` with the production services enabled until
+the final cutover window.
 
 ## Restore preflight
 
