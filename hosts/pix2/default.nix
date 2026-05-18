@@ -47,4 +47,6 @@
   };
 
   systemd.targets.postgresql.wantedBy = lib.mkForce [ ];
+
+  home-manager.users.agent.systemd.user.services.cli-proxy-api.Install.WantedBy = lib.mkForce [ ];
 }
