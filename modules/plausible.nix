@@ -39,6 +39,9 @@
   services.caddy = {
     enable = true;
     email = "aliceisjustplaying@gmail.com";
+    globalConfig = ''
+      acme_ca https://acme.zerossl.com/v2/DV90
+    '';
 
     virtualHosts."p.mosphere.at".extraConfig = builtins.readFile ../files/caddy/plausible.caddy;
     virtualHosts."pix.mosphere.at".extraConfig = builtins.readFile ../files/caddy/piclaw.caddy;
