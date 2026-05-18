@@ -104,6 +104,7 @@ in {
       ExecStartPre = agentmemoryBootstrap;
       ExecStart = "${pkgs.agentmemory}/bin/agentmemory --port 3111";
       ExecStop = "${pkgs.agentmemory}/bin/agentmemory stop --force";
+      Restart = "no";
       TimeoutStartSec = "2min";
       TimeoutStopSec = "30s";
     };
