@@ -61,12 +61,14 @@
         };
         hostOverlay = final: _prev: {
           agent-browser = llm-agents.packages.${final.stdenv.hostPlatform.system}.agent-browser;
+          agentmemory = final.callPackage ./pkgs/agentmemory { };
           amp-code = final.callPackage ./pkgs/amp.nix { };
           claude-code-acp = final.callPackage ./pkgs/claude-code-acp { };
           cli-proxy-api = final.callPackage ./pkgs/cli-proxy-api.nix { };
           codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
           droid = final.callPackage ./pkgs/droid.nix { };
           gogcli = final.callPackage ./pkgs/gogcli.nix { };
+          iii = final.callPackage ./pkgs/iii.nix { };
           portless = final.callPackage ./pkgs/portless { };
           tirith = final.callPackage ./pkgs/tirith.nix { };
           vet-run = final.callPackage ./pkgs/vet-run.nix { };
@@ -111,12 +113,14 @@
         pkgs = mkPkgs system;
       in {
         inherit (pkgs)
+          agentmemory
           amp-code
           claude-code-acp
           cli-proxy-api
           codex-acp
           droid
           gogcli
+          iii
           portless
           tirith
           vet-run

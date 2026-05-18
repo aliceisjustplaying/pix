@@ -25,6 +25,8 @@ in
   home.packages = with pkgs; [
     bun
     nodejs_24
+    agentmemory
+    iii
     google-cloud-sdk
     gh
     jujutsu
