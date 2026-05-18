@@ -119,37 +119,21 @@ Hermes state is split across:
 
 - `/workspace/src/hermes-live` and `/workspace/src/hermes-webui` for source checkouts
 - `/workspace/.hermes` for config, sessions, logs, skills, pairing, WebUI state, and overrides
-- `/home/agent/.hindsight` for the Hindsight profile/config
-- `/home/agent/.pg0/instances/hindsight-embed-hermes` for Hindsight's embedded PostgreSQL data
+- `/home/agent/.agentmemory` for AgentMemory config, pidfile, snapshots, and local memory data
 - `/home/agent/.cli-proxy-api` for the local OpenAI-compatible proxy config
 - `/home/agent/.config/gogcli` and `/home/agent/.config/gogcli/keyring` for Gog account config and tokens
 - `/home/agent/.agents`, `/home/agent/.codex`, `/home/agent/.claude`, and `/home/agent/.factory` for agent config and sessions
 
 Do not copy architecture-specific generated artifacts from the ARM host:
-Hermes venvs and pg0 PostgreSQL binaries must be rebuilt on `pix2`.
-
-Before the final state copy, export Hindsight's database from the old host:
-
-```bash
-mkdir -p /home/agent/migration
-old_hindsight_port="$(/workspace/.hermes/venv/lib/python3.12/site-packages/pg0/bin/pg0 info --name hindsight-embed-hermes -o json | jq -r .port)"
-LD_LIBRARY_PATH="$(sudo sed -n 's/^LD_LIBRARY_PATH=//p' /run/secrets/rendered/hermes-service-env)" \
-  PGPASSWORD=hindsight \
-  /home/agent/.pg0/installation/18.1.0/bin/pg_dump \
-    -h 127.0.0.1 \
-    -p "$old_hindsight_port" \
-    -U hindsight \
-    -d hindsight \
-    -Fc \
-    -f /home/agent/migration/hindsight-hermes.dump
-```
+Hermes venvs must be rebuilt on `pix2`; copy AgentMemory state after stopping
+`agentmemory.service` on the target.
 
 Use rsync from the old host to the new host after the new NixOS boot succeeds.
 Stop the new host's services first so empty first-boot state does not race the
 copy:
 
 ```bash
-ssh agent@<server-ip> 'sudo systemctl stop hermes-gateway hermes-webui piclaw plausible postgresql clickhouse caddy cloudflared || true'
+ssh agent@<server-ip> 'sudo systemctl stop hermes-gateway hermes-webui agentmemory piclaw plausible postgresql clickhouse caddy cloudflared || true'
 ```
 
 Copy the workspace and agent home. Keep generated caches out; keep auth,
@@ -161,8 +145,6 @@ rsync -aHAX --numeric-ids --info=progress2 \
   --exclude '/.nix-defexpr' \
   --exclude '/.nix-profile' \
   --exclude '/.npm/' \
-  --exclude '/.pg0/installation/' \
-  --exclude '/.pg0/instances/' \
   --exclude '/.cargo/registry/' \
   --exclude '/.bun/install/cache/' \
   --exclude '/workspace/.hermes/venv/' \
@@ -195,28 +177,7 @@ After copying, fix ownership-sensitive service state and restart:
 
 ```bash
 ssh agent@<server-ip> 'sudo chown -R agent:users /home/agent /workspace'
-ssh agent@<server-ip> 'sudo systemctl restart postgresql clickhouse caddy cloudflared plausible piclaw hermes-gateway hermes-webui'
-```
-
-Once Hermes has started Hindsight on `pix2`, restore the Hindsight dump:
-
-```bash
-ssh agent@<server-ip> 'curl -fsS http://127.0.0.1:9177/health'
-rsync -aHAX --info=progress2 /home/agent/migration/hindsight-hermes.dump root@<server-ip>:/home/agent/migration/
-ssh agent@<server-ip> '
-  new_hindsight_port="$(/workspace/.hermes/venv/lib/python3.12/site-packages/pg0/bin/pg0 info --name hindsight-embed-hermes -o json | jq -r .port)"
-  LD_LIBRARY_PATH="$(sudo sed -n "s/^LD_LIBRARY_PATH=//p" /run/secrets/rendered/hermes-service-env)" \
-    PGPASSWORD=hindsight \
-    /home/agent/.pg0/installation/18.1.0/bin/pg_restore \
-      --clean \
-      --if-exists \
-      -h 127.0.0.1 \
-      -p "$new_hindsight_port" \
-      -U hindsight \
-      -d hindsight \
-      /home/agent/migration/hindsight-hermes.dump
-'
-ssh agent@<server-ip> 'sudo systemctl restart hermes-gateway'
+ssh agent@<server-ip> 'sudo systemctl restart postgresql clickhouse caddy cloudflared plausible piclaw agentmemory hermes-gateway hermes-webui'
 ```
 
 Do not cut DNS or Cloudflare tunnel traffic until the new host has restored
@@ -227,10 +188,10 @@ state and passed service checks.
 Before switching traffic:
 
 ```bash
-ssh agent@<server-ip> 'systemctl status piclaw hermes-gateway plausible caddy cloudflared --no-pager'
+ssh agent@<server-ip> 'systemctl status piclaw agentmemory hermes-gateway plausible caddy cloudflared --no-pager'
 ssh agent@<server-ip> 'systemctl --user status cli-proxy-api --no-pager'
 ssh agent@<server-ip> 'curl -fsS http://127.0.0.1:8084/ >/dev/null || true'
-ssh agent@<server-ip> 'curl -fsS http://127.0.0.1:9177/health'
+ssh agent@<server-ip> 'curl -fsS http://127.0.0.1:3111/agentmemory/livez'
 ssh agent@<server-ip> 'hermes memory status'
 ssh agent@<server-ip> 'curl -fsS http://127.0.0.1:8000/api/health || true'
 ssh agent@<server-ip> 'curl -fsS http://127.0.0.1:2019/config/ >/dev/null || true'
