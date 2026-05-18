@@ -44,7 +44,7 @@ Shared config imports the same service stack for both host targets:
 - OpenSSH locked to `agent`, no passwords, no root login, no X11 forwarding, firewall closed except declared ports.
 - Cloudflare Tunnel from the configured token.
 - PiClaw service from `/workspace/src/piclaw-live`, with env rendered from SOPS.
-- Hermes gateway from `/workspace/src/hermes-live`, bootstrapped into `/workspace/.hermes/venv`.
+- Hermes gateway from `/workspace/src/hermes-live`, bootstrapped into `/workspace/.hermes/venv`, with Hindsight as the local memory provider.
 - Hermes WebUI from `/workspace/src/hermes-webui`, using `/workspace/.hermes/webui`.
 - Plausible on `https://p.mosphere.at`, backed by PostgreSQL, ClickHouse, and Caddy.
 - Restic backups of `/workspace` to Cloudflare R2, daily with 7d/4w/3m retention.
@@ -63,6 +63,8 @@ Shared config imports the same service stack for both host targets:
 | `127.0.0.1:8080` | Local | PiClaw |
 | `127.0.0.1:8084` | Local | Hermes API server |
 | `127.0.0.1:8317` | Local user service | CLIProxyAPI |
+| `127.0.0.1:9177` | Local | Hindsight API for Hermes memory |
+| `127.0.0.1:5433` | Local | Hindsight embedded PostgreSQL when memory is active |
 | `127.0.0.1:8000` | Local | Plausible |
 | `9377/tcp` | Service process | Camofox API |
 
@@ -80,6 +82,7 @@ Shared config imports the same service stack for both host targets:
 | `/workspace/src/camofox-browser` | optional Camofox checkout |
 | `/workspace/.piclaw` | PiClaw mutable state |
 | `/workspace/.hermes` | Hermes home, venv, logs, sessions, skills, pairing, WebUI state |
+| `/home/agent/.hindsight`, `/home/agent/.pg0` | Hindsight profile and embedded PostgreSQL state |
 | `/workspace/github-runners/bluepy-agent-*` | Bluepy runner work directories |
 | `/workspace/agent-worktrees/bluepy` | Bluepy runner agent worktrees |
 
@@ -142,7 +145,7 @@ Nix manages platform wiring, not app source or mutable user/session state:
 
 - PiClaw patch stack and deploy logic live in `/workspace/src/piclaw-customizations`.
 - PiClaw, Hermes, Hermes WebUI, and Camofox checkouts are mutable runtime/source checkouts under `/workspace/src`.
-- Hermes sessions, pairing data, skills, venv, and logs live under `/workspace/.hermes`.
+- Hermes sessions, pairing data, skills, venv, logs, and Hindsight memory state are mutable runtime data.
 - OAuth/login/session state for Claude, Codex, Amp, Factory/Droid, Gog, and related tools is not declared here.
 - GitHub runner registration tokens are expected at `/home/agent/.config/github-runner/bluepy-token`.
 
