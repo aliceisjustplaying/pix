@@ -18,7 +18,7 @@ and mutable runtime state live under `/workspace` and are only wired here.
 
 Package exports are built for both `aarch64-linux` and `x86_64-linux`:
 `amp-code`, `claude-code-acp`, `cli-proxy-api`, `codex-acp`, `droid`,
-`gogcli`, and `portless`.
+`gogcli`, `portless`, `tirith`, and `vet-run`.
 
 ## Layout
 
@@ -90,8 +90,8 @@ Shared config imports the same service stack for both host targets:
 
 Home Manager installs Bun, Node 24, Go 1.26, Python, uv, GitHub CLI, Google
 Cloud CLI, jj, tmux, zellij, todoist (sachaos/todoist CLI), `agent-browser`,
-Firefox, Playwright, media tools, `tsshd`, and the local packages exported by
-this flake. It also renders:
+`tirith`, `vet`, Firefox, Playwright, media tools, the Opus codec, `tsshd`, and
+the local packages exported by this flake. It also renders:
 
 - package-manager freshness gates: npm `min-release-age`, Bun/pnpm `minimumReleaseAge`, uv `exclude-newer`, and Cargo through the Menhera 1d proxy.
 - Amp, Factory/Droid, and CLIProxyAPI model config from `home/agent/model-catalog.nix`.

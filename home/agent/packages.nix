@@ -38,6 +38,8 @@ in
     yt-dlp
     sqlite
     tsshd
+    tirith
+    vet-run
     zellij
     droid
     gogcli

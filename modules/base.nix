@@ -187,6 +187,7 @@ in
     cloudflared
     bubblewrap
     chromium
+    libopus
     gh
     ghstack
     git-crypt

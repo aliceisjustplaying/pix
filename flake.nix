@@ -68,6 +68,8 @@
           droid = final.callPackage ./pkgs/droid.nix { };
           gogcli = final.callPackage ./pkgs/gogcli.nix { };
           portless = final.callPackage ./pkgs/portless { };
+          tirith = final.callPackage ./pkgs/tirith.nix { };
+          vet-run = final.callPackage ./pkgs/vet-run.nix { };
           inherit (unstablePkgs)
             bun
             fastfetch
@@ -116,6 +118,8 @@
           droid
           gogcli
           portless
+          tirith
+          vet-run
           ;
       });
 
