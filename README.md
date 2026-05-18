@@ -12,7 +12,7 @@ This repo owns the host/platform layer: NixOS modules, Home Manager config for t
 - `modules/` — NixOS modules for base OS, browser runtime, Tailscale, Cloudflare Tunnel, PiClaw, Hermes, Hermes WebUI, host jobs, bsky boost cron, Plausible, and restic backups.
 - `home/agent.nix`, `home/agent/` — Home Manager entry point and focused modules for `agent`: packages, shell aliases, helper commands, model/tool settings, Git/SSH, tmux, and user services.
 - `lib/` — shared Nix helpers, including agent service defaults and template rendering.
-- `pkgs/` — local package definitions/wrappers for Amp, CLIProxyAPI, Codex ACP, Claude Code ACP, Droid, Portless, and tsshd.
+- `pkgs/` — local package definitions/wrappers for Amp, CLIProxyAPI, Codex ACP, Claude Code ACP, Droid, Gog, Portless, and tsshd.
 - `files/` — rendered runtime files: helper scripts, service bootstraps, prompt/config overlays, cron entries, SOPS templates, Caddy config, and tool settings.
 - `scripts/` — bootstrap and validation scripts, including dependency freshness checks.
 - `secrets/`, `.sops.yaml`, `keys/` — SOPS policy, encrypted runtime secrets, bootstrap key material, and local public keys.
@@ -36,7 +36,7 @@ Nix owns the host/platform layer:
 - Daily encrypted restic backups of `/workspace` to Cloudflare R2, alongside Hetzner automatic backups.
 - Cron/`atd` support for bsky boost jobs.
 - Host job systemd units for rebuild/update/rollback/restart/backup operations, with narrow sudo rules for the `agent` user.
-- Agent CLI tooling: Bun, Node 24, Go, Python/uv, GitHub CLI, jj, tsshd, `agent-browser`, Amp, Droid, Claude Code, Codex, CLIProxyAPI, Codex ACP, Claude Code ACP, Portless, media/browser utilities, and local helper scripts.
+- Agent CLI tooling: Bun, Node 24, Go, Python/uv, GitHub CLI, jj, tsshd, `agent-browser`, Amp, Droid, Gog, Claude Code, Codex, CLIProxyAPI, Codex ACP, Claude Code ACP, Portless, media/browser utilities, and local helper scripts.
 
 ## What Nix does not manage
 

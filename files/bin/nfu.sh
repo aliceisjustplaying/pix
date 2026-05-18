@@ -9,6 +9,7 @@
 #       * cli-proxy-api   (github: router-for-me/CLIProxyAPI,       Go vendorHash)
 #       * codex-acp       (npm: @agentclientprotocol/codex-acp,     sha512, +lockfile)
 #       * droid           (npm: @factory/cli-linux-{arm64,x64},     sha512)
+#       * gogcli          (github: openclaw/gogcli,                 Go vendorHash)
 #       * portless        (npm: portless,                           sha256)
 #
 # Excluded on purpose:
@@ -296,6 +297,9 @@ main() {
 	log "cli-proxy-api"
 	update_go_github cli-proxy-api pkgs/cli-proxy-api.nix router-for-me CLIProxyAPI
 
+	log "gogcli"
+	update_go_github gogcli pkgs/gogcli.nix openclaw gogcli
+
 	log "checking dependency freshness"
 	./scripts/check-dependency-freshness.py
 
@@ -306,6 +310,7 @@ main() {
 		.#cli-proxy-api \
 		.#codex-acp \
 		.#droid \
+		.#gogcli \
 		.#portless \
 		--no-link
 

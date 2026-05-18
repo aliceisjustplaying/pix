@@ -39,6 +39,7 @@ in
     tsshd
     zellij
     droid
+    gogcli
     amp-code
     cli-proxy-api
     claude-code

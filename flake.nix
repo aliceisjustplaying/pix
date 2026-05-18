@@ -66,6 +66,7 @@
           cli-proxy-api = final.callPackage ./pkgs/cli-proxy-api.nix { };
           codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
           droid = final.callPackage ./pkgs/droid.nix { };
+          gogcli = final.callPackage ./pkgs/gogcli.nix { };
           portless = final.callPackage ./pkgs/portless { };
           inherit (unstablePkgs)
             bun
@@ -112,6 +113,7 @@
           cli-proxy-api
           codex-acp
           droid
+          gogcli
           portless
           ;
       });
