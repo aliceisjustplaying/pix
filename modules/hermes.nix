@@ -81,8 +81,6 @@ in {
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig = agentService.serviceDefaults // {
-      Type = "oneshot";
-      RemainAfterExit = true;
       WorkingDirectory = "/workspace";
       Environment = agentService.env {
         pathPackages = [ pkgs.agentmemory pkgs.iii pkgs.nodejs_24 pkgs.which pkgs.curl pkgs.procps ];
@@ -104,7 +102,7 @@ in {
       ExecStartPre = agentmemoryBootstrap;
       ExecStart = "${pkgs.agentmemory}/bin/agentmemory --port 3111";
       ExecStop = "${pkgs.agentmemory}/bin/agentmemory stop --force";
-      Restart = "no";
+      RestartSec = "10s";
       TimeoutStartSec = "2min";
       TimeoutStopSec = "30s";
     };
