@@ -42,7 +42,6 @@ in {
     "d ${agentHome}/.local/bin 0755 agent users - -"
     "d ${agentHome}/.pi 0700 agent users - -"
     "d ${agentHome}/.ssh 0700 agent users - -"
-    "d /workspace/.pi/gmail-channel 0700 agent users - -"
     "d /usr/local/bin 0755 root root - -"
     "L+ /workspace - - - - ${agentHome}/workspace"
   ];
@@ -113,31 +112,6 @@ in {
         ];
       };
       ExecStart = "${pkgs.bun}/bin/bun runtime/src/index.ts";
-    };
-  };
-
-  systemd.services.gmail-channel-daemon = {
-    description = "Gmail Channel Daemon";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
-    unitConfig.ConditionPathExists = "${agentHome}/gmail-channel-plugin/daemon.ts";
-
-    serviceConfig = agentService.serviceDefaults // {
-      WorkingDirectory = "${agentHome}/gmail-channel-plugin";
-      EnvironmentFile = "-/workspace/.pi/gmail-channel.env";
-      Environment = agentService.env {
-        pathPackages = [ pkgs.python3 ];
-        extra = [
-          "GMAIL_STATE_DIR=/workspace/.pi/gmail-channel"
-          "GMAIL_PICLAW_DATA_DIR=/workspace/.piclaw/data"
-          "GMAIL_PICLAW_CHAT_JID=web:default"
-          "HERMES_NOTIFY_TARGET=discord:#trinity-home"
-          "HERMES_NOTIFY_PYTHON=/workspace/.hermes/venv/bin/python3"
-          "HERMES_NOTIFY_AGENT_DIR=/workspace/src/hermes-live"
-        ];
-      };
-      ExecStart = "${pkgs.bun}/bin/bun run daemon.ts";
     };
   };
 }

@@ -31,7 +31,6 @@ Nix owns the host/platform layer:
 - `piclaw.service`, running from `/workspace/src/piclaw-live` via Bun. The live checkout is managed by `piclaw-customizations`.
 - `hermes-gateway.service`, bootstrapping `/workspace/src/hermes-live` into `/workspace/.hermes/venv` and running `hermes gateway run --replace`.
 - `hermes-webui.service`, serving `nesquena/hermes-webui` on Tailscale port `8787`.
-- `gmail-channel-daemon.service`, running the Gmail channel plugin from `~/gmail-channel-plugin` when present.
 - `camofox.service`, running the Camofox browser API from `/workspace/src/camofox-browser` when present.
 - Plausible Analytics for `https://p.mosphere.at`, fronted by Caddy on public ports 80/443.
 - Daily encrypted restic backups of `/workspace` to Cloudflare R2, alongside Hetzner automatic backups.
@@ -46,7 +45,6 @@ Nix owns the host/platform layer:
 - Clean upstream PiClaw PR work: `/workspace/src/piclaw-fork`.
 - Hermes source checkout: `/workspace/src/hermes-live`.
 - Hermes mutable state, skills, sessions, pairing data, and venv contents under `/workspace/.hermes`.
-- Gmail channel plugin source and mailbox state under `~/gmail-channel-plugin` and `/workspace/.pi/gmail-channel`.
 - Camofox browser source checkout under `/workspace/src/camofox-browser`.
 - OAuth/login/session state for Claude, Codex, Amp, Factory/Droid, and related tools.
 
@@ -62,7 +60,6 @@ Nix owns the host/platform layer:
 | Hermes checkout | `/workspace/src/hermes-live` | Hermes update flow |
 | Hermes home/state | `/workspace/.hermes` | Hermes service/runtime |
 | PiClaw state | `/workspace/.piclaw` | PiClaw runtime |
-| Gmail channel state | `/workspace/.pi/gmail-channel` | Gmail channel daemon |
 | PiClaw HTTP | `127.0.0.1:8080`, public via `pix.mosphere.at` | `piclaw.service` + Cloudflare Tunnel |
 | Hermes WebUI | `0.0.0.0:8787`, Tailscale only | `hermes-webui.service` |
 | Plausible | `127.0.0.1:8000`, public via `p.mosphere.at` | Plausible + Caddy |
