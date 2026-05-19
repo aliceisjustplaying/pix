@@ -68,6 +68,7 @@
           cli-proxy-api = final.callPackage ./pkgs/cli-proxy-api.nix { };
           codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
           droid = final.callPackage ./pkgs/droid.nix { };
+          gemini-cli = final.callPackage ./pkgs/gemini-cli.nix { };
           gogcli = final.callPackage ./pkgs/gogcli.nix { };
           iii = final.callPackage ./pkgs/iii.nix { };
           portless = final.callPackage ./pkgs/portless { };
@@ -121,6 +122,7 @@
           cli-proxy-api
           codex-acp
           droid
+          gemini-cli
           gogcli
           iii
           portless
