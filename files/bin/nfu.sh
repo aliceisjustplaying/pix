@@ -9,7 +9,6 @@
 #       * cli-proxy-api   (github: router-for-me/CLIProxyAPI,       Go vendorHash)
 #       * codex-acp       (npm: @agentclientprotocol/codex-acp,     sha512, +lockfile)
 #       * droid           (npm: @factory/cli-linux-{arm64,x64},     sha512)
-#       * gemini-cli      (npm: @google/gemini-cli,                 sha512)
 #       * gogcli          (github: openclaw/gogcli,                 Go vendorHash)
 #       * portless        (npm: portless,                           sha256)
 #
@@ -280,9 +279,6 @@ main() {
 	log "droid"
 	update_droid
 
-	log "gemini-cli"
-	update_npm pkgs/gemini-cli.nix '@google/gemini-cli' sha512
-
 	log "portless"
 	update_npm pkgs/portless/default.nix portless sha256
 
@@ -314,7 +310,6 @@ main() {
 		.#cli-proxy-api \
 		.#codex-acp \
 		.#droid \
-		.#gemini-cli \
 		.#gogcli \
 		.#portless \
 		--no-link

@@ -44,7 +44,6 @@ in
     vet-run
     zellij
     droid
-    gemini-cli
     gogcli
     amp-code
     cli-proxy-api

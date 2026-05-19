@@ -18,8 +18,8 @@ and mutable runtime state live under `/workspace` and are only wired here.
 
 Package exports are built for both `aarch64-linux` and `x86_64-linux`:
 `agentmemory`, `amp-code`, `camofox-browser`, `claude-code-acp`,
-`cli-proxy-api`, `codex-acp`, `droid`, `gemini-cli`, `gogcli`, `iii`,
-`portless`, `tirith`, and `vet-run`.
+`cli-proxy-api`, `codex-acp`, `droid`, `gogcli`, `iii`, `portless`, `tirith`,
+and `vet-run`.
 
 ## Layout
 
