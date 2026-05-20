@@ -46,6 +46,7 @@ let
     piclaw-logs = binStatic "piclaw-logs";
     backup = binStatic "backup";
     hermes = binSrc "hermes" { inherit hermesLibraryPath; };
+    hermes-gateway-smoke = binStatic "hermes-gateway-smoke";
     amp-login-proxy = binStatic "amp-login-proxy";
     amp-login-upstream = binStatic "amp-login-upstream";
   };

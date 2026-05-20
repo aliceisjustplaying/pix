@@ -114,6 +114,7 @@ in {
     after = [ "network-online.target" "agent-secrets.service" "camofox.service" "agentmemory.service" ];
     wants = [ "network-online.target" "agent-secrets.service" "camofox.service" "agentmemory.service" ];
     wantedBy = [ "multi-user.target" ];
+    unitConfig.StartLimitIntervalSec = 0;
 
     serviceConfig = agentService.serviceDefaults // {
       WorkingDirectory = "/workspace";
@@ -121,13 +122,26 @@ in {
       Environment = agentService.env {
         useRuntimePath = false;
         extra = [
+          "HERMES_HOME=${hermesHome}"
+          "PYTHONPATH=${hermesOverrides}"
+          "VIRTUAL_ENV=${hermesVenv}"
+          "HERMES_MANAGED=nixos"
           "PYTHONUNBUFFERED=1"
         ];
       };
       ExecStartPre = hermesBootstrap;
       ExecStart = "${hermesVenv}/bin/hermes gateway run --replace";
-      RestartSec = "10s";
+      ExecReload = "${pkgs.coreutils}/bin/kill -USR1 $MAINPID";
+      RestartSec = "5s";
+      RestartMaxDelaySec = "300s";
+      RestartSteps = 5;
+      RestartForceExitStatus = 75;
+      KillMode = "mixed";
+      KillSignal = "SIGTERM";
       TimeoutStartSec = "15min";
+      TimeoutStopSec = "90s";
+      StandardOutput = "journal";
+      StandardError = "journal";
     };
   };
 }

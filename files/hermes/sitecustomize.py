@@ -177,16 +177,7 @@ def _patch_system_gateway_restart(hermes_main) -> None:
                 and len(cmd) == 3
                 and cmd[2].startswith("hermes-gateway")
             ):
-                cmd = [
-                    "ssh",
-                    "-o",
-                    "BatchMode=yes",
-                    "localhost",
-                    "sudo",
-                    "systemctl",
-                    "restart",
-                    cmd[2],
-                ]
+                cmd = ["sudo", "-n", *cmd] if os.geteuid() != 0 else cmd
                 args = (cmd, *args[1:])
         return original_run(*args, **kwargs)
 
@@ -195,8 +186,52 @@ def _patch_system_gateway_restart(hermes_main) -> None:
     subprocess._pix_system_gateway_restart_patch_applied = True
 
 
+def _patch_nixos_gateway_unit_status() -> None:
+    try:
+        import hermes_cli.gateway as gateway
+    except Exception:
+        return
+
+    if getattr(gateway, "_pix_nixos_unit_status_patch_applied", False):
+        return
+
+    original_systemd_unit_is_current = gateway.systemd_unit_is_current
+
+    def nixos_gateway_unit_is_current(system: bool = False) -> bool:
+        try:
+            unit_path = gateway.get_systemd_unit_path(system=system)
+            text = unit_path.read_text(encoding="utf-8")
+        except Exception:
+            return original_systemd_unit_is_current(system=system)
+
+        required = (
+            "StartLimitIntervalSec=0",
+            "Environment=HERMES_HOME=/workspace/.hermes",
+            "Environment=PYTHONPATH=/workspace/.hermes/overrides",
+            "Environment=VIRTUAL_ENV=/workspace/.hermes/venv",
+            "Environment=HERMES_MANAGED=nixos",
+            "ExecStart=/workspace/.hermes/venv/bin/hermes gateway run --replace",
+            "ExecReload=",
+            "KillMode=mixed",
+            "KillSignal=SIGTERM",
+            "Restart=always",
+            "RestartForceExitStatus=75",
+            "RestartMaxDelaySec=300s",
+            "RestartSec=5s",
+            "RestartSteps=5",
+            "TimeoutStopSec=90s",
+        )
+        if all(item in text for item in required):
+            return True
+        return original_systemd_unit_is_current(system=system)
+
+    gateway.systemd_unit_is_current = nixos_gateway_unit_is_current
+    gateway._pix_nixos_unit_status_patch_applied = True
+
+
 def _apply() -> None:
     _patch_find_library_for_nixos_opus()
+    _patch_nixos_gateway_unit_status()
 
     try:
         import agent.prompt_builder as prompt_builder
