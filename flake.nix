@@ -70,6 +70,7 @@
           droid = final.callPackage ./pkgs/droid.nix { };
           gogcli = final.callPackage ./pkgs/gogcli.nix { };
           iii = final.callPackage ./pkgs/iii.nix { };
+          plausible = final.callPackage ./pkgs/plausible.nix { };
           portless = final.callPackage ./pkgs/portless { };
           tirith = final.callPackage ./pkgs/tirith.nix { };
           vet-run = final.callPackage ./pkgs/vet-run.nix { };
