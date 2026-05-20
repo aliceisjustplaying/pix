@@ -107,7 +107,8 @@ in {
     description = "Piclaw";
     after = [ "network-online.target" "agent-secrets.service" ];
     wants = [ "network-online.target" "agent-secrets.service" ];
-    wantedBy = [ "multi-user.target" ];
+    enable = false;
+    wantedBy = lib.mkForce [ ];
     unitConfig.ConditionPathExists = "/workspace/src/piclaw-live/runtime/src/index.ts";
 
     serviceConfig = agentService.serviceDefaults // {

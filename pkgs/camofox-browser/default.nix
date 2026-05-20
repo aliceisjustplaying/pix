@@ -37,6 +37,10 @@ buildNpmPackage rec {
 
   postInstall = ''
     pushd $out/lib/node_modules/@askjo/camofox-browser
+    # camoufox-js compares only the alpha/beta release suffix, which makes
+    # newer Firefox-major alpha builds look older than the old beta.24 build.
+    substituteInPlace node_modules/camoufox-js/dist/__version__.js \
+      --replace-fail 'static MIN_VERSION = "beta.19";' 'static MIN_VERSION = "alpha.0";'
     npm rebuild better-sqlite3 --build-from-source --offline --nodedir=${nodejs_24.dev}
     popd
 

@@ -64,7 +64,6 @@
           agentmemory = final.callPackage ./pkgs/agentmemory { };
           amp-code = final.callPackage ./pkgs/amp.nix { };
           camofox-browser = final.callPackage ./pkgs/camofox-browser { };
-          claude-code-acp = final.callPackage ./pkgs/claude-code-acp { };
           cli-proxy-api = final.callPackage ./pkgs/cli-proxy-api.nix { };
           codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
           droid = final.callPackage ./pkgs/droid.nix { };
@@ -118,7 +117,6 @@
           agentmemory
           amp-code
           camofox-browser
-          claude-code-acp
           cli-proxy-api
           codex-acp
           droid

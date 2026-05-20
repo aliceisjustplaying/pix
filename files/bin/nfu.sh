@@ -5,7 +5,6 @@
 #   - all flake inputs (`nix flake update`)
 #   - every first-party package under pkgs/ that tracks an upstream version
 #       * amp-code        (npm: @sourcegraph/amp,                   sha512)
-#       * claude-code-acp (npm: @zed-industries/claude-code-acp,    sha256, +lockfile)
 #       * cli-proxy-api   (github: router-for-me/CLIProxyAPI,       Go vendorHash)
 #       * codex-acp       (npm: @agentclientprotocol/codex-acp,     sha512, +lockfile)
 #       * droid           (npm: @factory/cli-linux-{arm64,x64},     sha512)
@@ -282,12 +281,6 @@ main() {
 	log "portless"
 	update_npm pkgs/portless/default.nix portless sha256
 
-	log "claude-code-acp"
-	update_npm_with_lockfile claude-code-acp \
-		pkgs/claude-code-acp/default.nix \
-		'@zed-industries/claude-code-acp' sha256 \
-		pkgs/claude-code-acp/package-lock.json
-
 	log "codex-acp"
 	update_npm_with_lockfile codex-acp \
 		pkgs/codex-acp.nix \
@@ -306,7 +299,6 @@ main() {
 	log "validating builds"
 	nix "${NIX_FLAGS[@]}" build \
 		.#amp-code \
-		.#claude-code-acp \
 		.#cli-proxy-api \
 		.#codex-acp \
 		.#droid \
