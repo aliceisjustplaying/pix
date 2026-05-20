@@ -35,6 +35,7 @@ in
     ncdu
     gdu
     diskus
+    binutils # strings, nm, objdump, ...
     go_1_26
     ffmpeg
     yt-dlp
