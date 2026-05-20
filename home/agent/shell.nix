@@ -3,6 +3,7 @@
 {
   programs.bash = {
     enable = true;
+    initExtra = builtins.readFile ../../files/bash/ssh-agent-guard.sh;
     shellAliases = {
       ll = "ls -lah";
       sync-nix = "rebuild";
