@@ -1,5 +1,5 @@
 {
-  description = "pix.mosphere.at - NixOS host for Piclaw";
+  description = "pix2 - NixOS host for Piclaw";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
@@ -48,10 +48,7 @@
     ...
   }:
   let
-    systems = [
-      "aarch64-linux"
-      "x86_64-linux"
-    ];
+    systems = [ "x86_64-linux" ];
     forAllSystems = nixpkgs.lib.genAttrs systems;
     mkPkgs = system:
       let
@@ -129,11 +126,6 @@
       });
 
     nixosConfigurations = {
-      pix = mkNixosConfiguration {
-        system = "aarch64-linux";
-        hostModule = ./hosts/pix/default.nix;
-      };
-
       pix2 = mkNixosConfiguration {
         system = "x86_64-linux";
         hostModule = ./hosts/pix2/default.nix;

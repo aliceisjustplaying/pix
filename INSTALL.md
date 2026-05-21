@@ -1,8 +1,8 @@
-# A-to-Z install runbook for `pix.mosphere.at`
+# A-to-Z install runbook for `pix2`
 
 This assumes:
 
-- Hetzner Cloud ARM64 VPS (CAX21 recommended)
+- Hetzner Cloud x86_64 VPS
 - one disk
 - current temporary image is any SSH-reachable Linux install
 - you are running the install from a Mac
@@ -20,8 +20,8 @@ This assumes:
 
 ```bash
 hcloud server create \
-  --name pix \
-  --type cax21 \
+  --name pix2 \
+  --type cpx42 \
   --image ubuntu-24.04 \
   --location fsn1 \
   --ssh-key <your-ssh-key-name>
@@ -55,7 +55,7 @@ sops secrets/secrets.yaml
 
 Required secrets: `tailscale-auth-key`, `cloudflared-tunnel-token`, `piclaw-keychain-key`, `piclaw-web-totp-secret`, `piclaw-web-internal-secret`, `exa-api-key`, `github-clone-key`, `alice-cloudflare`, `restic-password`, `r2-access-key-id`, `r2-secret-access-key`. See `SECRETS-CHECKLIST.md` for how to generate each one.
 
-**Back up both age keys** (`~/.config/sops/age/keys.txt` and `secrets/age/pix-host.key`) to a password manager. These cannot be recovered.
+**Back up both age keys** (`~/.config/sops/age/keys.txt` and `secrets/age/pix2-host.key`) to a password manager. These cannot be recovered.
 
 ## Lock flake inputs
 
@@ -196,7 +196,7 @@ Complete their login flows manually.
 
 After Tailscale SSH works and you can still reach the box:
 
-Edit `/workspace/src/pix/hosts/pix/default.nix`, change `publicSshBootstrap = true` to `false`, then:
+Edit the relevant SSH/firewall settings in `/workspace/src/pix`, then:
 
 ```bash
 rebuild

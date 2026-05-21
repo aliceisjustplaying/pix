@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HOST_KEY_PATH="${1:-secrets/age/pix-host.key}"
+HOST_KEY_PATH="${1:-secrets/age/pix2-host.key}"
 EXTRA_FILES_DIR="${2:-.nixos-anywhere-extra}"
 
 mkdir -p "$(dirname "$HOST_KEY_PATH")"

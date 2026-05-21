@@ -93,7 +93,7 @@ Important:
 How to create it:
 
 ```bash
-ssh-keygen -t ed25519 -f ./github-clone-key -C "pix.mosphere.at"
+ssh-keygen -t ed25519 -f ./github-clone-key -C "pix2"
 ```
 
 Then:
@@ -241,7 +241,7 @@ How it is created:
 ```
 
 This generates:
-- `secrets/age/pix-host.key`
+- `secrets/age/pix2-host.key`
 - `./.nixos-anywhere-extra/var/lib/sops-nix/key.txt`
 
 Use the printed public recipient in `.sops.yaml` (at the repo root).

@@ -1,7 +1,6 @@
 { modulesPath, ... }:
 let
   operatorKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+aS2lsR/vsc46amWdsUXGEFuEARJaz3yGAFtVePQuE operator";
-  pixKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIASGKGmqo6Inrjo5Vy1z9iS4NKPB6kX8nXiluyjJ8bMe pix.mosphere.at";
 in
 {
   imports = [
@@ -31,7 +30,7 @@ in
     validateSopsFiles = true;
   };
 
-  users.users.agent.openssh.authorizedKeys.keys = [ operatorKey pixKey ];
+  users.users.agent.openssh.authorizedKeys.keys = [ operatorKey ];
 
   services.openssh = {
     enable = true;

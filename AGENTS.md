@@ -17,7 +17,7 @@ Canonical tracked copy: `/workspace/src/pix/AGENTS.md`. Keep `/workspace/AGENTS.
 
 All async — they call `sudo systemctl start --no-block <unit>` and return immediately. Poll with `host-result`.
 
-- `rebuild` → `pix-rebuild.service` → `nixos-rebuild switch --flake path:/home/agent/workspace/src/pix#pix`.
+- `rebuild` → `pix-rebuild.service` → `nixos-rebuild switch --flake path:/home/agent/workspace/src/pix#pix2`.
 - `update [--force]`, `rollback [--force]` → piclaw-update / piclaw-rollback services.
 - `piclaw-restart`, `piclaw-status`, `piclaw-logs` — piclaw service control.
 - `backup` → `restic-backups-r2.service`.
