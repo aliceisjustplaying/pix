@@ -270,6 +270,44 @@ in
         }
       ];
     };
+
+    provision.alerting.contactPoints.settings = {
+      apiVersion = 1;
+      contactPoints = [
+        {
+          orgId = 1;
+          name = "email";
+          receivers = [
+            {
+              uid = "pix2-email";
+              type = "email";
+              settings = {
+                addresses = "aliceisjustplaying@gmail.com";
+                singleEmail = false;
+              };
+            }
+          ];
+        }
+      ];
+    };
+
+    provision.alerting.policies.settings = {
+      apiVersion = 1;
+      policies = [
+        {
+          orgId = 1;
+          receiver = "email";
+          group_by = [
+            "grafana_folder"
+            "alertname"
+          ];
+          group_wait = "30s";
+          group_interval = "5m";
+          repeat_interval = "4h";
+        }
+      ];
+      resetPolicies = [ 1 ];
+    };
   };
 
   systemd.services.grafana.serviceConfig.LoadCredential = [
