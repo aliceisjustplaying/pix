@@ -9,6 +9,7 @@
 #       * codex-acp       (npm: @agentclientprotocol/codex-acp,     sha512, +lockfile)
 #       * droid           (npm: @factory/cli-linux-{arm64,x64},     sha512)
 #       * gogcli          (github: openclaw/gogcli,                 Go vendorHash)
+#       * oracle          (npm: @steipete/oracle,                   sha512, +lockfile)
 #       * portless        (npm: portless,                           sha256)
 #
 # Excluded on purpose:
@@ -293,6 +294,12 @@ main() {
 	log "gogcli"
 	update_go_github gogcli pkgs/gogcli.nix openclaw gogcli
 
+	log "oracle"
+	update_npm_with_lockfile oracle \
+		pkgs/oracle.nix \
+		'@steipete/oracle' sha512 \
+		pkgs/oracle-package-lock.json
+
 	log "checking dependency freshness"
 	./scripts/check-dependency-freshness.py
 
@@ -303,6 +310,7 @@ main() {
 		.#codex-acp \
 		.#droid \
 		.#gogcli \
+		.#oracle \
 		.#portless \
 		--no-link
 

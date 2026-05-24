@@ -46,11 +46,13 @@ in
     zellij
     droid
     gogcli
+    oracle
     amp-code
     cli-proxy-api
     claude-code
     codex
     codex-acp
+    cursor-cli
     python3
     todoist
     uv

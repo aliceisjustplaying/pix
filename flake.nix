@@ -63,9 +63,11 @@
           camofox-browser = final.callPackage ./pkgs/camofox-browser { };
           cli-proxy-api = final.callPackage ./pkgs/cli-proxy-api.nix { };
           codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
+          cursor-cli = final.callPackage ./pkgs/cursor-cli.nix { };
           droid = final.callPackage ./pkgs/droid.nix { };
           gogcli = final.callPackage ./pkgs/gogcli.nix { };
           iii = final.callPackage ./pkgs/iii.nix { };
+          oracle = final.callPackage ./pkgs/oracle.nix { };
           plausible = final.callPackage ./pkgs/plausible.nix { };
           portless = final.callPackage ./pkgs/portless { };
           tirith = final.callPackage ./pkgs/tirith.nix { };
@@ -116,9 +118,11 @@
           camofox-browser
           cli-proxy-api
           codex-acp
+          cursor-cli
           droid
           gogcli
           iii
+          oracle
           portless
           tirith
           vet-run
