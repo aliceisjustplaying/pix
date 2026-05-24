@@ -18,6 +18,7 @@ in
     ../../modules/hermes-webui.nix
     ../../modules/plausible.nix
     ../../modules/glossonotif.nix
+    ../../modules/monitoring.nix
     ../../modules/backup.nix
   ];
 

@@ -33,6 +33,13 @@
       <asynchronous_metric_log remove="remove" />
       <query_metric_log remove="remove" />
       <processors_profile_log remove="remove" />
+      <prometheus>
+        <endpoint>/metrics</endpoint>
+        <port>9363</port>
+        <metrics>true</metrics>
+        <events>true</events>
+        <asynchronous_metrics>true</asynchronous_metrics>
+      </prometheus>
     </clickhouse>
   '';
 
