@@ -47,6 +47,7 @@ in
     droid
     gogcli
     oracle
+    sfw
     amp-code
     cli-proxy-api
     claude-code

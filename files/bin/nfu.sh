@@ -11,6 +11,7 @@
 #       * gogcli          (github: openclaw/gogcli,                 Go vendorHash)
 #       * oracle          (npm: @steipete/oracle,                   sha512, +lockfile)
 #       * portless        (npm: portless,                           sha256)
+#       * sfw             (github: SocketDev/sfw-free,              sha256)
 #
 # Excluded on purpose:
 #   - tsshd is firewall-pinned (UDP 61001-61999) and lives inside overrideAttrs;
@@ -209,6 +210,36 @@ update_go_github() {
 	log "$attr: $cur -> $new"
 }
 
+update_github_release_asset() {
+	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_name=$5 cur releases release new digest hash
+	cur=$(nix_field "$nix_file" version)
+	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
+		release=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
+			"https://api.github.com/repos/${owner}/${repo}/releases/latest")
+	else
+		releases=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
+			"https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
+			map(select(.draft | not))
+			| map(select(.prerelease | not))
+			| map(select(.published_at != null))
+			| map(. + {ts: (.published_at | fromdateiso8601)})
+			| map(select(.ts <= $cutoff))
+			| max_by(.ts) // empty
+		')
+	fi
+	[[ -n $release && $release != null ]] || die "$attr: couldn't read latest GitHub release"
+	new=$(printf '%s\n' "$release" | jq -r '.tag_name' | sed -E 's/^v//')
+	digest=$(printf '%s\n' "$release" | jq -r --arg asset "$asset_name" '
+		.assets[] | select(.name == $asset) | .digest
+	' | sed -E 's/^sha256://')
+	[[ -n $digest && $digest != null ]] || die "$attr: couldn't read asset digest for $asset_name"
+	hash=$(nix "${NIX_FLAGS[@]}" hash convert --hash-algo sha256 --to sri "$digest")
+	replace_field "$nix_file" version "$new"
+	replace_field "$nix_file" hash "$hash"
+	log "$attr: $cur -> $new"
+}
+
 restore_fresh_flake_inputs() {
 	local before=$1 current=flake.lock min_age
 	min_age=$(dependency_min_age_hours)
@@ -300,6 +331,9 @@ main() {
 		'@steipete/oracle' sha512 \
 		pkgs/oracle-package-lock.json
 
+	log "sfw"
+	update_github_release_asset sfw pkgs/sfw.nix SocketDev sfw-free sfw-free-linux-x86_64
+
 	log "checking dependency freshness"
 	./scripts/check-dependency-freshness.py
 
@@ -312,6 +346,7 @@ main() {
 		.#gogcli \
 		.#oracle \
 		.#portless \
+		.#sfw \
 		--no-link
 
 	log "done"

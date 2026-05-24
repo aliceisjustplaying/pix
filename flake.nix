@@ -70,6 +70,7 @@
           oracle = final.callPackage ./pkgs/oracle.nix { };
           plausible = final.callPackage ./pkgs/plausible.nix { };
           portless = final.callPackage ./pkgs/portless { };
+          sfw = final.callPackage ./pkgs/sfw.nix { };
           tirith = final.callPackage ./pkgs/tirith.nix { };
           vet-run = final.callPackage ./pkgs/vet-run.nix { };
           inherit (unstablePkgs)
@@ -124,6 +125,7 @@
           iii
           oracle
           portless
+          sfw
           tirith
           vet-run
           ;
