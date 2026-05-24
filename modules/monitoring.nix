@@ -228,6 +228,15 @@ in
 
       "auth.anonymous".enabled = false;
 
+      smtp = {
+        enabled = true;
+        host = "smtp.resend.com:465";
+        user = "resend";
+        password = "$__file{/run/credentials/grafana.service/smtp-password}";
+        from_address = "aliceisjustplaying@gmail.com";
+        from_name = "Pix2 Grafana";
+      };
+
       users = {
         allow_sign_up = false;
         auto_assign_org = false;
@@ -262,6 +271,10 @@ in
       ];
     };
   };
+
+  systemd.services.grafana.serviceConfig.LoadCredential = [
+    "smtp-password:${config.sops.secrets.plausible-smtp-password.path}"
+  ];
 
   services.caddy.virtualHosts."grafana.pix2.mosphere.at".extraConfig = ''
     encode zstd gzip
