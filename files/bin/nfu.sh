@@ -11,6 +11,7 @@
 #       * claude-code-acp (npm: @zed-industries/claude-code-acp,     sha256, +lockfile)
 #       * cli-proxy-api   (github: router-for-me/CLIProxyAPI,       Go vendorHash)
 #       * codex-acp       (npm: @agentclientprotocol/codex-acp,     sha512, +lockfile)
+#       * cursor-cli      (cursor.com/install lab tarball,           sha256)
 #       * droid           (npm: @factory/cli-linux-{arm64,x64},     sha512)
 #       * gogcli          (github: openclaw/gogcli,                 Go vendorHash)
 #       * iii             (github: iii-hq/iii release tarballs,      sha256)
@@ -22,8 +23,6 @@
 #       * vet-run         (github: vet-run/vet release binary,       sha256)
 #
 # Excluded on purpose:
-#   - cursor-cli is pinned to a Cursor lab build URL, not a stable release feed;
-#     bump it manually.
 #   - tsshd is firewall-pinned (UDP 61001-61999) and lives inside overrideAttrs;
 #     bump it manually.
 #
@@ -91,6 +90,21 @@ sri_for_url() {
 	local url=$1 algo=$2 base32
 	base32=$(nix-prefetch-url --type "$algo" "$url")
 	nix "${NIX_FLAGS[@]}" hash convert --hash-algo "$algo" --to sri "$base32"
+}
+
+github_json() {
+	local url=$1 token=${GITHUB_TOKEN:-}
+	if [[ -z $token ]] && command -v gh >/dev/null 2>&1; then
+		token=$(gh auth token 2>/dev/null || true)
+	fi
+	if [[ -n $token ]]; then
+		curl -fsSL \
+			-H 'Accept: application/vnd.github+json' \
+			-H "Authorization: Bearer ${token}" \
+			"$url"
+	else
+		curl -fsSL -H 'Accept: application/vnd.github+json' "$url"
+	fi
 }
 
 # Latest allowed version of an npm package via registry metadata.
@@ -191,18 +205,53 @@ update_npm_with_lockfile() {
 	fix_build_hash "$attr" "$nix_file" npmDepsHash
 }
 
+cursor_release_is_fresh() {
+	local release=$1 date_part cutoff release_epoch
+	[[ $release =~ ^([0-9]{4})\.([0-9]{2})\.([0-9]{2})- ]] || die "cursor-cli: unexpected release '$release'"
+	date_part="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}T00:00:00+00:00"
+	release_epoch=$(python3 - "$date_part" <<'PY'
+from datetime import datetime
+import sys
+print(datetime.fromisoformat(sys.argv[1]).timestamp())
+PY
+)
+	cutoff=$(cutoff_epoch)
+	python3 - "$release_epoch" "$cutoff" <<'PY'
+import sys
+raise SystemExit(0 if float(sys.argv[1]) > float(sys.argv[2]) else 1)
+PY
+}
+
+update_cursor_cli() {
+	local nix_file=pkgs/cursor-cli.nix cur install_script release date_part url sri
+	cur=$(nix_field "$nix_file" release)
+	install_script=$(curl -fsSL https://cursor.com/install)
+	release=$(printf '%s\n' "$install_script" | sed -n -E 's|^DOWNLOAD_URL="https://downloads\.cursor\.com/lab/([^/]+)/\$\{OS\}/\$\{ARCH\}/agent-cli-package\.tar\.gz"$|\1|p' | head -n1)
+	[[ -n $release ]] || die "cursor-cli: couldn't parse release from https://cursor.com/install"
+	if ! freshness_exempt cursor-cli cursor && ! allow_fresh_dependencies; then
+		if cursor_release_is_fresh "$release"; then
+			die "cursor-cli: release '$release' appears newer than $(dependency_min_age_hours)h; set PIX_ALLOW_FRESH_DEPS=1 and PIX_FRESH_DEPS_REASON=... to bypass"
+		fi
+	fi
+	date_part=$(printf '%s\n' "$release" | sed -E 's/^([0-9]{4})\.([0-9]{2})\.([0-9]{2})-.*/\1-\2-\3/')
+	url="https://downloads.cursor.com/lab/${release}/linux/x64/agent-cli-package.tar.gz"
+	sri=$(sri_for_url "$url" sha256)
+	replace_field "$nix_file" release "$release"
+	replace_field "$nix_file" version "0-unstable-${date_part}"
+	replace_field "$nix_file" hash "$sri"
+	log "cursor-cli: $cur -> $release"
+}
+
 # fetchFromGitHub + buildGoModule: bump version, then build-and-fix both
 # the source `hash` and `vendorHash` from nix's mismatch output.
 update_go_github() {
 	local attr=$1 nix_file=$2 owner=$3 repo=$4 cur new releases cutoff
 	cur=$(nix_field "$nix_file" version)
 	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
-		new=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases/latest" |
+		new=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases/latest" |
 			jq -r .tag_name | sed -E 's/^v//')
 	else
-		releases=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
 		cutoff=$(cutoff_epoch)
 		new=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$cutoff" '
 			map(select(.draft | not))
@@ -224,11 +273,9 @@ update_github_release_asset() {
 	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_name=$5 cur releases release new digest hash
 	cur=$(nix_field "$nix_file" version)
 	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
-		release=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases/latest")
+		release=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases/latest")
 	else
-		releases=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
 		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
 			map(select(.draft | not))
 			| map(select(.prerelease | not))
@@ -254,11 +301,9 @@ update_github_release_tarball() {
 	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_prefix=$5 cur releases release new url sri
 	cur=$(nix_field "$nix_file" version)
 	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
-		release=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases/latest")
+		release=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases/latest")
 	else
-		releases=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
 		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
 			map(select(.draft | not))
 			| map(select(.prerelease | not))
@@ -281,11 +326,9 @@ update_github_release_file() {
 	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_template=$5 cur releases release new url sri asset
 	cur=$(nix_field "$nix_file" version)
 	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
-		release=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases/latest")
+		release=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases/latest")
 	else
-		releases=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
 		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
 			map(select(.draft | not))
 			| map(select(.prerelease | not))
@@ -310,11 +353,9 @@ update_github_release_target_tarballs() {
 	shift 5
 	cur=$(nix_field "$nix_file" version)
 	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
-		release=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases/latest")
+		release=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases/latest")
 	else
-		releases=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
-			"https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
 		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
 			map(select(.draft | not))
 			| map(select(.prerelease | not))
@@ -454,6 +495,9 @@ main() {
 		'@agentclientprotocol/codex-acp' sha512 \
 		pkgs/codex-acp-package-lock.json
 
+	log "cursor-cli"
+	update_cursor_cli
+
 	log "cli-proxy-api"
 	update_go_github cli-proxy-api pkgs/cli-proxy-api.nix router-for-me CLIProxyAPI
 
@@ -496,6 +540,7 @@ main() {
 		.#claude-code-acp \
 		.#cli-proxy-api \
 		.#codex-acp \
+		.#cursor-cli \
 		.#droid \
 		.#gogcli \
 		.#iii \

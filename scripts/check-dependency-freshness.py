@@ -3,6 +3,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.parse
 import urllib.request
@@ -21,10 +22,28 @@ NPM_REGISTRY = "https://registry.npmjs.org"
 class Registry:
     def __init__(self):
         self._cache = {}
+        self._github_token = os.environ.get("GITHUB_TOKEN") or self._read_gh_token()
+
+    def _read_gh_token(self):
+        try:
+            result = subprocess.run(
+                ["gh", "auth", "token"],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=5,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return ""
+        return result.stdout.strip() if result.returncode == 0 else ""
 
     def json(self, url):
         if url not in self._cache:
-            request = urllib.request.Request(url, headers={"Accept": "application/json"})
+            headers = {"Accept": "application/json"}
+            if self._github_token and urllib.parse.urlparse(url).netloc == "api.github.com":
+                headers["Authorization"] = f"Bearer {self._github_token}"
+            request = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(request, timeout=20) as response:
                 self._cache[url] = json.load(response)
         return self._cache[url]
@@ -172,6 +191,25 @@ def iter_nix_github_release_fetches(repo):
         }
 
 
+def iter_cursor_fetches(repo):
+    path = repo / "pkgs" / "cursor-cli.nix"
+    if not path.exists():
+        return
+    rel = path.relative_to(repo).as_posix()
+    text = path.read_text(encoding="utf-8")
+    release = nix_attr(text, "release")
+    version = nix_attr(text, "version")
+    if not release or not version or "downloads.cursor.com/lab/${release}" not in text:
+        return
+    yield {
+        "kind": "cursor-lab",
+        "name": f"cursor-cli@{release}",
+        "source": rel,
+        "exempt": is_exempt("cursor-cli"),
+        "published": lambda _registry, r=release: cursor_release_time(r),
+    }
+
+
 def github_commit_time(registry, owner, repo_name, ref):
     metadata = registry.json(f"https://api.github.com/repos/{owner}/{repo_name}/commits/{ref}")
     date = metadata.get("commit", {}).get("committer", {}).get("date")
@@ -187,6 +225,14 @@ def github_release_time(registry, owner, repo_name, tag):
     if not published:
         raise RuntimeError(f"github:{owner}/{repo_name}@{tag}: missing release publish time")
     return parse_rfc3339(published)
+
+
+def cursor_release_time(release):
+    match = re.match(r"^(\d{4})\.(\d{2})\.(\d{2})-", release)
+    if not match:
+        raise RuntimeError(f"cursor-cli:{release}: missing date prefix")
+    year, month, day = map(int, match.groups())
+    return datetime(year, month, day, tzinfo=timezone.utc)
 
 
 def main():
@@ -227,6 +273,7 @@ def main():
     entries.extend(iter_nix_npm_fetches(repo))
     entries.extend(iter_nix_github_fetches(repo))
     entries.extend(iter_nix_github_release_fetches(repo))
+    entries.extend(iter_cursor_fetches(repo))
 
     seen = set()
     for entry in entries:

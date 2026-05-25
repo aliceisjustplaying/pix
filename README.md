@@ -134,8 +134,9 @@ running.
 
 `nfu` is the tracked updater for this repo. It handles flake inputs plus local
 package pins for AgentMemory, Amp, Camofox Browser, Claude Code ACP,
-CLIProxyAPI, Codex ACP, Droid, Gog, iii, Oracle, Portless, SFW, signal-cli,
-Tirith, and Vet, then validates the exported package set with `nix build`.
+CLIProxyAPI, Codex ACP, Cursor CLI, Droid, Gog, iii, Oracle, Portless, SFW,
+signal-cli, Tirith, and Vet, then validates the exported package set with
+`nix build`.
 
 The default freshness floor is 24 hours. Nix flake/fetcher pins are checked by
 `scripts/check-dependency-freshness.py`; npm/Bun/pnpm/uv/Cargo have managed
