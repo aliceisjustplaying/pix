@@ -80,6 +80,7 @@
             gh
             jujutsu
             mosh
+            sysbench
             tmux
             todoist
             uv

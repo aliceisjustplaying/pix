@@ -40,6 +40,7 @@ in
     ffmpeg
     yt-dlp
     sqlite
+    sysbench
     tsshd
     tirith
     vet-run

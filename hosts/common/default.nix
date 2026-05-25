@@ -10,6 +10,7 @@ in
     ../../modules/browser-runtime.nix
     ../../modules/bsky-boost.nix
     ../../modules/bluepy-agent-runner.nix
+    ../../modules/bluepy-push-gateway.nix
     ../../modules/host-jobs.nix
     ../../modules/tailscale.nix
     ../../modules/cloudflared.nix
