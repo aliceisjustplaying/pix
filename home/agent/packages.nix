@@ -49,6 +49,7 @@ in
     gogcli
     oracle
     sfw
+    signal-cli
     amp-code
     cli-proxy-api
     claude-code

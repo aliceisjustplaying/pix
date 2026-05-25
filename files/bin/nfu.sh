@@ -3,17 +3,27 @@
 #
 # Updates:
 #   - all flake inputs (`nix flake update`)
-#   - every first-party package under pkgs/ that tracks an upstream version
+#   - every exported first-party package under pkgs/ that tracks a discoverable
+#     upstream version
+#       * agentmemory     (npm: @agentmemory/agentmemory,           sha512, +lockfile)
 #       * amp-code        (npm: @sourcegraph/amp,                   sha512)
+#       * camofox-browser (npm: @askjo/camofox-browser,             sha512, +lockfile)
+#       * claude-code-acp (npm: @zed-industries/claude-code-acp,     sha256, +lockfile)
 #       * cli-proxy-api   (github: router-for-me/CLIProxyAPI,       Go vendorHash)
 #       * codex-acp       (npm: @agentclientprotocol/codex-acp,     sha512, +lockfile)
 #       * droid           (npm: @factory/cli-linux-{arm64,x64},     sha512)
 #       * gogcli          (github: openclaw/gogcli,                 Go vendorHash)
+#       * iii             (github: iii-hq/iii release tarballs,      sha256)
 #       * oracle          (npm: @steipete/oracle,                   sha512, +lockfile)
 #       * portless        (npm: portless,                           sha256)
 #       * sfw             (github: SocketDev/sfw-free,              sha256)
+#       * signal-cli      (github: AsamK/signal-cli release tarball, sha256)
+#       * tirith          (github: sheeki03/tirith release tarballs, sha256)
+#       * vet-run         (github: vet-run/vet release binary,       sha256)
 #
 # Excluded on purpose:
+#   - cursor-cli is pinned to a Cursor lab build URL, not a stable release feed;
+#     bump it manually.
 #   - tsshd is firewall-pinned (UDP 61001-61999) and lives inside overrideAttrs;
 #     bump it manually.
 #
@@ -240,6 +250,113 @@ update_github_release_asset() {
 	log "$attr: $cur -> $new"
 }
 
+update_github_release_tarball() {
+	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_prefix=$5 cur releases release new url sri
+	cur=$(nix_field "$nix_file" version)
+	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
+		release=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
+			"https://api.github.com/repos/${owner}/${repo}/releases/latest")
+	else
+		releases=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
+			"https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
+			map(select(.draft | not))
+			| map(select(.prerelease | not))
+			| map(select(.published_at != null))
+			| map(. + {ts: (.published_at | fromdateiso8601)})
+			| map(select(.ts <= $cutoff))
+			| max_by(.ts) // empty
+		')
+	fi
+	[[ -n $release && $release != null ]] || die "$attr: couldn't read latest GitHub release"
+	new=$(printf '%s\n' "$release" | jq -r '.tag_name' | sed -E 's/^v//')
+	url="https://github.com/${owner}/${repo}/releases/download/v${new}/${asset_prefix}-${new}.tar.gz"
+	sri=$(sri_for_url "$url" sha256)
+	replace_field "$nix_file" version "$new"
+	replace_field "$nix_file" hash "$sri"
+	log "$attr: $cur -> $new"
+}
+
+update_github_release_file() {
+	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_template=$5 cur releases release new url sri asset
+	cur=$(nix_field "$nix_file" version)
+	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
+		release=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
+			"https://api.github.com/repos/${owner}/${repo}/releases/latest")
+	else
+		releases=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
+			"https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
+			map(select(.draft | not))
+			| map(select(.prerelease | not))
+			| map(select(.published_at != null))
+			| map(. + {ts: (.published_at | fromdateiso8601)})
+			| map(select(.ts <= $cutoff))
+			| max_by(.ts) // empty
+		')
+	fi
+	[[ -n $release && $release != null ]] || die "$attr: couldn't read latest GitHub release"
+	new=$(printf '%s\n' "$release" | jq -r '.tag_name' | sed -E 's|^.*/v||; s/^v//')
+	asset=${asset_template//\{version\}/$new}
+	url="https://github.com/${owner}/${repo}/releases/download/$(printf '%s\n' "$release" | jq -r '.tag_name')/${asset}"
+	sri=$(sri_for_url "$url" sha256)
+	replace_field "$nix_file" version "$new"
+	replace_field "$nix_file" hash "$sri"
+	log "$attr: $cur -> $new"
+}
+
+update_github_release_target_tarballs() {
+	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_prefix=$5 cur releases release tag new target url hash target_hashes_json
+	shift 5
+	cur=$(nix_field "$nix_file" version)
+	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
+		release=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
+			"https://api.github.com/repos/${owner}/${repo}/releases/latest")
+	else
+		releases=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
+			"https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
+			map(select(.draft | not))
+			| map(select(.prerelease | not))
+			| map(select(.published_at != null))
+			| map(. + {ts: (.published_at | fromdateiso8601)})
+			| map(select(.ts <= $cutoff))
+			| max_by(.ts) // empty
+		')
+	fi
+	[[ -n $release && $release != null ]] || die "$attr: couldn't read latest GitHub release"
+	tag=$(printf '%s\n' "$release" | jq -r '.tag_name')
+	new=$(printf '%s\n' "$tag" | sed -E 's|^.*/v||; s/^v//')
+	target_hashes_json='{}'
+	for target in "$@"; do
+		url="https://github.com/${owner}/${repo}/releases/download/${tag}/${asset_prefix}-${target}.tar.gz"
+		hash=$(sri_for_url "$url" sha256)
+		target_hashes_json=$(jq -cn --argjson hashes "$target_hashes_json" --arg target "$target" --arg hash "$hash" \
+			'$hashes + {($target): $hash}')
+	done
+	replace_field "$nix_file" version "$new"
+	python3 - "$nix_file" "$target_hashes_json" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+hashes = json.loads(sys.argv[2])
+text = path.read_text(encoding="utf-8")
+for target, value in hashes.items():
+    pattern = re.compile(
+        rf'(target = "{re.escape(target)}";\n\s*)hash = "[^"]+";',
+        re.MULTILINE,
+    )
+    text, count = pattern.subn(rf'\1hash = "{value}";', text, count=1)
+    if count != 1:
+        raise SystemExit(f"{path}: expected one hash for target {target}, got {count}")
+path.write_text(text, encoding="utf-8")
+PY
+	log "$attr: $cur -> $new"
+}
+
 restore_fresh_flake_inputs() {
 	local before=$1 current=flake.lock min_age
 	min_age=$(dependency_min_age_hours)
@@ -304,8 +421,26 @@ main() {
 	nix "${NIX_FLAGS[@]}" flake update
 	restore_fresh_flake_inputs "$flake_before"
 
+	log "agentmemory"
+	update_npm_with_lockfile agentmemory \
+		pkgs/agentmemory/default.nix \
+		'@agentmemory/agentmemory' sha512 \
+		pkgs/agentmemory/package-lock.json
+
 	log "amp-code"
 	update_npm pkgs/amp.nix '@sourcegraph/amp' sha512
+
+	log "camofox-browser"
+	update_npm_with_lockfile camofox-browser \
+		pkgs/camofox-browser/default.nix \
+		'@askjo/camofox-browser' sha512 \
+		pkgs/camofox-browser/package-lock.json
+
+	log "claude-code-acp"
+	update_npm_with_lockfile claude-code-acp \
+		pkgs/claude-code-acp/default.nix \
+		'@zed-industries/claude-code-acp' sha256 \
+		pkgs/claude-code-acp/package-lock.json
 
 	log "droid"
 	update_droid
@@ -325,6 +460,11 @@ main() {
 	log "gogcli"
 	update_go_github gogcli pkgs/gogcli.nix openclaw gogcli
 
+	log "iii"
+	update_github_release_target_tarballs iii pkgs/iii.nix iii-hq iii iii \
+		aarch64-unknown-linux-gnu \
+		x86_64-unknown-linux-gnu
+
 	log "oracle"
 	update_npm_with_lockfile oracle \
 		pkgs/oracle.nix \
@@ -334,19 +474,37 @@ main() {
 	log "sfw"
 	update_github_release_asset sfw pkgs/sfw.nix SocketDev sfw-free sfw-free-linux-x86_64
 
+	log "signal-cli"
+	update_github_release_tarball signal-cli pkgs/signal-cli.nix AsamK signal-cli signal-cli
+
+	log "tirith"
+	update_github_release_target_tarballs tirith pkgs/tirith.nix sheeki03 tirith tirith \
+		aarch64-unknown-linux-gnu \
+		x86_64-unknown-linux-gnu
+
+	log "vet-run"
+	update_github_release_file vet-run pkgs/vet-run.nix vet-run vet vet
+
 	log "checking dependency freshness"
 	./scripts/check-dependency-freshness.py
 
 	log "validating builds"
 	nix "${NIX_FLAGS[@]}" build \
+		.#agentmemory \
 		.#amp-code \
+		.#camofox-browser \
+		.#claude-code-acp \
 		.#cli-proxy-api \
 		.#codex-acp \
 		.#droid \
 		.#gogcli \
+		.#iii \
 		.#oracle \
 		.#portless \
 		.#sfw \
+		.#signal-cli \
+		.#tirith \
+		.#vet-run \
 		--no-link
 
 	log "done"

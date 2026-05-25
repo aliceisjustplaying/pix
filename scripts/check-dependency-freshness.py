@@ -150,7 +150,7 @@ def iter_nix_github_fetches(repo):
 def iter_nix_github_release_fetches(repo):
     version_re = re.compile(r'^\s*version = "([^"]+)";', re.MULTILINE)
     url_re = re.compile(
-        r'https://github\.com/([^/"\s]+)/([^/"\s]+)/releases/download/v\$\{version\}/([^"\s]+)'
+        r'https://github\.com/([^/"\s]+)/([^/"\s]+)/releases/download/((?:[^/"\s]+/)?)v\$\{version\}/([^"\s]+)'
     )
     for path in iter_package_nix(repo):
         rel = path.relative_to(repo).as_posix()
@@ -160,14 +160,14 @@ def iter_nix_github_release_fetches(repo):
         if not version_match or not url_match:
             continue
         version = version_match.group(1)
-        owner, repo_name, asset = url_match.groups()
+        owner, repo_name, tag_prefix, asset = url_match.groups()
         yield {
             "kind": "nix-github-release",
             "name": f"{owner}/{repo_name}@v{version}/{asset}",
             "source": rel,
             "exempt": is_exempt(owner, repo_name),
-            "published": lambda registry, o=owner, r=repo_name, v=version: github_release_time(
-                registry, o, r, v
+            "published": lambda registry, o=owner, r=repo_name, p=tag_prefix, v=version: github_release_time(
+                registry, o, r, f"{p}v{v}"
             ),
         }
 
@@ -180,11 +180,12 @@ def github_commit_time(registry, owner, repo_name, ref):
     return parse_rfc3339(date)
 
 
-def github_release_time(registry, owner, repo_name, version):
-    metadata = registry.json(f"https://api.github.com/repos/{owner}/{repo_name}/releases/tags/v{version}")
+def github_release_time(registry, owner, repo_name, tag):
+    encoded_tag = urllib.parse.quote(tag, safe="")
+    metadata = registry.json(f"https://api.github.com/repos/{owner}/{repo_name}/releases/tags/{encoded_tag}")
     published = metadata.get("published_at")
     if not published:
-        raise RuntimeError(f"github:{owner}/{repo_name}@v{version}: missing release publish time")
+        raise RuntimeError(f"github:{owner}/{repo_name}@{tag}: missing release publish time")
     return parse_rfc3339(published)
 
 

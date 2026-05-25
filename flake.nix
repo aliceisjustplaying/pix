@@ -61,6 +61,7 @@
           agentmemory = final.callPackage ./pkgs/agentmemory { };
           amp-code = final.callPackage ./pkgs/amp.nix { };
           camofox-browser = final.callPackage ./pkgs/camofox-browser { };
+          claude-code-acp = final.callPackage ./pkgs/claude-code-acp { };
           cli-proxy-api = final.callPackage ./pkgs/cli-proxy-api.nix { };
           codex-acp = final.callPackage ./pkgs/codex-acp.nix { };
           cursor-cli = final.callPackage ./pkgs/cursor-cli.nix { };
@@ -71,6 +72,7 @@
           plausible = final.callPackage ./pkgs/plausible.nix { };
           portless = final.callPackage ./pkgs/portless { };
           sfw = final.callPackage ./pkgs/sfw.nix { };
+          signal-cli = final.callPackage ./pkgs/signal-cli.nix { signal-cli = _prev.signal-cli; };
           tirith = final.callPackage ./pkgs/tirith.nix { };
           vet-run = final.callPackage ./pkgs/vet-run.nix { };
           inherit (unstablePkgs)
@@ -118,6 +120,7 @@
           agentmemory
           amp-code
           camofox-browser
+          claude-code-acp
           cli-proxy-api
           codex-acp
           cursor-cli
@@ -127,6 +130,7 @@
           oracle
           portless
           sfw
+          signal-cli
           tirith
           vet-run
           ;
