@@ -189,7 +189,7 @@ regen_lockfile() (
 	tar -xzf "$tmp/pkg.tgz" -C "$tmp"
 	(
 		cd "$tmp/package"
-		npm install --min-release-age=0 --package-lock-only --ignore-scripts --no-audit --no-fund --silent
+		npm install --min-release-age=0 --package-lock-only --legacy-peer-deps --ignore-scripts --no-audit --no-fund --silent
 	)
 	cp "$tmp/package/package-lock.json" "$repo/$dest"
 )
@@ -349,19 +349,27 @@ update_github_release_file() {
 }
 
 update_github_release_target_tarballs() {
-	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_prefix=$5 cur releases release tag new target url hash target_hashes_json
+	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_prefix=$5 cur releases release tag new target url hash target_hashes_json targets_json
 	shift 5
 	cur=$(nix_field "$nix_file" version)
+	targets_json=$(printf '%s\n' "$@" | jq -R . | jq -s .)
 	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
-		release=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases/latest")
+		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+		release=$(printf '%s\n' "$releases" | jq -r --arg prefix "$asset_prefix" --argjson targets "$targets_json" '
+			map(select(.draft | not))
+			| map(select(.prerelease | not))
+			| map(select([.assets[].name] as $names | all($targets[]; . as $target | ($names | index($prefix + "-" + $target + ".tar.gz")))))
+			| first // empty
+		')
 	else
 		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
-		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
+		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" --arg prefix "$asset_prefix" --argjson targets "$targets_json" '
 			map(select(.draft | not))
 			| map(select(.prerelease | not))
 			| map(select(.published_at != null))
 			| map(. + {ts: (.published_at | fromdateiso8601)})
 			| map(select(.ts <= $cutoff))
+			| map(select([.assets[].name] as $names | all($targets[]; . as $target | ($names | index($prefix + "-" + $target + ".tar.gz")))))
 			| max_by(.ts) // empty
 		')
 	fi

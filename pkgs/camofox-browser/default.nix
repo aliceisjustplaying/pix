@@ -9,7 +9,7 @@
 
 buildNpmPackage rec {
   pname = "camofox-browser";
-  version = "1.10.1";
+  version = "1.11.2";
 
   nodejs = nodejs_24;
   nativeBuildInputs = [
@@ -19,7 +19,7 @@ buildNpmPackage rec {
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@askjo/camofox-browser/-/camofox-browser-${version}.tgz";
-    hash = "sha512-1O2gUwXOdprHu5h5lBtIQ9uaoHh/6AnbinqlkvbeCFAf7197N/HKTSHLpDmxezPCGW5c0DUCkeTgsG9yk4YZGQ==";
+    hash = "sha512-zllDDHl2aht8XAQngAKYY5SowjK4yz0HAQGp9OrWoYkOofS0kZKVkr3O+SoVebAv19edO4ZZ0OUQAcb3vs/guw==";
   };
 
   postPatch = ''
@@ -28,7 +28,7 @@ buildNpmPackage rec {
 
   npmFlags = [ "--legacy-peer-deps" ];
   npmRebuildFlags = [ "--ignore-scripts" ];
-  npmDepsHash = "sha256-m5uBKFb9D61TtzMvEeuCXrMWFT1eSbEvx75wCbKHHnk=";
+  npmDepsHash = "sha256-xNfxT60doY1LfSTPWSyPIBABSEBGyhaf0LLlDjTVuVA=";
 
   CAMOFOX_SKIP_DOWNLOAD = "1";
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";

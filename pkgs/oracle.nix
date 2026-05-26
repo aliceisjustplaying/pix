@@ -15,9 +15,10 @@ buildNpmPackage rec {
     cp ${./oracle-package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-eUQQYvQ8uzeNrof8/kUtUO+K2C6uVqIWahBQsuIBwWk=";
+  npmDepsHash = "sha256-JV1I5tb+4TktTlHaDr1CRHfOPbY4Pwu6OdkSYRBm3/Y=";
 
   dontNpmBuild = true;
+  npmFlags = [ "--legacy-peer-deps" ];
   npmPackFlags = [ "--ignore-scripts" ];
 
   meta = with lib; {

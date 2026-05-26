@@ -96,7 +96,6 @@ in {
         "XDG_CACHE_HOME=${agentHome}/.cache"
         "PATH=${lib.makeBinPath [ pkgs.camofox-browser pkgs.nodejs_24 pkgs.yt-dlp pkgs.coreutils pkgs.bash ]}"
       ];
-      ExecStartPre = "${pkgs.camofox-browser}/lib/node_modules/@askjo/camofox-browser/node_modules/.bin/camoufox-js fetch";
       ExecStart = "${lib.getExe pkgs.camofox-browser}";
       Restart = "on-failure";
       RestartSec = "5s";
