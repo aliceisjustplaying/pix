@@ -12,10 +12,7 @@ from pathlib import Path
 
 
 DEFAULT_MIN_AGE_HOURS = 24
-# Anchored: identifier must start with claude/codex, allowing an npm scope first.
-# We deliberately do NOT match file paths — "pkgs/claude-utils-fork.nix" should
-# not exempt an unrelated package.
-EXEMPT_RE = re.compile(r"^(@[^/]+/)?(claude|codex)", re.IGNORECASE)
+EXEMPT_NAMES = {"claude-code", "codex", "codex-cli"}
 NPM_REGISTRY = "https://registry.npmjs.org"
 
 
@@ -60,7 +57,7 @@ def age_hours(dt, now):
 
 
 def is_exempt(*parts):
-    return any(EXEMPT_RE.search(str(part or "")) for part in parts)
+    return any(str(part or "").lower().rsplit("/", 1)[-1] in EXEMPT_NAMES for part in parts)
 
 
 def npm_publish_time(registry, package, version):

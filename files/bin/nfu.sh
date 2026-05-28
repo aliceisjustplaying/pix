@@ -50,10 +50,11 @@ dependency_min_age_hours() { printf '%s' "${PIX_DEPENDENCY_MIN_AGE_HOURS:-24}"; 
 allow_fresh_dependencies() { [[ -n ${PIX_ALLOW_FRESH_DEPS:-} ]]; }
 
 freshness_exempt() {
-	local part lower
+	local part lower name
 	for part in "$@"; do
 		lower=${part,,}
-		[[ $lower =~ ^(@[^/]+/)?(claude|codex) ]] && return 0
+		name=${lower##*/}
+		[[ $name == claude-code || $name == codex || $name == codex-cli ]] && return 0
 	done
 	return 1
 }
@@ -115,7 +116,7 @@ github_json() {
 
 curl_stdout() {
 	curl --http1.1 --fail --location --silent --show-error \
-		--retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 20 \
+		--retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 20 --max-time 120 \
 		"$@"
 }
 
@@ -247,7 +248,8 @@ update_cursor_cli() {
 	[[ -n $release ]] || die "cursor-cli: couldn't parse release from https://cursor.com/install"
 	if ! freshness_exempt cursor-cli cursor && ! allow_fresh_dependencies; then
 		if cursor_release_is_fresh "$release"; then
-			die "cursor-cli: release '$release' appears newer than $(dependency_min_age_hours)h; set PIX_ALLOW_FRESH_DEPS=1 and PIX_FRESH_DEPS_REASON=... to bypass"
+			log "cursor-cli: keeping $cur; latest $release appears newer than $(dependency_min_age_hours)h"
+			return
 		fi
 	fi
 	date_part=$(printf '%s\n' "$release" | sed -E 's/^([0-9]{4})\.([0-9]{2})\.([0-9]{2})-.*/\1-\2-\3/')
