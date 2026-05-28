@@ -209,7 +209,6 @@ def _patch_nixos_gateway_unit_status() -> None:
             "Environment=HERMES_HOME=/workspace/.hermes",
             "Environment=PYTHONPATH=/workspace/.hermes/overrides",
             "Environment=VIRTUAL_ENV=/workspace/.hermes/venv",
-            "Environment=HERMES_MANAGED=nixos",
             "ExecStart=/workspace/.hermes/venv/bin/hermes gateway run --replace",
             "ExecReload=",
             "KillMode=mixed",

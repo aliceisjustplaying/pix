@@ -19,6 +19,5 @@ The unit owns the runtime environment directly:
 - `HERMES_HOME=/workspace/.hermes`
 - `PYTHONPATH=/workspace/.hermes/overrides`
 - `VIRTUAL_ENV=/workspace/.hermes/venv`
-- `HERMES_MANAGED=nixos`
 
-Hermes code updates still refresh `/workspace/.hermes/venv`; Nix owns service lifecycle and the startup override path.
+Hermes code updates still refresh `/workspace/.hermes/venv`; Nix owns service lifecycle and the startup override path, but Hermes CLI updates and config mutations remain available.

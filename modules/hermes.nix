@@ -125,7 +125,6 @@ in {
           "HERMES_HOME=${hermesHome}"
           "PYTHONPATH=${hermesOverrides}"
           "VIRTUAL_ENV=${hermesVenv}"
-          "HERMES_MANAGED=nixos"
           "PYTHONUNBUFFERED=1"
         ];
       };

@@ -19,8 +19,6 @@ fi
 install -m 600 "@hermesSitecustomize@" "@hermesOverrides@/sitecustomize.py"
 install -m 600 "@agentmemoryMemoryProvider@" "@hermesHome@/plugins/agentmemory/__init__.py"
 install -m 700 "@hermesLive@" "@hermesHome@/bin/hermes-live"
-printf 'nixos\n' >"@hermesHome@/.managed"
-chmod 600 "@hermesHome@/.managed"
 
 if [ ! -f "@hermesHome@/config.yaml" ]; then
 	install -m 600 "@hermesConfig@" "@hermesHome@/config.yaml"
