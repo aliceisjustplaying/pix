@@ -13,7 +13,7 @@
       pclaw = "cd /workspace/src/piclaw-customizations";
       tc = "cd /workspace/src/tapering-calculator";
       nm = "cd ~/newmem";
-      nfur = "nfu && rebuild";
+      nfur = "nfu && rebuild && printf 'watch live logs with: journalctl -fu pix-rebuild.service\ncheck detached result with: host-result pix-rebuild.service --wait 900\n'";
       h = "hermes";
       ht = "hermes --tui";
       c = "claude --dangerously-skip-permissions";

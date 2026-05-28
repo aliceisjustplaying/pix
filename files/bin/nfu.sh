@@ -87,9 +87,15 @@ replace_field() {
 
 # SRI hash of an HTTP URL with explicit algo (sha256 | sha512).
 sri_for_url() {
-	local url=$1 algo=$2 base32
-	base32=$(nix-prefetch-url --type "$algo" "$url")
-	nix "${NIX_FLAGS[@]}" hash convert --hash-algo "$algo" --to sri "$base32"
+	local url=$1 algo=$2 tmp name file sri
+	tmp=$(mktemp -d)
+	name=$(basename "${url%%\?*}")
+	file="$tmp/$name"
+	curl_file "$url" "$file"
+	nix-store --add-fixed "$algo" "$file" >/dev/null
+	sri=$(nix "${NIX_FLAGS[@]}" hash file --type "$algo" --sri "$file")
+	rm -rf "$tmp"
+	printf '%s\n' "$sri"
 }
 
 github_json() {
@@ -98,19 +104,30 @@ github_json() {
 		token=$(gh auth token 2>/dev/null || true)
 	fi
 	if [[ -n $token ]]; then
-		curl -fsSL \
+		curl_stdout \
 			-H 'Accept: application/vnd.github+json' \
 			-H "Authorization: Bearer ${token}" \
 			"$url"
 	else
-		curl -fsSL -H 'Accept: application/vnd.github+json' "$url"
+		curl_stdout -H 'Accept: application/vnd.github+json' "$url"
 	fi
+}
+
+curl_stdout() {
+	curl --http1.1 --fail --location --silent --show-error \
+		--retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 20 \
+		"$@"
+}
+
+curl_file() {
+	local url=$1 dest=$2
+	curl_stdout "$url" -o "$dest"
 }
 
 # Latest allowed version of an npm package via registry metadata.
 npm_latest_version() {
 	local pkg=$1 metadata cutoff version
-	metadata=$(curl -fsSL "https://registry.npmjs.org/$pkg")
+	metadata=$(curl_stdout "https://registry.npmjs.org/$pkg")
 	if freshness_exempt "$pkg" || allow_fresh_dependencies; then
 		printf '%s\n' "$metadata" | jq -r '."dist-tags".latest'
 		return
@@ -185,7 +202,7 @@ regen_lockfile() (
 	url=$(npm_tarball_url "$npm_pkg" "$version")
 	tmp=$(mktemp -d)
 	trap 'rm -rf "$tmp"' EXIT
-	curl -fsSL "$url" -o "$tmp/pkg.tgz"
+	curl_file "$url" "$tmp/pkg.tgz"
 	tar -xzf "$tmp/pkg.tgz" -C "$tmp"
 	(
 		cd "$tmp/package"
@@ -225,7 +242,7 @@ PY
 update_cursor_cli() {
 	local nix_file=pkgs/cursor-cli.nix cur install_script release date_part url sri
 	cur=$(nix_field "$nix_file" release)
-	install_script=$(curl -fsSL https://cursor.com/install)
+	install_script=$(curl_stdout https://cursor.com/install)
 	release=$(printf '%s\n' "$install_script" | sed -n -E 's|^DOWNLOAD_URL="https://downloads\.cursor\.com/lab/([^/]+)/\$\{OS\}/\$\{ARCH\}/agent-cli-package\.tar\.gz"$|\1|p' | head -n1)
 	[[ -n $release ]] || die "cursor-cli: couldn't parse release from https://cursor.com/install"
 	if ! freshness_exempt cursor-cli cursor && ! allow_fresh_dependencies; then
@@ -460,11 +477,7 @@ main() {
 	local flake_before
 	flake_before=$(mktemp)
 	trap 'rm -f "${flake_before:-}"' EXIT
-	if git show HEAD:flake.lock >"$flake_before" 2>/dev/null; then
-		:
-	else
-		cp flake.lock "$flake_before"
-	fi
+	cp flake.lock "$flake_before"
 
 	log "updating flake inputs"
 	nix "${NIX_FLAGS[@]}" flake update
@@ -561,6 +574,9 @@ main() {
 		--no-link
 
 	log "done"
+	printf 'deploy with: rebuild\n'
+	printf 'watch rebuild with: journalctl -fu pix-rebuild.service\n'
+	printf 'check detached result with: host-result pix-rebuild.service --wait 900\n'
 }
 
 main "$@"

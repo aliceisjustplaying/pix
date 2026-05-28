@@ -2,9 +2,9 @@
   description = "pix2 - NixOS host for Piclaw";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    kernel-nixpkgs.url = "github:NixOS/nixpkgs/master";
+    nixpkgs.url = "git+https://github.com/NixOS/nixpkgs.git?ref=nixos-25.11&shallow=1";
+    nixpkgs-unstable.url = "git+https://github.com/NixOS/nixpkgs.git?ref=nixpkgs-unstable&shallow=1";
+    kernel-nixpkgs.url = "git+https://github.com/NixOS/nixpkgs.git?ref=master&shallow=1";
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
