@@ -1,15 +1,15 @@
 { fetchurl, lib, stdenv }:
 
 let
-  version = "0.13.0";
+  version = "0.16.0";
   targets = {
     aarch64-linux = {
       target = "aarch64-unknown-linux-gnu";
-      hash = "sha256-8yInNSvGiqpxk1IpsSwlQvuahzQ8l8XevDQKhnJvv0A=";
+      hash = "sha256-o/koeNFyEHbFQkhX3Qq+EZc2ttVpR50EA6wwQqovEqg=";
     };
     x86_64-linux = {
       target = "x86_64-unknown-linux-gnu";
-      hash = "sha256-ChfllKKveE/Y1IuTzXMjjfFIWaHAlGl53hHzbNM5b/g=";
+      hash = "sha256-YZa0rhvhSCSO1mIUSAOnZpSE9rhto/8SKllOwaAPf+w=";
     };
   };
   platform = targets.${stdenv.hostPlatform.system} or (throw "unsupported platform for iii: ${stdenv.hostPlatform.system}");

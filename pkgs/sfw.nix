@@ -6,11 +6,11 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "sfw";
-  version = "1.10.0";
+  version = "1.11.0";
 
   src = fetchurl {
     url = "https://github.com/SocketDev/sfw-free/releases/download/v${version}/sfw-free-linux-x86_64";
-    hash = "sha256-HqFvFfEhe95mrJx9AmLHEmt7sbLWDhTo+gmCRWE5rm4=";
+    hash = "sha256-t0w/pU5uKvzJt4ARnWFbgUqxnMfOLvRUMXaHDLCRcKI=";
   };
 
   dontUnpack = true;
