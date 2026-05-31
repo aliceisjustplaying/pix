@@ -291,10 +291,15 @@ update_go_github() {
 update_github_release_asset() {
 	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_name=$5 cur releases release new digest hash
 	cur=$(nix_field "$nix_file" version)
+	releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
 	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
-		release=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases/latest")
+		release=$(printf '%s\n' "$releases" | jq -r --arg asset "$asset_name" '
+			map(select(.draft | not))
+			| map(select(.prerelease | not))
+			| map(select([.assets[].name] | index($asset)))
+			| first // empty
+		')
 	else
-		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
 		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
 			map(select(.draft | not))
 			| map(select(.prerelease | not))
@@ -319,16 +324,34 @@ update_github_release_asset() {
 update_github_release_tarball() {
 	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_prefix=$5 cur releases release new url sri
 	cur=$(nix_field "$nix_file" version)
+	releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
 	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
-		release=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases/latest")
+		release=$(printf '%s\n' "$releases" | jq -r --arg prefix "$asset_prefix" '
+			map(select(.draft | not))
+			| map(select(.prerelease | not))
+			| map(
+				. as $release
+				| ($release.tag_name | sub("^.*/v"; "") | sub("^v"; "")) as $version
+				| ($prefix + "-" + $version + ".tar.gz") as $asset
+				| $release + {selected_asset: $asset}
+			)
+			| map(. as $release | select([.assets[].name] | index($release.selected_asset)))
+			| first // empty
+		')
 	else
-		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
-		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
+		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" --arg prefix "$asset_prefix" '
 			map(select(.draft | not))
 			| map(select(.prerelease | not))
 			| map(select(.published_at != null))
 			| map(. + {ts: (.published_at | fromdateiso8601)})
 			| map(select(.ts <= $cutoff))
+			| map(
+				. as $release
+				| ($release.tag_name | sub("^.*/v"; "") | sub("^v"; "")) as $version
+				| ($prefix + "-" + $version + ".tar.gz") as $asset
+				| $release + {selected_asset: $asset}
+			)
+			| map(. as $release | select([.assets[].name] | index($release.selected_asset)))
 			| max_by(.ts) // empty
 		')
 	fi
@@ -344,16 +367,34 @@ update_github_release_tarball() {
 update_github_release_file() {
 	local attr=$1 nix_file=$2 owner=$3 repo=$4 asset_template=$5 cur releases release new url sri asset
 	cur=$(nix_field "$nix_file" version)
+	releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
 	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
-		release=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases/latest")
+		release=$(printf '%s\n' "$releases" | jq -r --arg template "$asset_template" '
+			map(select(.draft | not))
+			| map(select(.prerelease | not))
+			| map(
+				. as $release
+				| ($release.tag_name | sub("^.*/v"; "") | sub("^v"; "")) as $version
+				| ($template | gsub("\\{version\\}"; $version)) as $asset
+				| $release + {selected_asset: $asset}
+			)
+			| map(. as $release | select([.assets[].name] | index($release.selected_asset)))
+			| first // empty
+		')
 	else
-		releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
-		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" '
+		release=$(printf '%s\n' "$releases" | jq -r --argjson cutoff "$(cutoff_epoch)" --arg template "$asset_template" '
 			map(select(.draft | not))
 			| map(select(.prerelease | not))
 			| map(select(.published_at != null))
 			| map(. + {ts: (.published_at | fromdateiso8601)})
 			| map(select(.ts <= $cutoff))
+			| map(
+				. as $release
+				| ($release.tag_name | sub("^.*/v"; "") | sub("^v"; "")) as $version
+				| ($template | gsub("\\{version\\}"; $version)) as $asset
+				| $release + {selected_asset: $asset}
+			)
+			| map(. as $release | select([.assets[].name] | index($release.selected_asset)))
 			| max_by(.ts) // empty
 		')
 	fi
@@ -425,6 +466,41 @@ PY
 	log "$attr: $cur -> $new"
 }
 
+update_agentmemory_iii() {
+	local nix_file=pkgs/iii.nix cur new target url hash target_hashes_json
+	cur=$(nix_field "$nix_file" version)
+	new=$(jq -r '.packages["node_modules/iii-sdk"].version // empty' pkgs/agentmemory/package-lock.json)
+	[[ -n $new && $new != null ]] || die "iii: couldn't read iii-sdk version from agentmemory lockfile"
+	target_hashes_json='{}'
+	for target in aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu; do
+		url="https://github.com/iii-hq/iii/releases/download/iii/v${new}/iii-${target}.tar.gz"
+		hash=$(sri_for_url "$url" sha256)
+		target_hashes_json=$(jq -cn --argjson hashes "$target_hashes_json" --arg target "$target" --arg hash "$hash" \
+			'$hashes + {($target): $hash}')
+	done
+	replace_field "$nix_file" version "$new"
+	python3 - "$nix_file" "$target_hashes_json" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+hashes = json.loads(sys.argv[2])
+text = path.read_text(encoding="utf-8")
+for target, value in hashes.items():
+    pattern = re.compile(
+        rf'(target = "{re.escape(target)}";\n\s*)hash = "[^"]+";',
+        re.MULTILINE,
+    )
+    text, count = pattern.subn(rf'\1hash = "{value}";', text, count=1)
+    if count != 1:
+        raise SystemExit(f"{path}: expected one hash for target {target}, got {count}")
+path.write_text(text, encoding="utf-8")
+PY
+	log "iii: $cur -> $new (agentmemory iii-sdk)"
+}
+
 restore_fresh_flake_inputs() {
 	local before=$1 current=flake.lock min_age
 	min_age=$(dependency_min_age_hours)
@@ -435,8 +511,11 @@ import sys
 import time
 
 before_path, current_path, min_age = sys.argv[1], sys.argv[2], float(sys.argv[3])
-exempt_re = re.compile(r"^(@[^/]+/)?(claude|codex)", re.IGNORECASE)
+exempt_names = {"claude-code", "codex", "codex-cli"}
 cutoff = time.time() - min_age * 3600
+
+def is_exempt(*parts):
+    return any(str(part or "").lower().rsplit("/", 1)[-1] in exempt_names for part in parts)
 
 with open(before_path, encoding="utf-8") as f:
     before = json.load(f)
@@ -451,7 +530,7 @@ for name, node in list(current.get("nodes", {}).items()):
     if not isinstance(last_modified, int):
         continue
     parts = [name, locked.get("owner"), locked.get("repo")]
-    if any(exempt_re.search(str(part or "")) for part in parts):
+    if is_exempt(*parts):
         continue
     if last_modified > cutoff and name in before_nodes:
         if before_nodes[name].get("locked", {}).get("lastModified") != last_modified:
@@ -528,9 +607,7 @@ main() {
 	update_go_github gogcli pkgs/gogcli.nix openclaw gogcli
 
 	log "iii"
-	update_github_release_target_tarballs iii pkgs/iii.nix iii-hq iii iii \
-		aarch64-unknown-linux-gnu \
-		x86_64-unknown-linux-gnu
+	update_agentmemory_iii
 
 	log "oracle"
 	update_npm_with_lockfile oracle \
