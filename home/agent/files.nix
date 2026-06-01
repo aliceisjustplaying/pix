@@ -15,6 +15,13 @@ let
     pkgs.zlib
     pkgs.zstd
   ];
+  hermesBuildPath = pkgs.lib.makeBinPath [
+    pkgs.gnumake
+    pkgs.nodejs_24
+    pkgs.pkg-config
+    pkgs.python312
+    pkgs.stdenv.cc
+  ];
 
   proxyApiKey = "CLI_PROXY_API_KEY";
   proxyBaseUrl = "http://127.0.0.1:8317";
@@ -45,7 +52,7 @@ let
     piclaw-status = binStatic "piclaw-status";
     piclaw-logs = binStatic "piclaw-logs";
     backup = binStatic "backup";
-    hermes = binSrc "hermes" { inherit hermesLibraryPath; };
+    hermes = binSrc "hermes" { inherit hermesBuildPath hermesLibraryPath; };
     hermes-gateway-smoke = binStatic "hermes-gateway-smoke";
     amp-login-proxy = binStatic "amp-login-proxy";
     amp-login-upstream = binStatic "amp-login-upstream";

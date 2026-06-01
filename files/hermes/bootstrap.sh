@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PATH="@hermesBuildPath@${PATH:+:$PATH}"
+
 mkdir -p "@hermesHome@" \
 	"@hermesOverrides@" \
 	"@hermesHome@/plugins/agentmemory" \

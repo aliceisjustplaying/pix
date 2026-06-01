@@ -11,6 +11,13 @@ let
   tmpl = import ../lib/template.nix;
 
   servicePath = agentService.runtimePath [ pkgs.uv pkgs.python312 ];
+  hermesBuildPath = lib.makeBinPath [
+    pkgs.gnumake
+    pkgs.nodejs_24
+    pkgs.pkg-config
+    pkgs.python312
+    pkgs.stdenv.cc
+  ];
   hermesLibraryPath = lib.makeLibraryPath [
     pkgs.stdenv.cc.cc.lib
     pkgs.krb5
@@ -37,7 +44,7 @@ let
   agentmemoryMcp = "${pkgs.agentmemory}/bin/agentmemory-mcp";
   agentmemoryBootstrap = pkgs.writeShellScript "agentmemory-bootstrap" (builtins.readFile ../files/hermes/agentmemory-bootstrap.sh);
   hermesBootstrap = pkgs.writeShellScript "hermes-bootstrap" (tmpl ../files/hermes/bootstrap.sh {
-    inherit hermesHome hermesOverrides hermesRepo hermesVenv hermesSitePackages agentmemoryMcp;
+    inherit hermesBuildPath hermesHome hermesOverrides hermesRepo hermesVenv hermesSitePackages agentmemoryMcp;
     hermesSitecustomize = toString hermesSitecustomize;
     hermesConfig = toString hermesConfig;
     hermesEnvTemplate = toString hermesEnvTemplate;
