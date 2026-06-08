@@ -78,7 +78,7 @@ let
       src
       mixEnv
       ;
-    hash = "sha256-+jlTkdJEYbAWNYDdZE40b3EzmpGwLEJKXNtib1qeZTU=";
+    hash = "sha256-fm/elkCNpu5sduBxly06i/z30Y9BMtt+qthXmLuvlUc=";
   };
 
   mjmlNif = rustPlatform.buildRustPackage {

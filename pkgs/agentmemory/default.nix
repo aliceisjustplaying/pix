@@ -2,14 +2,14 @@
 
 buildNpmPackage rec {
   pname = "agentmemory";
-  version = "0.9.24";
+  version = "0.9.27";
 
   nodejs = nodejs_24;
   nativeBuildInputs = [ makeWrapper ];
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@agentmemory/agentmemory/-/agentmemory-${version}.tgz";
-    hash = "sha512-fvnAk8UgCwvNZJMuUrgj7Ac+CSuKo6KgZvTWQkjElU/Y++/g91UcrkfnYJ3RIFAxDxTZ+WkEUphhmOXn34tORQ==";
+    hash = "sha512-3IZ8j41gUBoQnMtoRlSHda3mEBYPh1TxZ9xgTi4zqEWDFu0ZrEhCm76C8t13mIAQA2M2R1GtD7t9OcU3nsyTgw==";
   };
 
   postPatch = ''
@@ -18,7 +18,7 @@ buildNpmPackage rec {
 
   npmFlags = [ "--legacy-peer-deps" ];
   npmRebuildFlags = [ "--ignore-scripts" ];
-  npmDepsHash = "sha256-Fa36Imc8bqJDjKknT8wgK2CYsmA24KPIUMK2ArblCZ4=";
+  npmDepsHash = "sha256-EKsbfmk3SwllvlVieWFoqLh/UT9PA2zJ2hKAAm8QjsI=";
 
   dontNpmBuild = true;
 

@@ -28,7 +28,7 @@ buildNpmPackage rec {
 
   npmFlags = [ "--legacy-peer-deps" ];
   npmRebuildFlags = [ "--ignore-scripts" ];
-  npmDepsHash = "sha256-iDbwakNhrwl0xexcJhYWYZWPFp/1DzhqoyeKgkDjHbM=";
+  npmDepsHash = "sha256-smeboo+u9C6MMZ9JzZ02YIn19KiISr+3682Qcc0APj4=";
 
   CAMOFOX_SKIP_DOWNLOAD = "1";
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
@@ -39,8 +39,10 @@ buildNpmPackage rec {
     pushd $out/lib/node_modules/@askjo/camofox-browser
     # camoufox-js compares only the alpha/beta release suffix, which makes
     # newer Firefox-major alpha builds look older than the old beta.24 build.
-    substituteInPlace node_modules/camoufox-js/dist/__version__.js \
-      --replace-fail 'static MIN_VERSION = "beta.19";' 'static MIN_VERSION = "alpha.0";'
+    grep -q 'static MIN_VERSION = "' node_modules/camoufox-js/dist/__version__.js
+    sed -i 's/static MIN_VERSION = "[^"]*";/static MIN_VERSION = "alpha.0";/' \
+      node_modules/camoufox-js/dist/__version__.js
+    grep -q 'static MIN_VERSION = "alpha.0";' node_modules/camoufox-js/dist/__version__.js
     npm rebuild better-sqlite3 --build-from-source --offline --nodedir=${nodejs_24.dev}
     popd
 

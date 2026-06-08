@@ -2,16 +2,16 @@
 
 (buildGoModule.override { go = go_1_26; }) rec {
   pname = "gogcli";
-  version = "0.19.0";
+  version = "0.21.0";
 
   src = fetchFromGitHub {
     owner = "openclaw";
     repo = "gogcli";
     rev = "v${version}";
-    hash = "sha256-8+ojZUNsmAzFQbdTG0eE/FG6nbptq49QZqjrCP1RhE4=";
+    hash = "sha256-V7kTXdLO2zsf69d4QV+7tGelQUYzaOMhDE17tffokts=";
   };
 
-  vendorHash = "sha256-fkvMTJmYRsknDDffrZq2L2GRYDozwPX0yv7K84n5a84=";
+  vendorHash = "sha256-ElQF27p/kDaRSCwUuWLHV4AJ36ZlNI0OmqemmiJHBkE=";
 
   subPackages = [ "cmd/gog" ];
 
