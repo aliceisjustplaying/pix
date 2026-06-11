@@ -17,6 +17,7 @@
 
   # Mixed auction hardware (set per shard in flake.nix). Every box has a second
   # identical disk that stays unformatted — spool headroom if ever needed.
+  # disko derives boot.loader.grub.devices from the EF02-carrying disk, so this
+  # one assignment is the whole story (listing devices here too duplicates it).
   disko.devices.disk.main.device = diskDevice;
-  boot.loader.grub.devices = [ diskDevice ];
 }
