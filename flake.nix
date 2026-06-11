@@ -141,6 +141,15 @@
         system = "x86_64-linux";
         hostModule = ./hosts/pix2/default.nix;
       };
-    };
+
+      emoji = mkNixosConfiguration {
+        system = "x86_64-linux";
+        hostModule = ./hosts/emoji/default.nix;
+      };
+    } // nixpkgs.lib.listToAttrs (map (i:
+      nixpkgs.lib.nameValuePair "crawl${toString i}" (mkNixosConfiguration {
+        system = "x86_64-linux";
+        hostModule = import ./hosts/crawl { shardIndex = i; };
+      })) (nixpkgs.lib.range 0 5));
   };
 }
