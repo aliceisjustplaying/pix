@@ -2,7 +2,11 @@
 # hosts/common without the pix2 application modules.
 { ... }:
 let
-  operatorKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+aS2lsR/vsc46amWdsUXGEFuEARJaz3yGAFtVePQuE operator";
+  operatorKeys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+aS2lsR/vsc46amWdsUXGEFuEARJaz3yGAFtVePQuE operator"
+    # Fleet bootstrap key (~/.ssh/backfill) — same key nixos-anywhere installs with.
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINW8/PGvo69ULso/5laB2KfFr2PrtJ6rq4+G9nkvWTw4 alice"
+  ];
 in
 {
   imports = [
@@ -20,11 +24,14 @@ in
     validateSopsFiles = true;
   };
 
-  users.users.agent.openssh.authorizedKeys.keys = [ operatorKey ];
+  users.users.agent.openssh.authorizedKeys.keys = operatorKeys;
 
   services.openssh = {
     enable = true;
-    openFirewall = false;
+    # Public 22 for the backfill launch window (key-only, agent user, no root):
+    # if first-boot tailscale enrollment fails there is no other way into a
+    # freshly-wiped auction box. Flip back to false once the fleet is stable.
+    openFirewall = true;
     settings = {
       PasswordAuthentication = false;
       KbdInteractiveAuthentication = false;
