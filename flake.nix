@@ -149,7 +149,14 @@
     } // nixpkgs.lib.listToAttrs (map (i:
       nixpkgs.lib.nameValuePair "crawl${toString i}" (mkNixosConfiguration {
         system = "x86_64-linux";
-        hostModule = import ./hosts/crawl { shardIndex = i; };
+        hostModule = import ./hosts/crawl {
+          shardIndex = i;
+          # Verified per box over rescue SSH 2026-06-12: crawl0/1 carry NVMe,
+          # crawl2-5 SATA SSD.
+          diskDevice = builtins.elemAt [
+            "/dev/nvme0n1" "/dev/nvme0n1" "/dev/sda" "/dev/sda" "/dev/sda" "/dev/sda"
+          ] i;
+        };
       })) (nixpkgs.lib.range 0 5));
   };
 }
