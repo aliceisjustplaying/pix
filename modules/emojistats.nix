@@ -72,11 +72,24 @@ in
       </clickhouse>
     '';
 
+    # The live worker spools full post text to parquet exactly like the crawl
+    # boxes do — its archive is the only durable home of the live tail's
+    # non-emoji text, so it ships to the same Storage Box (live/ prefix).
+    # Without ARCHIVE_SYNC_COMMAND finalized files would pile up on the 80 GB
+    # disk forever; the sink's startup sweep re-ships any stranded file.
+    sops.secrets.emojistats-rclone-conf = { owner = "agent"; };
     systemd.services.emojistats-ingest = mkAppService {
       description = "emojistats live Jetstream ingest worker";
       workdir = "${cfg.checkoutDir}/packages/ingest";
       execStart = "${tsx} src/index.ts";
       memoryMax = "1G";
+      extraEnv = [
+        "ARCHIVE_DIR=/var/lib/emojistats/archive"
+        "ARCHIVE_SYNC_COMMAND=${pkgs.rclone}/bin/rclone --config ${config.sops.secrets.emojistats-rclone-conf.path} move {file} storagebox:emojistats-archive/live/"
+      ];
+      extraConfig = {
+        StateDirectory = "emojistats/archive";
+      };
     };
 
     systemd.services.emojistats-api = mkAppService {
