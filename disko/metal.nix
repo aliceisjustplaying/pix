@@ -6,6 +6,12 @@
 # disko.devices.disk.main.device and boot.loader.grub.devices in the host if so).
 { lib, ... }:
 {
+  # No generated hardware-configuration.nix in this flow, so the initrd must
+  # be told about the storage controllers explicitly or stage 1 cannot find
+  # the root disk (SATA on crawl2-5, NVMe on crawl0/1, virtio-scsi on emoji
+  # via the qemu-guest profile).
+  boot.initrd.availableKernelModules = [ "ahci" "nvme" "xhci_pci" "ehci_pci" "usbhid" "sd_mod" ];
+
   # base.nix configures GRUB for UEFI (pix2/cloud); metal auction boxes are
   # legacy BIOS, so force the relevant knobs back.
   boot.loader.grub = {
