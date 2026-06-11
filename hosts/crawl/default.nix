@@ -15,6 +15,8 @@
 
   emojistatsCrawl.shardIndex = shardIndex;
 
+  home-manager.users.agent = import ../../home/agent-lean.nix;
+
   # Mixed auction hardware (set per shard in flake.nix). Every box has a second
   # identical disk that stays unformatted — spool headroom if ever needed.
   # disko derives boot.loader.grub.devices from the EF02-carrying disk, so this

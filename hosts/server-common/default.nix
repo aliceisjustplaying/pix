@@ -54,10 +54,11 @@ in
     interfaces.tailscale0.allowedUDPPortRanges = [ { from = 61001; to = 61999; } ];
   };
 
+  # The agent home profile is chosen per host: full tooling on emoji, the lean
+  # checkout-runner profile on the crawl fleet (hosts/{emoji,crawl} wire it).
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
-    users.agent = import ../../home/agent.nix;
   };
 
   system.stateVersion = "25.11";

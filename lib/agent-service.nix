@@ -1,8 +1,27 @@
-{ pkgs }:
+{ pkgs, lean ? false }:
 
 let
   home = "/home/agent";
-  agentPath = with pkgs; [
+  # lean: service PATH for boxes that only run checkouts (emojistats crawl
+  # fleet) — none of the interactive-agent tooling of the full list.
+  leanAgentPath = with pkgs; [
+    bash
+    coreutils
+    findutils
+    git
+    gnugrep
+    gnused
+    jq
+    openssh
+    procps
+    sqlite
+    which
+    curl
+    diffutils
+    bun
+    nodejs_24
+  ];
+  fullAgentPath = with pkgs; [
     bash
     coreutils
     findutils
@@ -36,6 +55,7 @@ let
     codex
     codex-acp
   ];
+  agentPath = if lean then leanAgentPath else fullAgentPath;
 
   makePath = extra: pkgs.lib.makeBinPath (agentPath ++ extra);
 in {

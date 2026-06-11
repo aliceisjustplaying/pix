@@ -12,4 +12,6 @@
   ];
 
   networking.hostName = "emoji";
+
+  home-manager.users.agent = import ../../home/agent.nix;
 }

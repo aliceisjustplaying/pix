@@ -8,7 +8,7 @@
 # crawl service auto-starts on boot and can be started the moment enumeration
 # has rows — it claims work as enumeration appends.
 let
-  agentService = import ../lib/agent-service.nix { inherit pkgs; };
+  agentService = import ../lib/agent-service.nix { inherit pkgs; lean = true; };
   cfg = config.emojistatsCrawl;
   tsx = "${cfg.checkoutDir}/node_modules/.bin/tsx";
   backfillDir = "${cfg.checkoutDir}/packages/backfill";
