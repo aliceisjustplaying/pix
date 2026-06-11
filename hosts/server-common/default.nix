@@ -17,6 +17,13 @@ in
   networking.domain = "mosphere.at";
   time.timeZone = "UTC";
 
+  # The fleet auth key carries tag:emojistats (not pix2's tag:pix).
+  tailscaleTag = "tag:emojistats";
+
+  # MagicDNS is off fleet-wide (--accept-dns=false) but the crawl env reaches
+  # ClickHouse at http://emoji:8123 — pin the serving box's tailnet IP.
+  networking.hosts."100.118.22.42" = [ "emoji" ];
+
   sops = {
     defaultSopsFile = ../../secrets/secrets.yaml;
     defaultSopsFormat = "yaml";
