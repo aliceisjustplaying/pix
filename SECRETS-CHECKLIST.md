@@ -270,3 +270,39 @@ These are configured in Nix, not SOPS:
 - `PICLAW_WEB_PASSKEY_MODE=passkey-only`
 - `PICLAW_DREAM_MODEL=anthropic/claude-sonnet-4-6`
 - Tailscale tag `tag:pix`
+
+## emojistats (hosts: emoji, crawl0..5)
+
+- `emojistats-env` — env file for the serving services (ingest/api/dashboard/rebuild on `emoji`):
+  ```
+  CLICKHOUSE_URL=http://127.0.0.1:8123
+  CLICKHOUSE_DATABASE=emojistats
+  CLICKHOUSE_USER=emojistats
+  CLICKHOUSE_PASSWORD=<generate>
+  JETSTREAM_ENDPOINT=wss://jetstream2.us-east.bsky.network/subscribe
+  ORIGINS=https://emojitracker.bsky.sh
+  ```
+- `emojistats-clickhouse-users.xml` — ClickHouse users.d drop-in creating the `emojistats` user; hash via `echo -n '<password>' | shasum -a 256`:
+  ```xml
+  <clickhouse>
+    <users>
+      <emojistats>
+        <password_sha256_hex>HASH</password_sha256_hex>
+        <networks><ip>::/0</ip></networks>
+        <profile>default</profile>
+        <quota>default</quota>
+      </emojistats>
+    </users>
+  </clickhouse>
+  ```
+  (networks stays wide because the firewall only exposes 8123 on the tailnet)
+- `emojistats-crawl-env` — env file for the crawl boxes; same keys as `emojistats-env` but `CLICKHOUSE_URL=http://emoji:8123` (tailnet MagicDNS name), plus optional per-box overrides (GLOBAL_CONCURRENCY etc. — EnvironmentFile wins over module defaults)
+- `emojistats-rclone-conf` — rclone config with the Storage Box remote:
+  ```ini
+  [storagebox]
+  type = sftp
+  host = <uXXXXXX>.your-storagebox.de
+  user = <uXXXXXX>
+  pass = <rclone obscure'd password>
+  shell_type = unix
+  ```
