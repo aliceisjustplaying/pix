@@ -26,6 +26,12 @@ in
 
   users.users.agent.openssh.authorizedKeys.keys = operatorKeys;
 
+  # Live checkouts (emojistats services run from /workspace/src/<repo>).
+  systemd.tmpfiles.rules = [
+    "d /workspace 0755 agent users -"
+    "d /workspace/src 0755 agent users -"
+  ];
+
   services.openssh = {
     enable = true;
     # Public 22 for the backfill launch window (key-only, agent user, no root):
