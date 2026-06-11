@@ -7,7 +7,7 @@
 #   cd packages/dashboard && bun run build   # rebuild after every dashboard pull
 # then `bun run db:migrate` once in packages/ingest (needs emojistats-env secret).
 let
-  agentService = import ../lib/agent-service.nix { inherit pkgs; };
+  agentService = import ../lib/agent-service.nix { inherit pkgs; lean = true; };
   cfg = config.emojistats;
   tsx = "${cfg.checkoutDir}/node_modules/.bin/tsx";
 
