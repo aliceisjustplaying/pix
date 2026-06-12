@@ -27,6 +27,7 @@ in
     nodejs_24
     agentmemory
     iii
+    kickbacks-ai
     google-cloud-sdk
     gh
     jujutsu

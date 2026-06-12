@@ -5,6 +5,7 @@
     ./agent/packages.nix
     ./agent/files.nix
     ./agent/cli-proxy.nix
+    ./agent/kickbacks.nix
     ./agent/shell.nix
     ./agent/git-ssh.nix
   ];

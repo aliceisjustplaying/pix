@@ -68,6 +68,7 @@
           droid = final.callPackage ./pkgs/droid.nix { };
           gogcli = final.callPackage ./pkgs/gogcli.nix { };
           iii = final.callPackage ./pkgs/iii.nix { };
+          kickbacks-ai = final.callPackage ./pkgs/kickbacks-ai.nix { };
           oracle = final.callPackage ./pkgs/oracle.nix { };
           plausible = final.callPackage ./pkgs/plausible.nix { };
           portless = final.callPackage ./pkgs/portless { };
@@ -127,6 +128,7 @@
           droid
           gogcli
           iii
+          kickbacks-ai
           oracle
           portless
           sfw
