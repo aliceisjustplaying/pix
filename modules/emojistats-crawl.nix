@@ -107,6 +107,11 @@ in
             "GLOBAL_CONCURRENCY=128"
             "PER_HOST_CONCURRENCY_BSKY=16"
             "ARCHIVE_SYNC_COMMAND=${syncCommand}"
+            # getaddrinfo runs on the libuv threadpool (default 4): retry
+            # waves dialing dead PDSes park all four threads in DNS timeouts
+            # and every healthy fetch queues behind them before it can even
+            # open a socket — observed as fetching=128 with 21 sockets.
+            "UV_THREADPOOL_SIZE=64"
           ];
         };
       };
