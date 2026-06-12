@@ -49,7 +49,12 @@ in
       description = "emojistats PLC directory enumeration (manual start)";
       serviceConfig = agentService.serviceDefaults // {
         Type = "oneshot";
-        Restart = "no";
+        # on-failure, not "no": it died twice during launch night (ledger
+        # contention era) and silently froze the DID universe at 33M of ~45M
+        # for nine hours — the crawl ran "fine" against a stale host set and
+        # nobody got paged. The cursor checkpoint makes restarts free.
+        Restart = "on-failure";
+        RestartSec = "60s";
         TimeoutStartSec = "infinity";
         WorkingDirectory = backfillDir;
         ExecStartPre = "${pkgs.coreutils}/bin/test -x ${tsx}";
