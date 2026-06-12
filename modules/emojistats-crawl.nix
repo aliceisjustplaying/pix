@@ -119,6 +119,13 @@ in
             # a 60s backoff, so overshoot degrades softly.
             "GLOBAL_CONCURRENCY=1536"
             "PER_HOST_CONCURRENCY_BSKY=32"
+            # Default is 2, sized for single-user hobby PDSes — but the tail
+            # enumeration surfaced multi-thousand-account third-party hosts
+            # (a 1,474-deep queue being drained two at a time). The cap only
+            # binds when a host's queue is deeper than it, so raising it is
+            # self-targeting at the big providers; true hobby boxes never
+            # queue past 2 anyway.
+            "PER_HOST_CONCURRENCY=6"
             "ARCHIVE_SYNC_COMMAND=${syncCommand}"
             # getaddrinfo runs on the libuv threadpool (default 4): retry
             # waves dialing dead PDSes park all four threads in DNS timeouts
