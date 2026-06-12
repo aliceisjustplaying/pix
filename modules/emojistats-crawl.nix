@@ -37,6 +37,15 @@ in
       type = lib.types.str;
       default = "/workspace/src/emojistats-bsky";
     };
+    heapMb = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 12288;
+      description = ''
+        V8 old-space cap for the crawl process. Node's default (~4GB) OOMed
+        repeatedly at 4096 fetch slots while the loader was backed up; the
+        64GB boxes can afford 12GB. The 32GB box (crawl3) sets 8192.
+      '';
+    };
   };
 
   config = {
@@ -113,10 +122,16 @@ in
             # LOADER_FLUSH_MS), so many are parked, not downloading. After the
             # morel wall, the claim loop learned to skip cooling/full hosts and
             # scan deeper into the skewed tail; with 429s still ambient, the
-            # fleet can use a wider global and mushroom cap.
+            # fleet can use a wider global and mushroom cap. Per-host pressure
+            # is AIMD now (host-pressure.ts): the static caps are ceilings,
+            # 429s converge each host to what it actually tolerates.
             "GLOBAL_CONCURRENCY=4096"
             "PER_HOST_CONCURRENCY_BSKY=96"
             "PER_HOST_CONCURRENCY=16"
+            # 50k batches: the 200k default crossed the HTTP upload path's
+            # tolerance under load (CANNOT_READ_ALL_DATA mid-body resets).
+            "LOADER_BATCH_ROWS=50000"
+            "NODE_OPTIONS=--max-old-space-size=${toString cfg.heapMb}"
             "ARCHIVE_SYNC_COMMAND=${syncCommand}"
             # getaddrinfo runs on the libuv threadpool (default 4): retry
             # waves dialing dead PDSes park all four threads in DNS timeouts

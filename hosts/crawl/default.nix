@@ -14,6 +14,8 @@
   networking.hostName = "crawl${toString shardIndex}";
 
   emojistatsCrawl.shardIndex = shardIndex;
+  # crawl3 is the one 32GB box in the fleet (rest are 64GB).
+  emojistatsCrawl.heapMb = if shardIndex == 3 then 8192 else 12288;
 
   home-manager.users.agent = import ../../home/agent-lean.nix;
 
