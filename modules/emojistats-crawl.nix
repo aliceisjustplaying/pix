@@ -109,16 +109,16 @@ in
             "CRAWL_SHARD_INDEX=${toString cfg.shardIndex}"
             "SHARD_LABEL=shard${toString cfg.shardIndex}"
             "BACKFILL_RUN_ID=${cfg.runId}"
-            # 768, not 128: a pipeline slot is held through the batched
-            # loader's flush wait (up to LOADER_FLUSH_MS), so most slots are
-            # parked, not downloading — actual download concurrency is governed
-            # by the per-host caps below times host diversity (measured ~170
-            # concurrent at 768 slots). 128 was the launch-night value from
-            # when fetch+parse still ran on the main thread; at 768 one box
-            # resolves ~3,750 repos/min at load ~1.1 of 8 cores. Validated
-            # 2026-06-12, runtime drop-in first, then baked here.
-            "GLOBAL_CONCURRENCY=768"
-            "PER_HOST_CONCURRENCY_BSKY=16"
+            # Slots are held through the batched loader's flush wait (up to
+            # LOADER_FLUSH_MS), so most are parked, not downloading — actual
+            # download concurrency is per-host caps × host diversity. 1536
+            # keeps the global pool from re-binding once enumeration fans out
+            # to the full mushroom set at 32/host (launch-night history:
+            # 128 → 768 → 1536). Owner's call 2026-06-12: crank while 429s
+            # stay ambient and ClickHouse keeps headroom; 429s park repos for
+            # a 60s backoff, so overshoot degrades softly.
+            "GLOBAL_CONCURRENCY=1536"
+            "PER_HOST_CONCURRENCY_BSKY=32"
             "ARCHIVE_SYNC_COMMAND=${syncCommand}"
             # getaddrinfo runs on the libuv threadpool (default 4): retry
             # waves dialing dead PDSes park all four threads in DNS timeouts
