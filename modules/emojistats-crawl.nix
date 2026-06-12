@@ -110,22 +110,13 @@ in
             "SHARD_LABEL=shard${toString cfg.shardIndex}"
             "BACKFILL_RUN_ID=${cfg.runId}"
             # Slots are held through the batched loader's flush wait (up to
-            # LOADER_FLUSH_MS), so most are parked, not downloading — actual
-            # download concurrency is per-host caps × host diversity. 1536
-            # keeps the global pool from re-binding once enumeration fans out
-            # to the full mushroom set at 32/host (launch-night history:
-            # 128 → 768 → 1536). Owner's call 2026-06-12: crank while 429s
-            # stay ambient and ClickHouse keeps headroom; 429s park repos for
-            # a 60s backoff, so overshoot degrades softly.
-            "GLOBAL_CONCURRENCY=1536"
-            "PER_HOST_CONCURRENCY_BSKY=32"
-            # Default is 2, sized for single-user hobby PDSes — but the tail
-            # enumeration surfaced multi-thousand-account third-party hosts
-            # (a 1,474-deep queue being drained two at a time). The cap only
-            # binds when a host's queue is deeper than it, so raising it is
-            # self-targeting at the big providers; true hobby boxes never
-            # queue past 2 anyway.
-            "PER_HOST_CONCURRENCY=6"
+            # LOADER_FLUSH_MS), so many are parked, not downloading. After the
+            # morel wall, the claim loop learned to skip cooling/full hosts and
+            # scan deeper into the skewed tail; with 429s still ambient, the
+            # fleet can use a wider global and mushroom cap.
+            "GLOBAL_CONCURRENCY=5120"
+            "PER_HOST_CONCURRENCY_BSKY=128"
+            "PER_HOST_CONCURRENCY=20"
             "ARCHIVE_SYNC_COMMAND=${syncCommand}"
             # getaddrinfo runs on the libuv threadpool (default 4): retry
             # waves dialing dead PDSes park all four threads in DNS timeouts
