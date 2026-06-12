@@ -151,8 +151,17 @@ in
       globalConfig = ''
         acme_ca https://acme.zerossl.com/v2/DV90
       '';
+      # The built TanStack Start node server only handles routes — client
+      # assets are plain files in dist/client that something must serve.
       virtualHosts.${cfg.dashboardHost}.extraConfig = ''
-        reverse_proxy 127.0.0.1:3105
+        root * ${cfg.checkoutDir}/packages/dashboard/dist/client
+        @static file
+        handle @static {
+          file_server
+        }
+        handle {
+          reverse_proxy 127.0.0.1:3105
+        }
       '';
     };
 
