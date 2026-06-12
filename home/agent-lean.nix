@@ -26,5 +26,10 @@
     nodejs_24
     sqlite
     ncdu
+    # node-gyp toolchain: better-sqlite3 builds its binding from source on
+    # every fresh `bun install`.
+    python3
+    gcc
+    gnumake
   ];
 }
