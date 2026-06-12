@@ -55,13 +55,14 @@ in
     };
 
     services.clickhouse.enable = true;
-    # Sized for the CX33 (8 GB): CH gets 5 GB hard, trimmed mark cache. Listens
-    # on all interfaces but the firewall only opens 8123 on the tailnet — that
-    # is how the crawl boxes reach it during the backfill.
+    # Sized for the 16 GB rescale (2026-06-12): CH gets 12 GB hard, leaving 4 GB
+    # for the node services + OS. Listens on all interfaces but the firewall
+    # only opens 8123 on the tailnet — that is how the crawl boxes reach it
+    # during the backfill.
     services.clickhouse.extraServerConfig = ''
       <clickhouse>
-        <max_server_memory_usage>5368709120</max_server_memory_usage>
-        <mark_cache_size>536870912</mark_cache_size>
+        <max_server_memory_usage>12884901888</max_server_memory_usage>
+        <mark_cache_size>1073741824</mark_cache_size>
         <listen_host>0.0.0.0</listen_host>
         <prometheus>
           <endpoint>/metrics</endpoint>
