@@ -55,7 +55,7 @@ Shared config imports the production service stack:
 
 | Port | Scope | Owner |
 | --- | --- | --- |
-| `22/tcp` | Tailscale only | SSH |
+| `22/tcp` | Public and Tailscale | SSH |
 | `80/tcp`, `443/tcp` | Public and Tailscale | Caddy/Plausible plus host web entrypoints |
 | `8787/tcp` | Tailscale only | Hermes WebUI |
 | `61001-61999/udp` | Tailscale only | Wrapped `tsshd` |

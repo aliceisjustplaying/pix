@@ -1,25 +1,25 @@
-{ lib, stdenv, fetchurl, nodejs, makeWrapper }:
+{ lib, stdenv, fetchurl, autoPatchelfHook }:
 
 stdenv.mkDerivation rec {
-  pname = "sourcegraph-amp";
-  version = "0.0.1780827515-ga4daec";
+  pname = "amp-code";
+  version = "0.0.1781166336-g02cc1e";
 
   src = fetchurl {
-    url = "https://registry.npmjs.org/@sourcegraph/amp/-/amp-${version}.tgz";
-    hash = "sha512-J1nGeiInZN76fAAr6ywtFxScgmHm5rmPxfMVP1hHg5ie0mChZbhwqh4kudyfm9GskiIzSPPvmP5eRcvcOELFJg==";
+    url = "https://registry.npmjs.org/@ampcode/cli-linux-x64/-/cli-linux-x64-${version}.tgz";
+    hash = "sha512-24Oo0XFgxLvSf3YqePdV2QtIA9GdHIMkG/PxYB6HWW0E7uKraZe9k+USkGmJ4NN1IHiu9SXhJedqefBuF+rttg==";
   };
 
   sourceRoot = "package";
+  dontStrip = true;
 
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ autoPatchelfHook ];
 
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out/lib/amp
-    cp -R dist LICENSE.md README.md package.json $out/lib/amp/
-    makeWrapper ${nodejs}/bin/node $out/bin/amp \
-      --add-flags "$out/lib/amp/dist/main.js"
+    install -Dm755 amp $out/bin/amp
+    install -Dm644 LICENSE.md $out/share/doc/amp/LICENSE.md
+    install -Dm644 README.md $out/share/doc/amp/README.md
 
     runHook postInstall
   '';
@@ -28,7 +28,8 @@ stdenv.mkDerivation rec {
     description = "CLI for Amp, the frontier coding agent";
     homepage = "https://ampcode.com";
     license = lib.licenses.unfree;
-    platforms = lib.platforms.linux;
+    platforms = [ "x86_64-linux" ];
     mainProgram = "amp";
+    sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
   };
 }

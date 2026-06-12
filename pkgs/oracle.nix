@@ -15,7 +15,7 @@ buildNpmPackage rec {
     cp ${./oracle-package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-KEk3qkaS9ByvBSxfI9KUoHDAve8g8rJOdUYV6Ag1ylk=";
+  npmDepsHash = "sha256-ubryryb4vvt8IBtPKZt5+rrhLJHmj0AEWyCJ372yZco=";
 
   dontNpmBuild = true;
   npmFlags = [ "--legacy-peer-deps" ];

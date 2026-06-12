@@ -6,7 +6,7 @@
 #   - every exported first-party package under pkgs/ that tracks a discoverable
 #     upstream version
 #       * agentmemory     (npm: @agentmemory/agentmemory,           sha512, +lockfile)
-#       * amp-code        (npm: @sourcegraph/amp,                   sha512)
+#       * amp-code        (npm: @ampcode/cli-linux-x64,             sha512)
 #       * camofox-browser (npm: @askjo/camofox-browser,             sha512, +lockfile)
 #       * claude-code-acp (npm: @zed-industries/claude-code-acp,     sha256, +lockfile)
 #       * cli-proxy-api   (github: router-for-me/CLIProxyAPI,       Go vendorHash)
@@ -571,7 +571,7 @@ main() {
 		pkgs/agentmemory/package-lock.json
 
 	log "amp-code"
-	update_npm pkgs/amp.nix '@sourcegraph/amp' sha512
+	update_npm pkgs/amp.nix '@ampcode/cli-linux-x64' sha512
 
 	log "camofox-browser"
 	update_npm_with_lockfile camofox-browser \

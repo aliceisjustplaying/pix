@@ -37,8 +37,10 @@ in
 
   services.openssh = {
     enable = true;
-    openFirewall = false;
+    openFirewall = true;
     settings = {
+      AuthenticationMethods = "publickey";
+      PubkeyAuthentication = true;
       PasswordAuthentication = false;
       KbdInteractiveAuthentication = false;
       PermitRootLogin = "no";
