@@ -114,9 +114,9 @@ in
             # morel wall, the claim loop learned to skip cooling/full hosts and
             # scan deeper into the skewed tail; with 429s still ambient, the
             # fleet can use a wider global and mushroom cap.
-            "GLOBAL_CONCURRENCY=5120"
-            "PER_HOST_CONCURRENCY_BSKY=128"
-            "PER_HOST_CONCURRENCY=20"
+            "GLOBAL_CONCURRENCY=4096"
+            "PER_HOST_CONCURRENCY_BSKY=96"
+            "PER_HOST_CONCURRENCY=16"
             "ARCHIVE_SYNC_COMMAND=${syncCommand}"
             # getaddrinfo runs on the libuv threadpool (default 4): retry
             # waves dialing dead PDSes park all four threads in DNS timeouts
