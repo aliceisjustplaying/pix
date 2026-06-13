@@ -76,8 +76,8 @@ in
     };
 
     # Digest reconciliation: ledger counts/rkey-digests vs ClickHouse, promotes
-    # loaded -> verified (verify.ts). Re-checks already-verified repos too, so
-    # cadence is deliberately low — the full acceptance run happens at the end.
+    # loaded -> verified (verify.ts). This is intentionally manual: the full
+    # reconcile is ClickHouse-heavy and belongs after the crawl drains.
     systemd.services.emojistats-verify = {
       description = "emojistats backfill digest verification pass";
       serviceConfig = agentService.serviceDefaults // {
@@ -91,15 +91,6 @@ in
         Environment = agentService.env { };
       };
     };
-    systemd.timers.emojistats-verify = {
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnCalendar = "00/6:20:00 UTC";
-        Persistent = true;
-        RandomizedDelaySec = "10m";
-      };
-    };
-
     systemd.services.emojistats-crawl = {
       description = "emojistats backfill crawler (shard ${toString cfg.shardIndex}/${toString cfg.shards})";
       wantedBy = [ "multi-user.target" ];
