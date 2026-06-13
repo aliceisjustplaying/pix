@@ -5,11 +5,13 @@ import crypto from "node:crypto";
 import cp from "node:child_process";
 
 const BASE = process.env.KICKBACKS_BASE || "https://kickbacks-backend-gmdaqm2c7q-uw.a.run.app";
-const EXT_VERSION = "0.3.174";
+const EXT_VERSION = "0.3.177";
 const POLL_MS = 1000;
 const VIEW_TICK_MS = 5000;
 const PORTFOLIO_MS = 120000;
 const REFRESH_MS = 45 * 60 * 1000;
+const AUTH_REJECT_BREAK_N = 3;
+const AUTH_REJECT_SUPPRESS_MS = 20000;
 const HOME = os.homedir();
 const AUTH_FILE = path.join(HOME, ".kickbacks", "auth.json");
 const VIBE_DIR = path.join(HOME, ".vibe-ads");
@@ -22,22 +24,22 @@ const FRESH_ACTIVITY_MS = 4000;
 const RERESOLVE_MIN_MS = 15000;
 
 let accessToken = "";
+let refreshInFlight = null;
 let refreshAt = 0;
 let portfolioAt = 0;
 let ad = null;
 let ccVersion = "unknown";
-let viewThresholdMs = 5000;
 let showing = false;
 let visibleMs = 0;
 let lastAccrualMs = 0;
 let lastTickMs = 0;
 let shownKey = "";
-let statuslineThresholdSent = false;
-let spinnerThresholdSent = false;
 let cliLogPath = "";
 let lastReresolveAt = 0;
 let firstSeen = Date.now();
 let lastTool = "";
+let consecutiveAuthRejects = 0;
+let suppressedUntil = 0;
 
 function log(message, extra = {}) {
   fs.mkdirSync(VIBE_DIR, { recursive: true });
@@ -105,6 +107,17 @@ function supportsSpinner(version) {
 }
 
 async function refreshAccess(force = false) {
+  if (refreshInFlight) return refreshInFlight;
+  const promise = refreshAccessInner(force);
+  refreshInFlight = promise;
+  try {
+    return await promise;
+  } finally {
+    if (refreshInFlight === promise) refreshInFlight = null;
+  }
+}
+
+async function refreshAccessInner(force = false) {
   if (!force && accessToken && Date.now() < refreshAt) return true;
   const current = auth();
   if (!current.refresh) {
@@ -150,7 +163,6 @@ async function fetchPortfolio(force = false) {
     portfolioAt = Date.now() + 30000;
     return ad;
   }
-  viewThresholdMs = Math.max(1000, Number(body.view_threshold_seconds || 5) * 1000);
   ad = {
     adId: String(first.ad_id || ""),
     campaignId: String(first.campaign_id || ""),
@@ -363,8 +375,8 @@ function saveState(value) {
   writeJson(STATE_FILE, value, 0o644);
 }
 
-async function sendMetric(event, surface, visible = undefined) {
-  if (!ad || !accessToken) return false;
+async function sendMetric(event, surface, visible = undefined, includeSessionToken = true) {
+  if (!ad || !accessToken) return null;
   const current = auth();
   const eventUuid = crypto.randomUUID();
   const body = {
@@ -377,39 +389,43 @@ async function sendMetric(event, surface, visible = undefined) {
     extension_version: EXT_VERSION,
     nonce: eventUuid,
     surface,
-    session_token: ad.sessionToken,
     ext: { os: process.platform, arch: process.arch, os_version: os.release(), editor: "kickbacks-local-reporter" }
   };
+  if (includeSessionToken && ad.sessionToken) body.session_token = ad.sessionToken;
   if (typeof visible === "number") body.visible_ms = Math.max(0, Math.floor(visible));
-  if (event === "impression_viewable" || event === "view_threshold_met") {
+  if (event === "impression_viewable") {
     body.viewable = true;
     body.view_pct = 100;
   }
-  if (event === "view_threshold_met") body.view_ms = Math.max(0, Math.floor(visible || viewThresholdMs));
 
-  const response = await fetch(BASE + "/v1/metrics", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: "Bearer " + accessToken,
-      "X-Kickbacks-Corr": "local." + event + "." + ad.adId,
-      "X-Vibe-Corr": "local." + event + "." + ad.adId
-    },
-    body: JSON.stringify(body)
-  });
-  log("metric." + event, { surface, status: response.status, visibleMs: body.visible_ms ?? null });
-  return response.ok;
+  try {
+    const response = await fetch(BASE + "/v1/metrics", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: "Bearer " + accessToken,
+        "X-Kickbacks-Corr": "local." + event + "." + ad.adId,
+        "X-Vibe-Corr": "local." + event + "." + ad.adId
+      },
+      body: JSON.stringify(body)
+    });
+    log("metric." + event, { surface, status: response.status, visibleMs: body.visible_ms ?? null });
+    if (response.status === 401 || response.status === 403) void refreshAccess(true);
+    return response.status;
+  } catch (error) {
+    log("metric.send_error", { event, error: error instanceof Error ? error.message : String(error) });
+    return null;
+  }
 }
 
 async function beginExposure(surfaces) {
-  const key = ad.adId + ":" + ad.sessionToken;
+  const key = ad.adId;
   shownKey = key;
   showing = true;
   visibleMs = 0;
   lastAccrualMs = Date.now();
   lastTickMs = 0;
-  statuslineThresholdSent = false;
-  spinnerThresholdSent = false;
+  consecutiveAuthRejects = 0;
 
   const current = state();
   current.sent ||= {};
@@ -417,12 +433,12 @@ async function beginExposure(surfaces) {
     current.sent[key] = { at: new Date().toISOString(), statusline: false, spinner: false };
   }
   if (!current.sent[key].statusline && surfaces.any) {
-    await sendMetric("impression_rendered", "statusline");
+    await sendMetric("impression_rendered", "statusline", undefined, false);
     await sendMetric("impression_viewable", "statusline");
     current.sent[key].statusline = true;
   }
   if (!current.sent[key].spinner && surfaces.claude && supportsSpinner(ccVersion)) {
-    await sendMetric("impression_rendered", "spinner");
+    await sendMetric("impression_rendered", "spinner", undefined, false);
     await sendMetric("impression_viewable", "spinner");
     current.sent[key].spinner = true;
   }
@@ -437,16 +453,19 @@ async function tickExposure(surfaces) {
   lastAccrualMs = now;
   if (now - lastTickMs >= VIEW_TICK_MS) {
     lastTickMs = now;
-    if (surfaces.any) await sendMetric("view_tick", "statusline", visibleMs);
-    if (surfaces.claude && supportsSpinner(ccVersion)) await sendMetric("view_tick", "spinner", visibleMs);
-  }
-  if (!statuslineThresholdSent && surfaces.any && visibleMs >= viewThresholdMs) {
-    statuslineThresholdSent = true;
-    await sendMetric("view_threshold_met", "statusline", visibleMs);
-  }
-  if (!spinnerThresholdSent && surfaces.claude && supportsSpinner(ccVersion) && visibleMs >= viewThresholdMs) {
-    spinnerThresholdSent = true;
-    await sendMetric("view_threshold_met", "spinner", visibleMs);
+    if (surfaces.any) {
+      const status = await sendMetric("view_tick", "statusline", visibleMs);
+      if (status === 401 || status === 403) {
+        consecutiveAuthRejects++;
+        if (consecutiveAuthRejects >= AUTH_REJECT_BREAK_N) {
+          showing = false;
+          suppressedUntil = Date.now() + AUTH_REJECT_SUPPRESS_MS;
+          log("metric.auth_reject_break", { adId: ad.adId });
+        }
+      } else if (status !== null) {
+        consecutiveAuthRejects = 0;
+      }
+    }
   }
 }
 
@@ -463,7 +482,11 @@ async function loop() {
         showing = false;
         return;
       }
-      const key = ad.adId + ":" + ad.sessionToken;
+      if (Date.now() < suppressedUntil) {
+        showing = false;
+        return;
+      }
+      const key = ad.adId;
       if (!showing || shownKey !== key) await beginExposure(surfaces);
       else await tickExposure(surfaces);
     } catch (error) {

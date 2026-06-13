@@ -2,11 +2,11 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "kickbacks-ai";
-  version = "0.3.174";
+  version = "0.3.177";
 
   src = fetchurl {
     url = "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/Kickbacksai/vsextensions/kickbacks-ai/latest/vspackage";
-    hash = "sha256-M5tdLPltXsTgQA/BN0CWBspeZ9+HD39fmLdbqibd8n8=";
+    hash = "sha256-PC/qJWZ6KQi6CO8Q6wkFXdL5A55xkABleY7H6rni4WU=";
   };
 
   nativeBuildInputs = [ unzip ];
