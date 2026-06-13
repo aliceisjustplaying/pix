@@ -1,10 +1,11 @@
 { config, lib, pkgs, ... }:
 # emojistats serving stack (plan 0001 in the emojistats-bsky repo): ClickHouse +
-# ingest worker + Socket.IO API + public backfill dashboard + aggregate-rebuild
-# timers. App code runs from a live checkout (hermes pattern):
+# ingest worker + Socket.IO API + public frontend + public backfill dashboard +
+# aggregate-rebuild timers. App code runs from a live checkout (hermes pattern):
 #   sudo -u agent git clone https://github.com/aliceisjustplaying/emojistats-bsky \
 #     /workspace/src/emojistats-bsky && cd $_ && bun install
 #   cd packages/dashboard && bun run build   # rebuild after every dashboard pull
+#   cd packages/frontend  && bun run build   # rebuild after every frontend pull
 # then `bun run db:migrate` once in packages/ingest (needs emojistats-env secret).
 let
   agentService = import ../lib/agent-service.nix { inherit pkgs; lean = true; };
@@ -37,6 +38,15 @@ in
       type = lib.types.str;
       default = "backfill.mosphere.at";
       description = "Public vhost for the shareable backfill dashboard.";
+    };
+    frontendHost = lib.mkOption {
+      type = lib.types.str;
+      default = "emojistats.mosphere.at";
+      description = ''
+        Public vhost for the emoji-stats frontend + Socket.IO API. Interim home
+        on the emoji box while the backfill runs; serves packages/frontend/dist
+        statically and reverse-proxies /socket.io to the emojistats-api on :3100.
+      '';
     };
   };
 
@@ -162,6 +172,21 @@ in
         }
         handle {
           reverse_proxy 127.0.0.1:3105
+        }
+      '';
+      # Public frontend: a static Vite SPA that opens a same-origin Socket.IO
+      # connection (frontend build leaves VITE_SOCKET_URL unset, so the client
+      # talks to /socket.io on this same host). Caddy proxies /socket.io to the
+      # emojistats-api (:3100, websocket upgrade handled automatically) and
+      # serves the SPA for everything else with an index.html fallback.
+      virtualHosts.${cfg.frontendHost}.extraConfig = ''
+        handle /socket.io/* {
+          reverse_proxy 127.0.0.1:3100
+        }
+        handle {
+          root * ${cfg.checkoutDir}/packages/frontend/dist
+          try_files {path} /index.html
+          file_server
         }
       '';
     };
