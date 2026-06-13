@@ -16,6 +16,40 @@ let
   # archive sink treats a non-zero exit as fatal (the parquet is the only home
   # of full post text) — the crawl trips rather than accumulating unsynced files.
   syncCommand = "${pkgs.rclone}/bin/rclone --config ${config.sops.secrets.emojistats-rclone-conf.path} move {file} storagebox:emojistats-archive/shard${toString cfg.shardIndex}/";
+  crawlEnv = [
+    "CRAWL_SHARDS=${toString cfg.shards}"
+    "CRAWL_SHARD_INDEX=${toString cfg.shardIndex}"
+    "SHARD_LABEL=shard${toString cfg.shardIndex}"
+    "BACKFILL_RUN_ID=${cfg.runId}"
+    # Slots are held through the batched loader's flush wait (up to
+    # LOADER_FLUSH_MS), so many are parked, not downloading. After the
+    # morel wall, the claim loop learned to skip cooling/full hosts and
+    # scan deeper into the skewed tail; with 429s still ambient, the
+    # fleet can use a wider global and mushroom cap. Per-host pressure
+    # is AIMD now (host-pressure.ts): the static caps are ceilings,
+    # 429s converge each host to what it actually tolerates.
+    "GLOBAL_CONCURRENCY=4096"
+    "PER_HOST_CONCURRENCY_BSKY=96"
+    "PER_HOST_CONCURRENCY=16"
+    # 50k batches: the 200k default crossed the HTTP upload path's
+    # tolerance under load (CANNOT_READ_ALL_DATA mid-body resets).
+    "LOADER_BATCH_ROWS=50000"
+    "NODE_OPTIONS=--max-old-space-size=${toString cfg.heapMb}"
+    "ARCHIVE_SYNC_COMMAND=${syncCommand}"
+    # getaddrinfo runs on the libuv threadpool (default 4): retry
+    # waves dialing dead PDSes park all four threads in DNS timeouts
+    # and every healthy fetch queues behind them before it can even
+    # open a socket — observed as fetching=128 with 21 sockets.
+    "UV_THREADPOOL_SIZE=64"
+  ];
+  v1RecrawlWorkerIndex = {
+    "0" = 0;
+    "3" = 1;
+    "4" = 2;
+    "5" = 3;
+  }.${toString cfg.shardIndex} or null;
+  v1RecrawlWorker = toString v1RecrawlWorkerIndex;
+  v1RecrawlSyncCommand = "${pkgs.rclone}/bin/rclone --config ${config.sops.secrets.emojistats-rclone-conf.path} move {file} storagebox:emojistats-archive/v1-recrawl/worker${v1RecrawlWorker}/";
 in
 {
   options.emojistatsCrawl = {
@@ -91,6 +125,21 @@ in
         Environment = agentService.env { };
       };
     };
+    systemd.services.emojistats-final-sweep = {
+      description = "emojistats final sweep crawler (manual)";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      serviceConfig = agentService.serviceDefaults // {
+        Restart = "no";
+        TimeoutStartSec = "infinity";
+        WorkingDirectory = backfillDir;
+        ExecStartPre = "${pkgs.coreutils}/bin/test -x ${tsx}";
+        ExecStart = "${tsx} src/crawl.ts --final-sweep";
+        EnvironmentFile = config.sops.secrets.emojistats-crawl-env.path;
+        Environment = agentService.env { extra = crawlEnv; };
+      };
+    };
+
     systemd.services.emojistats-crawl = {
       description = "emojistats backfill crawler (shard ${toString cfg.shardIndex}/${toString cfg.shards})";
       wantedBy = [ "multi-user.target" ];
@@ -103,31 +152,38 @@ in
         EnvironmentFile = config.sops.secrets.emojistats-crawl-env.path;
         # EnvironmentFile overrides Environment=, so the secret env can tune any
         # of these per-box without a rebuild.
+        Environment = agentService.env { extra = crawlEnv; };
+      };
+    };
+
+    systemd.services.emojistats-v1-recrawl = lib.mkIf (v1RecrawlWorkerIndex != null) {
+      description = "emojistats v1 archive metadata recrawl worker ${v1RecrawlWorker} (manual)";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      serviceConfig = agentService.serviceDefaults // {
+        Restart = "no";
+        TimeoutStartSec = "infinity";
+        WorkingDirectory = backfillDir;
+        ExecStartPre = [
+          "${pkgs.coreutils}/bin/test -x ${tsx}"
+          "${pkgs.coreutils}/bin/test -f ${backfillDir}/data/v1-recrawl-workers/v1-recrawl-worker${v1RecrawlWorker}.tsv"
+        ];
+        ExecStart = "${tsx} src/crawl.ts --did-host-file data/v1-recrawl-workers/v1-recrawl-worker${v1RecrawlWorker}.tsv";
+        EnvironmentFile = config.sops.secrets.emojistats-crawl-env.path;
         Environment = agentService.env {
           extra = [
-            "CRAWL_SHARDS=${toString cfg.shards}"
-            "CRAWL_SHARD_INDEX=${toString cfg.shardIndex}"
-            "SHARD_LABEL=shard${toString cfg.shardIndex}"
-            "BACKFILL_RUN_ID=${cfg.runId}"
-            # Slots are held through the batched loader's flush wait (up to
-            # LOADER_FLUSH_MS), so many are parked, not downloading. After the
-            # morel wall, the claim loop learned to skip cooling/full hosts and
-            # scan deeper into the skewed tail; with 429s still ambient, the
-            # fleet can use a wider global and mushroom cap. Per-host pressure
-            # is AIMD now (host-pressure.ts): the static caps are ceilings,
-            # 429s converge each host to what it actually tolerates.
+            "CRAWL_SHARDS=1"
+            "CRAWL_SHARD_INDEX=0"
+            "SHARD_LABEL=v1-worker${v1RecrawlWorker}"
+            "BACKFILL_RUN_ID=v1-recrawl-2026-06-13"
+            "LEDGER_DB_PATH=data/v1-recrawl-worker/ledger-worker${v1RecrawlWorker}.sqlite"
+            "ARCHIVE_DIR=data/archive-v1-worker${v1RecrawlWorker}"
+            "ARCHIVE_SYNC_COMMAND=${v1RecrawlSyncCommand}"
             "GLOBAL_CONCURRENCY=4096"
             "PER_HOST_CONCURRENCY_BSKY=96"
             "PER_HOST_CONCURRENCY=16"
-            # 50k batches: the 200k default crossed the HTTP upload path's
-            # tolerance under load (CANNOT_READ_ALL_DATA mid-body resets).
             "LOADER_BATCH_ROWS=50000"
             "NODE_OPTIONS=--max-old-space-size=${toString cfg.heapMb}"
-            "ARCHIVE_SYNC_COMMAND=${syncCommand}"
-            # getaddrinfo runs on the libuv threadpool (default 4): retry
-            # waves dialing dead PDSes park all four threads in DNS timeouts
-            # and every healthy fetch queues behind them before it can even
-            # open a socket — observed as fetching=128 with 21 sockets.
             "UV_THREADPOOL_SIZE=64"
           ];
         };
