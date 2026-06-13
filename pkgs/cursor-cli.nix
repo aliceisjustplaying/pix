@@ -7,15 +7,15 @@
 }:
 
 let
-  release = "2026.06.04-5fd875e";
+  release = "2026.06.12-19-59-36-f6aba9a";
 in
 stdenv.mkDerivation {
   pname = "cursor-cli";
-  version = "0-unstable-2026-06-04";
+  version = "0-unstable-2026-06-12";
 
   src = fetchurl {
     url = "https://downloads.cursor.com/lab/${release}/linux/x64/agent-cli-package.tar.gz";
-    hash = "sha256-VCWqsp+KAdN33j3H90VXOa1Zgp4IeeoMQpa9nuxSAwA=";
+    hash = "sha256-bn8gLdiHW1adZ0VkvmN28Pb7X35F/dlztZuE8zzJoeQ=";
   };
 
   nativeBuildInputs = [
