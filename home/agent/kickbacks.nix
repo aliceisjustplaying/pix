@@ -156,6 +156,14 @@ in
         exec ${pkgs.nodejs_24}/bin/node ${../../files/kickbacks/reporter.mjs}
       '';
     };
+    ".local/bin/kickbacks-codex-tmux-demo" = {
+      executable = true;
+      text = ''
+        #!/usr/bin/env bash
+        set -euo pipefail
+        exec ${pkgs.nodejs_24}/bin/node ${../../files/kickbacks/codex-tmux-demo.mjs} "$@"
+      '';
+    };
   };
 
   systemd.user.services.kickbacks-reporter = {
