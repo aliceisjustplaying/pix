@@ -13,11 +13,17 @@ let
 in
 {
   nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
     auto-optimise-store = true;
     min-free = gib 10;
     max-free = gib 20;
-    trusted-users = [ "root" "@wheel" ];
+    trusted-users = [
+      "root"
+      "@wheel"
+    ];
   };
   nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
 
@@ -164,16 +170,12 @@ in
     shellcheck
     shfmt
     yq-go
+    nixfmt-rfc-style
     gnumake
     go_1_26
     zig
 
-    # Rust toolchain
-    rustc
-    cargo
-    clippy
-    rustfmt
-    rust-analyzer
+    rust-nightly
 
     tree
     tmux
@@ -194,7 +196,6 @@ in
     git-crypt
     patch
     at
-
 
   ];
 
