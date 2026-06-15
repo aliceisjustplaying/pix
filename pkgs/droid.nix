@@ -1,8 +1,8 @@
 { lib, stdenv, fetchurl }:
 
 let
-  droidArm64Hash = "sha512-CGnjR4xk0UTp7gjCEI4ApvYWs1GhWl+sbYiQGhWEl3Hvf8s3cBN13uUVkSN+fgUuJSe0Pov8At3LpAnflXZxvA==";
-  droidX64Hash = "sha512-UmOUm8TkOJlxdC0yLahSAlkClVUt+nd5KAbzgvaDcI2PiHCRL1n+CoZ0jNIYIlhbi7p2ZAX+I3/VKoXkoVyaEg==";
+  droidArm64Hash = "sha512-PdkcsdCTw65M9Z28rz1ZeVO/6IA5f9Of5TSzUi8UCQ3/u9i01RQnpuC4eVTTKnyNgpysQ9zL77IYcxcAlGHZow==";
+  droidX64Hash = "sha512-hAf2gdXB6Ehuhp6w0rG3SqRaE7v0vna+vErnelXiG1EShd3UL+MKqYacIsDnF43klZY0NImI1hmGJoOah8hETg==";
   sources = {
     aarch64-linux = {
       npmArch = "arm64";
@@ -17,7 +17,7 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "droid";
-  version = "0.146.0";
+  version = "0.147.0";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@factory/cli-linux-${source.npmArch}/-/cli-linux-${source.npmArch}-${version}.tgz";

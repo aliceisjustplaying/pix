@@ -18,7 +18,7 @@ buildNpmPackage rec {
 
   npmFlags = [ "--legacy-peer-deps" ];
   npmRebuildFlags = [ "--ignore-scripts" ];
-  npmDepsHash = "sha256-Dh+a+awNFdqFwYxd5avS/ZbjjqAqrlrJZnmHPrH1DAU=";
+  npmDepsHash = "sha256-lvdVp8vYWe4sLyTw9Q60wn6nZ9OmMrCF/3Z06iQdgx4=";
 
   dontNpmBuild = true;
 

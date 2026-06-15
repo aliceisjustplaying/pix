@@ -172,10 +172,17 @@ in
     yq-go
     nixfmt-rfc-style
     gnumake
+    gcc
     go_1_26
     zig
 
     rust-nightly
+    rust-nightly-llvm-tools
+    cargo-nextest
+    cargo-deny
+    cargo-audit
+    cargo-machete
+    cargo-llvm-cov
 
     tree
     tmux

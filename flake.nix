@@ -84,8 +84,19 @@
               extensions = [
                 "rust-src"
                 "rust-analyzer"
+                "llvm-tools"
               ];
             };
+            rust-nightly-llvm-tools =
+              let
+                rustTarget = final.stdenv.hostPlatform.config;
+              in
+              final.runCommand "rust-nightly-llvm-tools-${final.rust-nightly.version}" { } ''
+                mkdir -p "$out/bin"
+                for tool in llvm-cov llvm-profdata; do
+                  ln -s "${final.rust-nightly}/lib/rustlib/${rustTarget}/bin/$tool" "$out/bin/$tool"
+                done
+              '';
             sfw = final.callPackage ./pkgs/sfw.nix { };
             signal-cli = final.callPackage ./pkgs/signal-cli.nix { signal-cli = _prev.signal-cli; };
             tirith = final.callPackage ./pkgs/tirith.nix { };
