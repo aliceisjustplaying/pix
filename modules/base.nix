@@ -183,6 +183,8 @@ in
     cargo-audit
     cargo-machete
     cargo-llvm-cov
+    wasm-pack
+    wasm-bindgen-cli
 
     tree
     tmux
