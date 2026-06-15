@@ -280,7 +280,7 @@ These are configured in Nix, not SOPS:
   CLICKHOUSE_USER=emojistats
   CLICKHOUSE_PASSWORD=<generate>
   JETSTREAM_ENDPOINT=wss://jetstream2.us-east.bsky.network/subscribe
-  ORIGINS=https://emojitracker.bsky.sh
+  ORIGINS=https://emojistats.at,https://emojistats.mosphere.at,https://www.emojistats.at
   ```
 - `emojistats-clickhouse-users.xml` — ClickHouse users.d drop-in creating the `emojistats` user; hash via `echo -n '<password>' | shasum -a 256`:
   ```xml

@@ -11,6 +11,23 @@ let
   agentService = import ../lib/agent-service.nix { inherit pkgs; lean = true; };
   cfg = config.emojistats;
   tsx = "${cfg.checkoutDir}/node_modules/.bin/tsx";
+  canonicalFrontendHost = "emojistats.at";
+  legacyFrontendHost = "emojistats.mosphere.at";
+  wwwFrontendHost = "www.emojistats.at";
+  frontendRedirectHosts = lib.unique [ legacyFrontendHost wwwFrontendHost ];
+  frontendOrigins = lib.concatStringsSep "," (
+    map (host: "https://${host}") ([ cfg.frontendHost ] ++ frontendRedirectHosts)
+  );
+  frontendCaddyConfig = ''
+    handle /socket.io/* {
+      reverse_proxy 127.0.0.1:3100
+    }
+    handle {
+      root * ${cfg.checkoutDir}/packages/frontend/dist
+      try_files {path} /index.html
+      file_server
+    }
+  '';
 
   mkAppService = { description, workdir, execStart, memoryMax, extraEnv ? [ ], extraConfig ? { } }: {
     inherit description;
@@ -41,10 +58,10 @@ in
     };
     frontendHost = lib.mkOption {
       type = lib.types.str;
-      default = "emojistats.mosphere.at";
+      default = canonicalFrontendHost;
       description = ''
-        Public vhost for the emoji-stats frontend + Socket.IO API. Interim home
-        on the emoji box while the backfill runs; serves packages/frontend/dist
+        Canonical public vhost for the emoji-stats frontend + Socket.IO API.
+        Serves packages/frontend/dist
         statically and reverse-proxies /socket.io to the emojistats-api on :3100.
       '';
     };
@@ -106,7 +123,7 @@ in
     systemd.services.emojistats-api = mkAppService {
       description = "emojistats Socket.IO API (ClickHouse-backed)";
       workdir = "${cfg.checkoutDir}/packages/backend";
-      execStart = "${tsx} src/index.ts";
+      execStart = "${pkgs.coreutils}/bin/env -u ORIGINS ORIGINS=${frontendOrigins} ${tsx} src/index.ts";
       memoryMax = "512M";
     };
 
@@ -160,35 +177,33 @@ in
       enable = true;
       email = "aliceisjustplaying@gmail.com";
       globalConfig = ''
-        acme_ca https://acme.zerossl.com/v2/DV90
+        acme_ca https://acme-v02.api.letsencrypt.org/directory
       '';
       # The built TanStack Start node server only handles routes — client
       # assets are plain files in dist/client that something must serve.
-      virtualHosts.${cfg.dashboardHost}.extraConfig = ''
-        root * ${cfg.checkoutDir}/packages/dashboard/dist/client
-        @static file
-        handle @static {
-          file_server
-        }
-        handle {
-          reverse_proxy 127.0.0.1:3105
-        }
-      '';
+      virtualHosts = {
+        ${cfg.dashboardHost}.extraConfig = ''
+          root * ${cfg.checkoutDir}/packages/dashboard/dist/client
+          @static file
+          handle @static {
+            file_server
+          }
+          handle {
+            reverse_proxy 127.0.0.1:3105
+          }
+        '';
+      } // {
+        ${cfg.frontendHost}.extraConfig = frontendCaddyConfig;
+      } // lib.genAttrs frontendRedirectHosts (_: {
+        extraConfig = ''
+          redir https://${cfg.frontendHost}{uri} permanent
+        '';
+      });
       # Public frontend: a static Vite SPA that opens a same-origin Socket.IO
       # connection (frontend build leaves VITE_SOCKET_URL unset, so the client
       # talks to /socket.io on this same host). Caddy proxies /socket.io to the
       # emojistats-api (:3100, websocket upgrade handled automatically) and
       # serves the SPA for everything else with an index.html fallback.
-      virtualHosts.${cfg.frontendHost}.extraConfig = ''
-        handle /socket.io/* {
-          reverse_proxy 127.0.0.1:3100
-        }
-        handle {
-          root * ${cfg.checkoutDir}/packages/frontend/dist
-          try_files {path} /index.html
-          file_server
-        }
-      '';
     };
 
     networking.firewall.allowedTCPPorts = [ 80 443 ];
