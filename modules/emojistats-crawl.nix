@@ -168,7 +168,7 @@ in
           "${pkgs.coreutils}/bin/test -x ${tsx}"
           "${pkgs.coreutils}/bin/test -f ${backfillDir}/data/v1-recrawl-workers/v1-recrawl-worker${v1RecrawlWorker}.tsv"
         ];
-        ExecStart = "${tsx} src/crawl.ts --did-host-file data/v1-recrawl-workers/v1-recrawl-worker${v1RecrawlWorker}.tsv";
+        ExecStart = "${tsx} src/crawl.ts --archive-only --did-host-file data/v1-recrawl-workers/v1-recrawl-worker${v1RecrawlWorker}.tsv";
         EnvironmentFile = config.sops.secrets.emojistats-crawl-env.path;
         Environment = agentService.env {
           extra = [
