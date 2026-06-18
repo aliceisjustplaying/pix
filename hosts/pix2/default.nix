@@ -3,6 +3,7 @@
 {
   imports = [
     ../common
+    ../../modules/clickhouse-smoke.nix
   ];
 
   networking.hostName = "pix2";
