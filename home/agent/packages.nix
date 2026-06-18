@@ -48,6 +48,7 @@ in
     zellij
     droid
     gogcli
+    grok
     oracle
     sfw
     signal-cli

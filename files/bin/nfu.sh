@@ -261,6 +261,18 @@ update_cursor_cli() {
 	log "cursor-cli: $cur -> $release"
 }
 
+update_grok() {
+	local nix_file=pkgs/grok.nix cur new url sri
+	cur=$(nix_field "$nix_file" version)
+	new=$(curl_stdout https://x.ai/cli/stable)
+	[[ $new =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[^[:space:]]+)?$ ]] || die "grok: invalid version from https://x.ai/cli/stable: $new"
+	url="https://x.ai/cli/grok-${new}-linux-x86_64"
+	sri=$(sri_for_url "$url" sha256)
+	replace_field "$nix_file" version "$new"
+	replace_field "$nix_file" hash "$sri"
+	log "grok: $cur -> $new"
+}
+
 # fetchFromGitHub + buildGoModule: bump version, then build-and-fix both
 # the source `hash` and `vendorHash` from nix's mismatch output.
 update_go_github() {
@@ -606,6 +618,9 @@ main() {
 	log "gogcli"
 	update_go_github gogcli pkgs/gogcli.nix openclaw gogcli
 
+	log "grok"
+	update_grok
+
 	log "iii"
 	update_agentmemory_iii
 
@@ -643,6 +658,7 @@ main() {
 		.#cursor-cli \
 		.#droid \
 		.#gogcli \
+		.#grok \
 		.#iii \
 		.#oracle \
 		.#portless \

@@ -15,7 +15,7 @@ buildNpmPackage rec {
     cp ${./codex-acp-package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-q9JT3OrfMKMhW+PuIQVYlIletoIKAa5t82wCfehfixs=";
+  npmDepsHash = "sha256-lALHfJS3DVBhKNo2OEqnj/kzFNGl6HC3DsPdyUg+xuk=";
   npmFlags = [ "--legacy-peer-deps" ];
 
   dontNpmBuild = true;

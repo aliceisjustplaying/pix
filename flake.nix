@@ -75,6 +75,7 @@
             cursor-cli = final.callPackage ./pkgs/cursor-cli.nix { };
             droid = final.callPackage ./pkgs/droid.nix { };
             gogcli = final.callPackage ./pkgs/gogcli.nix { };
+            grok = final.callPackage ./pkgs/grok.nix { };
             iii = final.callPackage ./pkgs/iii.nix { };
             kickbacks-ai = final.callPackage ./pkgs/kickbacks-ai.nix { };
             oracle = final.callPackage ./pkgs/oracle.nix { };
@@ -160,6 +161,7 @@
             cursor-cli
             droid
             gogcli
+            grok
             iii
             kickbacks-ai
             oracle

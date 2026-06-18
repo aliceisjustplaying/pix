@@ -16,8 +16,8 @@ and mutable runtime state live under `/workspace` and are only wired here.
 
 Package exports are built for `x86_64-linux`:
 `agentmemory`, `amp-code`, `camofox-browser`, `claude-code-acp`,
-`cli-proxy-api`, `codex-acp`, `droid`, `gogcli`, `iii`, `portless`, `tirith`,
-and `vet-run`.
+`cli-proxy-api`, `codex-acp`, `droid`, `gogcli`, `grok`, `iii`, `portless`,
+`tirith`, and `vet-run`.
 
 ## Layout
 
@@ -28,7 +28,7 @@ and `vet-run`.
 - `modules/` - NixOS modules for base OS, browser runtime, Tailscale, Cloudflare Tunnel, PiClaw, Hermes, Hermes WebUI, Plausible, backups, host jobs, bsky cron, and Bluepy GitHub runners.
 - `home/agent/` - Home Manager modules for packages, shell aliases, dotfiles, model/tool config, Git, SSH, tmux, and the user-level CLIProxyAPI service.
 - `files/` - rendered scripts, service bootstraps, CLI config templates, SOPS templates, Caddy config, and package-manager settings.
-- `pkgs/` - local package definitions/wrappers for Amp, Claude Code ACP, CLIProxyAPI, Codex ACP, Droid, Gog, Portless, and wrapped `tsshd`.
+- `pkgs/` - local package definitions/wrappers for Amp, Claude Code ACP, CLIProxyAPI, Codex ACP, Droid, Gog, Grok, Portless, and wrapped `tsshd`.
 - `scripts/` - deployment, bootstrap-key, and dependency validation helpers.
 - `INSTALL.md`, `SECRETS-CHECKLIST.md`, `AGENTS.md` - install, secret, and agent runbooks.
 

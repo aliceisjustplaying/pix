@@ -9,18 +9,18 @@ let
   sources = {
     aarch64-linux = {
       target = "aarch64-unknown-linux-gnu";
-      hash = "sha256-BGL+UIO0xyxFqN6RjVQT4h0XqoB3qn2+U8CHaxEoR7s=";
+      hash = "sha256-z5Xv5K5fSZ3H3s/bFdKWQll5r8hFrzzdh/4pw/Teog0=";
     };
     x86_64-linux = {
       target = "x86_64-unknown-linux-gnu";
-      hash = "sha256-Vx5qMA5MREKTR2U3oyJmYGnlYcfwUoPWZQ9bjvg9s6w=";
+      hash = "sha256-bElwcJer//s7ktqdAxglSa3Z23CkQhJC7OHTMIcbk2U=";
     };
   };
   source = sources.${stdenv.hostPlatform.system} or (throw "tirith: unsupported platform ${stdenv.hostPlatform.system}");
 in
 stdenv.mkDerivation rec {
   pname = "tirith";
-  version = "0.3.1";
+  version = "0.3.2";
 
   src = fetchurl {
     url = "https://github.com/sheeki03/tirith/releases/download/v${version}/tirith-${source.target}.tar.gz";
