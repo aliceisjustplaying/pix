@@ -13,8 +13,9 @@ let
   tsx = "${cfg.checkoutDir}/node_modules/.bin/tsx";
   canonicalFrontendHost = "emojistats.at";
   legacyFrontendHost = "emojistats.mosphere.at";
+  bskyLegacyFrontendHost = "emojistats.bsky.sh";
   wwwFrontendHost = "www.emojistats.at";
-  frontendRedirectHosts = lib.unique [ legacyFrontendHost wwwFrontendHost ];
+  frontendRedirectHosts = lib.unique [ legacyFrontendHost bskyLegacyFrontendHost wwwFrontendHost ];
   frontendOrigins = lib.concatStringsSep "," (
     map (host: "https://${host}") ([ cfg.frontendHost ] ++ frontendRedirectHosts)
   );
