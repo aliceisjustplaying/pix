@@ -12,6 +12,8 @@ const PORTFOLIO_MS = 120000;
 const REFRESH_MS = 45 * 60 * 1000;
 const AUTH_REJECT_BREAK_N = 3;
 const AUTH_REJECT_SUPPRESS_MS = 20000;
+const CLICK_THRESHOLD_MS = 15000;
+const CLICK_EVENT_MAX_AGE_MS = 30000;
 const HOME = os.homedir();
 const TMUX_ENV = {
   ...process.env,
@@ -21,6 +23,7 @@ const AUTH_FILE = path.join(HOME, ".kickbacks", "auth.json");
 const VIBE_DIR = path.join(HOME, ".vibe-ads");
 const CLI_AD = path.join(VIBE_DIR, "cli-ad.json");
 const CODEX_AD = path.join(VIBE_DIR, "codex-cli-ad.txt");
+const CODEX_CLICK_QUEUE = path.join(VIBE_DIR, "codex-clicks.jsonl");
 const STATE_FILE = path.join(VIBE_DIR, "reporter-state.json");
 const LOG_FILE = path.join(VIBE_DIR, "reporter.log");
 const CODEX_TMUX_AD_TITLE_PREFIX = "kickbacks-codex-ad:";
@@ -38,6 +41,7 @@ let showing = false;
 let visibleMs = 0;
 let lastAccrualMs = 0;
 let lastTickMs = 0;
+let shownAtMs = 0;
 let shownKey = "";
 let cliLogPath = "";
 let lastReresolveAt = 0;
@@ -81,6 +85,20 @@ function writeText(file, value) {
 
 function stripControl(value) {
   return String(value || "").replace(/[\x00-\x1f\x7f-\x9f]/g, "");
+}
+
+function normalizeAdText(value) {
+  return stripControl(value).replace(/\s+/g, " ").trim().slice(0, 180);
+}
+
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+    return url.toString();
+  } catch {
+    return "";
+  }
 }
 
 function auth() {
@@ -404,11 +422,16 @@ async function sendMetric(event, surface, visible = undefined, includeSessionTok
   if (!ad || !accessToken) return null;
   const current = auth();
   const eventUuid = crypto.randomUUID();
+  return sendMetricWithNonce(event, surface, eventUuid, visible, includeSessionToken, current.clientId);
+}
+
+async function sendMetricWithNonce(event, surface, eventUuid, visible = undefined, includeSessionToken = true, clientId = auth().clientId) {
+  if (!ad || !accessToken) return null;
   const body = {
     event_type: event,
     ad_id: ad.adId,
     campaign_id: ad.campaignId,
-    client_id: current.clientId,
+    client_id: clientId,
     ts: new Date().toISOString(),
     claude_code_version: ccVersion,
     extension_version: EXT_VERSION,
@@ -450,6 +473,7 @@ async function beginExposure(surfaces) {
   visibleMs = 0;
   lastAccrualMs = Date.now();
   lastTickMs = 0;
+  shownAtMs = Date.now();
   consecutiveAuthRejects = 0;
 
   const current = state();
@@ -473,6 +497,68 @@ async function beginExposure(surfaces) {
     current.sent[key].codexOverlay = true;
   }
   saveState(current);
+}
+
+function drainCodexClickQueue() {
+  const batch = CODEX_CLICK_QUEUE + ".processing." + process.pid + "." + Date.now();
+  try {
+    fs.renameSync(CODEX_CLICK_QUEUE, batch);
+  } catch {
+    return [];
+  }
+  try {
+    return fs.readFileSync(batch, "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .flatMap((line) => {
+        try {
+          const event = JSON.parse(line);
+          return event && typeof event === "object" ? [event] : [];
+        } catch {
+          log("click.drop_malformed");
+          return [];
+        }
+      });
+  } finally {
+    try {
+      fs.unlinkSync(batch);
+    } catch {}
+  }
+}
+
+function codexClickMatchesCurrentAd(click) {
+  return normalizeAdText(click.adText) === normalizeAdText(ad?.adText) &&
+    safeHttpUrl(click.clickUrl) === safeHttpUrl(ad?.clickUrl);
+}
+
+async function processCodexClicks(surfaces) {
+  const clicks = drainCodexClickQueue();
+  for (const click of clicks) {
+    const ts = Number(click.ts);
+    const ageMs = Date.now() - ts;
+    const eventUuid = typeof click.eventUuid === "string" && click.eventUuid ? click.eventUuid : crypto.randomUUID();
+    if (click.surface !== "codex_overlay") {
+      log("click.drop_surface", { surface: String(click.surface || "") });
+      continue;
+    }
+    if (!Number.isFinite(ts) || ageMs < 0 || ageMs > CLICK_EVENT_MAX_AGE_MS) {
+      log("click.drop_stale", { ageMs: Number.isFinite(ageMs) ? ageMs : null });
+      continue;
+    }
+    if (!ad || !showing || shownKey !== ad.adId || !surfaces.codexTmux || ts < shownAtMs) {
+      log("click.drop_not_visible", { adId: ad?.adId || "", visibleMs });
+      continue;
+    }
+    if (!codexClickMatchesCurrentAd(click)) {
+      log("click.drop_ad_mismatch", { adId: ad.adId });
+      continue;
+    }
+    if (visibleMs < CLICK_THRESHOLD_MS) {
+      log("click.early", { adId: ad.adId, visibleMs, thresholdMs: CLICK_THRESHOLD_MS, eventUuid });
+      continue;
+    }
+    await sendMetricWithNonce("click", "codex_overlay", eventUuid);
+  }
 }
 
 async function tickExposure(surfaces) {
@@ -532,6 +618,7 @@ async function loop() {
       const key = ad.adId;
       if (!showing || shownKey !== key) await beginExposure(surfaces);
       else await tickExposure(surfaces);
+      if (showing && shownKey === key) await processCodexClicks(surfaces);
     } catch (error) {
       log("loop.error", { error: error instanceof Error ? error.message : String(error) });
     } finally {

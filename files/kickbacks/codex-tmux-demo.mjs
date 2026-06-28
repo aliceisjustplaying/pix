@@ -7,6 +7,7 @@ import cp from "node:child_process";
 const HOME = os.homedir();
 const VIBE_DIR = path.join(HOME, ".vibe-ads");
 const AD_FILE = path.join(VIBE_DIR, "codex-cli-ad.txt");
+const CLICK_QUEUE_FILE = path.join(VIBE_DIR, "codex-clicks.jsonl");
 const LEGACY_STATE_FILE = path.join(VIBE_DIR, "codex-tmux-demo-state.json");
 const KEY_STATE_FILE = path.join(VIBE_DIR, "codex-tmux-demo-mouse-key.tmux");
 const PID_FILE = path.join(VIBE_DIR, "codex-tmux-demo.pid");
@@ -86,6 +87,23 @@ function shellQuote(value) {
   return "'" + String(value).replace(/'/g, "'\\''") + "'";
 }
 
+function randomUuid() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return "local-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+}
+
+function queueClick(ad) {
+  fs.mkdirSync(VIBE_DIR, { recursive: true });
+  const event = {
+    ts: Date.now(),
+    eventUuid: randomUuid(),
+    surface: "codex_overlay",
+    adText: ad.text,
+    clickUrl: ad.clickUrl
+  };
+  fs.appendFileSync(CLICK_QUEUE_FILE, JSON.stringify(event) + "\n", { mode: 0o600 });
+}
+
 function saveMouseBinding() {
   if (fs.existsSync(KEY_STATE_FILE)) return;
   fs.mkdirSync(VIBE_DIR, { recursive: true });
@@ -122,6 +140,9 @@ function restoreMouseBinding() {
 function handleClick() {
   const ad = readAd();
   if (!ad.clickUrl) process.exit(0);
+  try {
+    queueClick(ad);
+  } catch {}
   tmux(["set-buffer", "-w", ad.clickUrl]);
   tmux(["display-message", `kickbacks ad link copied: ${ad.clickUrl}`]);
   process.exit(0);
