@@ -24,11 +24,13 @@ const VIBE_DIR = path.join(HOME, ".vibe-ads");
 const CLI_AD = path.join(VIBE_DIR, "cli-ad.json");
 const CODEX_AD = path.join(VIBE_DIR, "codex-cli-ad.txt");
 const CODEX_CLICK_QUEUE = path.join(VIBE_DIR, "codex-clicks.jsonl");
+const CODEX_ACTIVITY_FILE = path.join(VIBE_DIR, "codex-tmux-activity.json");
 const STATE_FILE = path.join(VIBE_DIR, "reporter-state.json");
 const LOG_FILE = path.join(VIBE_DIR, "reporter.log");
 const CODEX_TMUX_AD_TITLE_PREFIX = "kickbacks-codex-ad:";
 const IDLE_STALE_MS = 90000;
 const FRESH_ACTIVITY_MS = 4000;
+const CODEX_ACTIVITY_STALE_MS = 3000;
 const RERESOLVE_MIN_MS = 15000;
 
 let accessToken = "";
@@ -400,6 +402,17 @@ function hasVisibleCodexTmuxAdPane() {
   }
 }
 
+function codexTmuxActive() {
+  try {
+    const value = readJson(CODEX_ACTIVITY_FILE, {});
+    return value.active === true &&
+      Number.isFinite(value.ts) &&
+      Date.now() - value.ts <= CODEX_ACTIVITY_STALE_MS;
+  } catch {
+    return false;
+  }
+}
+
 function visibleSurfaces() {
   const activity = currentActivity();
   const age = activityAgeMs();
@@ -407,7 +420,8 @@ function visibleSurfaces() {
   const active = activity ? !activity.done : fresh;
   const claude = active && hasClaudeCliProcess();
   const codexTmux = hasVisibleCodexTmuxAdPane();
-  return { claude, codexTmux, any: claude || codexTmux };
+  const codexTmuxBillable = codexTmux && codexTmuxActive();
+  return { claude, codexTmux, codexTmuxBillable, any: claude || codexTmux };
 }
 
 function state() {
@@ -563,7 +577,8 @@ async function processCodexClicks(surfaces) {
 
 async function tickExposure(surfaces) {
   const now = Date.now();
-  if (showing) {
+  const billable = surfaces.claude || surfaces.codexTmuxBillable;
+  if (showing && billable) {
     visibleMs += Math.min(now - lastAccrualMs, 2 * POLL_MS);
   }
   lastAccrualMs = now;
@@ -582,7 +597,7 @@ async function tickExposure(surfaces) {
         consecutiveAuthRejects = 0;
       }
     }
-    if (surfaces.codexTmux) {
+    if (surfaces.codexTmuxBillable) {
       const status = await sendMetric("view_tick", "codex_overlay", visibleMs);
       if (status === 401 || status === 403) {
         consecutiveAuthRejects++;

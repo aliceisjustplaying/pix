@@ -8,6 +8,7 @@ const HOME = os.homedir();
 const VIBE_DIR = path.join(HOME, ".vibe-ads");
 const AD_FILE = path.join(VIBE_DIR, "codex-cli-ad.txt");
 const CLICK_QUEUE_FILE = path.join(VIBE_DIR, "codex-clicks.jsonl");
+const ACTIVITY_FILE = path.join(VIBE_DIR, "codex-tmux-activity.json");
 const LEGACY_STATE_FILE = path.join(VIBE_DIR, "codex-tmux-demo-state.json");
 const KEY_STATE_FILE = path.join(VIBE_DIR, "codex-tmux-demo-mouse-key.tmux");
 const PID_FILE = path.join(VIBE_DIR, "codex-tmux-demo.pid");
@@ -20,6 +21,7 @@ const AD_TITLE_PREFIX = "kickbacks-codex-ad:";
 
 let restored = false;
 const activeUntil = new Map();
+let lastActivityWriteAt = 0;
 
 function tmux(args, fallback = "") {
   try {
@@ -265,8 +267,34 @@ function codexPaneActive(pane) {
   return active || (activeUntil.get(pane.id) || 0) > now;
 }
 
+function codexPaneLooksActive(pane) {
+  return paneTextLooksActive(pane.id);
+}
+
+function writeActivityState(panes) {
+  const now = Date.now();
+  if (now - lastActivityWriteAt < POLL_MS) return;
+  lastActivityWriteAt = now;
+  const activePanes = panes
+    .filter((pane) =>
+      pane.command === "codex-raw" &&
+      !pane.title?.startsWith(AD_TITLE_PREFIX) &&
+      codexPaneLooksActive(pane)
+    )
+    .map((pane) => pane.id);
+  const active = activePanes.length > 0;
+  let previous = {};
+  try {
+    previous = JSON.parse(fs.readFileSync(ACTIVITY_FILE, "utf8"));
+  } catch {}
+  const since = active && previous.active === true && Number.isFinite(previous.since) ? previous.since : now;
+  fs.mkdirSync(VIBE_DIR, { recursive: true });
+  fs.writeFileSync(ACTIVITY_FILE, JSON.stringify({ active, activePanes, ts: now, since }) + "\n", { mode: 0o644 });
+}
+
 function syncAdPanes() {
   const panes = listPanes();
+  writeActivityState(panes);
   const codexPanesById = new Map(codexPanes(panes).map((pane) => [pane.id, pane]));
   const codex = new Set(codexPanesById.keys());
   const ads = adPanes(panes);
