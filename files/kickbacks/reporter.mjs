@@ -13,12 +13,17 @@ const REFRESH_MS = 45 * 60 * 1000;
 const AUTH_REJECT_BREAK_N = 3;
 const AUTH_REJECT_SUPPRESS_MS = 20000;
 const HOME = os.homedir();
+const TMUX_ENV = {
+  ...process.env,
+  TMUX_TMPDIR: process.env.TMUX_TMPDIR || process.env.XDG_RUNTIME_DIR || `/run/user/${process.getuid()}`
+};
 const AUTH_FILE = path.join(HOME, ".kickbacks", "auth.json");
 const VIBE_DIR = path.join(HOME, ".vibe-ads");
 const CLI_AD = path.join(VIBE_DIR, "cli-ad.json");
 const CODEX_AD = path.join(VIBE_DIR, "codex-cli-ad.txt");
 const STATE_FILE = path.join(VIBE_DIR, "reporter-state.json");
 const LOG_FILE = path.join(VIBE_DIR, "reporter.log");
+const CODEX_TMUX_AD_TITLE_PREFIX = "kickbacks-codex-ad:";
 const IDLE_STALE_MS = 90000;
 const FRESH_ACTIVITY_MS = 4000;
 const RERESOLVE_MIN_MS = 15000;
@@ -358,13 +363,33 @@ function hasClaudeCliProcess() {
   }
 }
 
+function hasVisibleCodexTmuxAdPane() {
+  try {
+    const lines = cp.execFileSync("tmux", [
+      "list-panes",
+      "-a",
+      "-F",
+      "#{session_attached}\t#{window_active}\t#{pane_title}"
+    ], { encoding: "utf8", timeout: 3000, env: TMUX_ENV }).split("\n");
+    return lines.some((line) => {
+      const [attached, activeWindow, title] = line.split("\t");
+      return Number(attached) > 0 &&
+        activeWindow === "1" &&
+        String(title || "").startsWith(CODEX_TMUX_AD_TITLE_PREFIX);
+    });
+  } catch {
+    return false;
+  }
+}
+
 function visibleSurfaces() {
   const activity = currentActivity();
   const age = activityAgeMs();
   const fresh = age !== null && age <= FRESH_ACTIVITY_MS;
   const active = activity ? !activity.done : fresh;
   const claude = active && hasClaudeCliProcess();
-  return { claude, any: claude };
+  const codexTmux = hasVisibleCodexTmuxAdPane();
+  return { claude, codexTmux, any: claude || codexTmux };
 }
 
 function state() {
@@ -430,9 +455,9 @@ async function beginExposure(surfaces) {
   const current = state();
   current.sent ||= {};
   if (!current.sent[key]) {
-    current.sent[key] = { at: new Date().toISOString(), statusline: false, spinner: false };
+    current.sent[key] = { at: new Date().toISOString(), statusline: false, spinner: false, codexOverlay: false };
   }
-  if (!current.sent[key].statusline && surfaces.any) {
+  if (!current.sent[key].statusline && surfaces.claude) {
     await sendMetric("impression_rendered", "statusline", undefined, false);
     await sendMetric("impression_viewable", "statusline");
     current.sent[key].statusline = true;
@@ -441,6 +466,11 @@ async function beginExposure(surfaces) {
     await sendMetric("impression_rendered", "spinner", undefined, false);
     await sendMetric("impression_viewable", "spinner");
     current.sent[key].spinner = true;
+  }
+  if (!current.sent[key].codexOverlay && surfaces.codexTmux) {
+    await sendMetric("impression_rendered", "codex_overlay", undefined, false);
+    await sendMetric("impression_viewable", "codex_overlay");
+    current.sent[key].codexOverlay = true;
   }
   saveState(current);
 }
@@ -453,8 +483,21 @@ async function tickExposure(surfaces) {
   lastAccrualMs = now;
   if (now - lastTickMs >= VIEW_TICK_MS) {
     lastTickMs = now;
-    if (surfaces.any) {
+    if (surfaces.claude) {
       const status = await sendMetric("view_tick", "statusline", visibleMs);
+      if (status === 401 || status === 403) {
+        consecutiveAuthRejects++;
+        if (consecutiveAuthRejects >= AUTH_REJECT_BREAK_N) {
+          showing = false;
+          suppressedUntil = Date.now() + AUTH_REJECT_SUPPRESS_MS;
+          log("metric.auth_reject_break", { adId: ad.adId });
+        }
+      } else if (status !== null) {
+        consecutiveAuthRejects = 0;
+      }
+    }
+    if (surfaces.codexTmux) {
+      const status = await sendMetric("view_tick", "codex_overlay", visibleMs);
       if (status === 401 || status === 403) {
         consecutiveAuthRejects++;
         if (consecutiveAuthRejects >= AUTH_REJECT_BREAK_N) {

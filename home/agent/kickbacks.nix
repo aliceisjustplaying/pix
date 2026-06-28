@@ -177,6 +177,7 @@ in
       RestartSec = "10s";
       Environment = [
         "PATH=${home}/.local/bin:/etc/profiles/per-user/agent/bin:/run/current-system/sw/bin"
+        "TMUX_TMPDIR=%t"
       ];
     };
     Install.WantedBy = [ "default.target" ];
