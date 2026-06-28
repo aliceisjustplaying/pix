@@ -15,6 +15,7 @@ const POLL_MS = Number(process.env.KICKBACKS_CODEX_TMUX_DEMO_POLL_MS || 1000);
 const ACTIVE_GRACE_MS = Number(process.env.KICKBACKS_CODEX_TMUX_ACTIVE_GRACE_MS || 4000);
 const SHOW_IDLE = process.env.KICKBACKS_CODEX_TMUX_SHOW_IDLE === "1";
 const AD_POSITION = process.env.KICKBACKS_CODEX_TMUX_AD_POSITION || "auto";
+const USE_OSC8 = process.env.KICKBACKS_CODEX_TMUX_OSC8 === "1";
 const AD_TITLE_PREFIX = "kickbacks-codex-ad:";
 
 let restored = false;
@@ -120,6 +121,8 @@ function installMouseBinding() {
     "MouseDown1Pane",
     "if",
     "-F",
+    "-t",
+    "=",
     "#{m/r:^kickbacks-codex-ad:,#{pane_title}}",
     `run-shell -b ${shellQuote(clickCommand)}`,
     "select-pane -t = \\; send-keys -M"
@@ -155,7 +158,7 @@ function renderAdPane() {
     const ad = readAd();
     const width = process.stdout.columns || Number(process.env.COLUMNS) || 80;
     const text = truncate(adLineText(ad.text), Math.max(0, width));
-    const body = ad.clickUrl ? osc8(ad.clickUrl, text) : text;
+    const body = USE_OSC8 && ad.clickUrl ? osc8(ad.clickUrl, text) : text;
     process.stdout.write("\r\x1b[2K" + body);
   }
 
