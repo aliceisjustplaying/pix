@@ -127,7 +127,7 @@ function installMouseBinding() {
     "=",
     "#{m/r:^kickbacks-codex-ad:,#{pane_title}}",
     `run-shell -b ${shellQuote(clickCommand)}`,
-    "select-pane -t = \\; send-keys -M"
+    "send-keys -M"
   ]);
 }
 
