@@ -2,20 +2,20 @@
 
 buildNpmPackage rec {
   pname = "oracle";
-  version = "0.14.0";
+  version = "0.15.0";
 
   nodejs = nodejs_24;
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@steipete/oracle/-/oracle-${version}.tgz";
-    hash = "sha512-tqbz8R7N7jetJXyFEMQh/DidcPF90tsW2gQNtxcaUe6HnSF/z5/c8nM42GdDWkHvzgb2qOea4R0gBkvI1Wm0qg==";
+    hash = "sha512-aXHLYk2y6rsx3IGBgwzZM+5yjEoRaAxfAb5/ZzRIu++Cr6G5LIXTHUnVEu4xI/AMit0pj9nKAJkFXW5RdP7rnw==";
   };
 
   postPatch = ''
     cp ${./oracle-package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-wwxRk6q3dg4SPw9UJAZ5m8V2Atpnulyarz8Yoq7P2F4=";
+  npmDepsHash = "sha256-RSxmxy+1EYfsDTbOvgVCHhXR1HijTzQzfjmbpPi7v0g=";
 
   dontNpmBuild = true;
   npmFlags = [ "--legacy-peer-deps" ];

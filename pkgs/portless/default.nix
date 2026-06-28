@@ -15,11 +15,11 @@ let
 in
 stdenvNoCC.mkDerivation rec {
   pname = "portless";
-  version = "0.14.0";
+  version = "0.15.0";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/portless/-/portless-${version}.tgz";
-    hash = "sha256-fRBPzQWq4aKUQPZbk222OR6MOoV7irG0BmsMI0KDMZc=";
+    hash = "sha256-BVJXZnyBoRKyC8dBrsNcl1pNMP6qjIEU3dPTHcGMxdg=";
   };
 
   dontBuild = true;
