@@ -78,6 +78,28 @@
             grok = final.callPackage ./pkgs/grok.nix { };
             iii = final.callPackage ./pkgs/iii.nix { };
             kickbacks-ai = final.callPackage ./pkgs/kickbacks-ai.nix { };
+            open-webui =
+              let
+                version = "0.10.2";
+                src = final.fetchFromGitHub {
+                  owner = "open-webui";
+                  repo = "open-webui";
+                  tag = "v${version}";
+                  hash = "sha256-tJ9b5up5FoX5TrmpwMWevyA/o3Ai/lKsHu+nahc2Ttc=";
+                };
+                frontend = unstablePkgs.open-webui.frontend.overrideAttrs (_old: {
+                  inherit version src;
+                  npmDeps = final.fetchNpmDeps {
+                    inherit src;
+                    hash = "sha256-yw/1n1jBCUtt8wUqJmIkB3W53wsXTKuAFG/EMwcTpx8=";
+                  };
+                });
+              in
+              unstablePkgs.open-webui.overridePythonAttrs (old: {
+                inherit version src;
+                makeWrapperArgs = [ "--set FRONTEND_BUILD_DIR ${frontend}/share/open-webui" ];
+                passthru = (old.passthru or { }) // { inherit frontend; };
+              });
             oracle = final.callPackage ./pkgs/oracle.nix { };
             plausible = final.callPackage ./pkgs/plausible.nix { };
             portless = final.callPackage ./pkgs/portless { };
