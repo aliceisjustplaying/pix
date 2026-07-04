@@ -28,7 +28,7 @@ buildNpmPackage rec {
 
   npmFlags = [ "--legacy-peer-deps" ];
   npmRebuildFlags = [ "--ignore-scripts" ];
-  npmDepsHash = "sha256-45j35Sgh+HXvcj+aB9+0znlmvfj8PlsW5vEO3QxT+Tc=";
+  npmDepsHash = "sha256-/9w20mrCuSC9+d784xfGxQhsYzPlgJlKqkeN7rMlBCg=";
 
   CAMOFOX_SKIP_DOWNLOAD = "1";
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";

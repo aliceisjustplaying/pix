@@ -2,20 +2,20 @@
 
 buildNpmPackage rec {
   pname = "codex-acp";
-  version = "1.0.1";
+  version = "1.1.0";
 
   nodejs = nodejs_24;
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@agentclientprotocol/codex-acp/-/codex-acp-${version}.tgz";
-    hash = "sha512-GTgfS3LXF3MtLk4m/AtlV8sX1MbvV3YQkbjoTBceqkR1Zub65vz5dHkSNHHAr/RNuoJrBHDr8AEgO3iU2yPo3g==";
+    hash = "sha512-EdUwW6n12yy4khxS6YpOgT8dd4JbVeOP8qPLdCEj795kp85qVI6369EWUXHq1CrnvOmGVwieUMvnrMlsqJaRWg==";
   };
 
   postPatch = ''
     cp ${./codex-acp-package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-fhudHMusFhCOVJ7nuVstcGpXfBe3WvG5tldXWkWOw6U=";
+  npmDepsHash = "sha256-odFbKr34xuoB7zNKUz+AF7fFq79fSE/ZAEpeQ1st6Ho=";
   npmFlags = [ "--legacy-peer-deps" ];
 
   dontNpmBuild = true;

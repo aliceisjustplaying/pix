@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   pname = "amp-code";
-  version = "0.0.1782542697-gd6b6a8";
+  version = "0.0.1783074896-g09327d";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@ampcode/cli-linux-x64/-/cli-linux-x64-${version}.tgz";
-    hash = "sha512-K78qTR6JL7jhsM334or6g40PLj2GvRzEz1Y4zXWP994fL+EyiGSxsbGuy292Qfhzrx3WavE6UGYx8erYlKGaRA==";
+    hash = "sha512-AYQJocmRUBvpyW3qRPqXnKZCj++lkrv3pulyc5N8o3Oh26hqBjRsgwV9OVgaqFvBZCfpX+XreQOvWPXP/suj1A==";
   };
 
   sourceRoot = "package";
