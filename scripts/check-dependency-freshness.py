@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 DEFAULT_MIN_AGE_HOURS = 24
-EXEMPT_NAMES = {"claude-code", "codex", "codex-cli"}
+EXEMPT_NAMES = {"claude-code", "codex", "codex-cli", "llm-agents", "llm-agents.nix"}
 NPM_REGISTRY = "https://registry.npmjs.org"
 
 

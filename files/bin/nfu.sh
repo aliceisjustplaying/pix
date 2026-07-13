@@ -54,7 +54,7 @@ freshness_exempt() {
 	for part in "$@"; do
 		lower=${part,,}
 		name=${lower##*/}
-		[[ $name == claude-code || $name == codex || $name == codex-cli ]] && return 0
+		[[ $name == claude-code || $name == codex || $name == codex-cli || $name == llm-agents || $name == llm-agents.nix ]] && return 0
 	done
 	return 1
 }
@@ -185,10 +185,14 @@ update_droid() {
 # Refresh `npmDepsHash` by building with a known-bad placeholder and scraping
 # the "got:" hash mismatch line. Re-runnable.
 fix_build_hash() {
-	local attr=$1 nix_file=$2 field=$3 out got
+	local attr=$1 nix_file=$2 field=$3 out got attempt
 	replace_field "$nix_file" "$field" "$PLACEHOLDER_HASH"
-	out=$(nix "${NIX_FLAGS[@]}" build ".#${attr}" --no-link 2>&1 || true)
-	got=$(printf '%s\n' "$out" | sed -n -E 's/.*got:[[:space:]]+(sha[0-9]+-[A-Za-z0-9+/=]+).*/\1/p' | head -n1)
+	for attempt in 1 2 3; do
+		out=$(nix "${NIX_FLAGS[@]}" build ".#${attr}" --no-link 2>&1 || true)
+		got=$(printf '%s\n' "$out" | sed -n -E 's/.*got:[[:space:]]+(sha[0-9]+-[A-Za-z0-9+/=]+).*/\1/p' | head -n1)
+		[[ -n $got ]] && break
+		[[ $attempt -eq 3 ]] || sleep "$((attempt * 2))"
+	done
 	if [[ -z $got ]]; then
 		printf '%s\n' "$out" >&2
 		die "$attr: couldn't determine '$field'"
@@ -298,6 +302,67 @@ update_go_github() {
 	fix_build_hash "$attr" "$nix_file" hash
 	fix_build_hash "$attr" "$nix_file" vendorHash
 	log "$attr: $cur -> $new"
+}
+
+version_lte() {
+	python3 - "$1" "$2" <<'PY'
+import sys
+
+def parts(value):
+    return tuple(int(part) for part in value.split("."))
+
+left, right = sys.argv[1:3]
+raise SystemExit(0 if parts(left) <= parts(right) else 1)
+PY
+}
+
+update_gogcli() {
+	local attr=gogcli nix_file=pkgs/gogcli.nix owner=openclaw repo=gogcli
+	local cur releases cutoff max_go tag new required_go latest latest_go
+
+	cur=$(nix_field "$nix_file" version)
+	max_go=$(nix eval --raw --impure --expr \
+		'let flake = builtins.getFlake (toString /home/agent/workspace/src/pix); pkgs = import flake.inputs.nixpkgs { system = builtins.currentSystem; }; in pkgs.go_1_26.version')
+	releases=$(github_json "https://api.github.com/repos/${owner}/${repo}/releases?per_page=100")
+	latest=$(printf '%s\n' "$releases" | jq -r '
+		map(select(.draft | not))
+		| map(select(.prerelease | not))
+		| first.tag_name // empty
+	')
+	latest_go=$(curl_stdout "https://raw.githubusercontent.com/${owner}/${repo}/${latest}/go.mod" |
+		sed -n -E 's/^go ([0-9.]+).*/\1/p' | head -n1)
+	if freshness_exempt "$attr" "$owner" "$repo" || allow_fresh_dependencies; then
+		cutoff=9999999999
+	else
+		cutoff=$(cutoff_epoch)
+	fi
+	while IFS= read -r tag; do
+		required_go=$(curl_stdout "https://raw.githubusercontent.com/${owner}/${repo}/${tag}/go.mod" |
+			sed -n -E 's/^go ([0-9.]+).*/\1/p' | head -n1)
+		[[ -n $required_go ]] || continue
+		if version_lte "$required_go" "$max_go"; then
+			new=$(printf '%s\n' "$tag" | sed -E 's/^v//')
+			break
+		fi
+	done < <(printf '%s\n' "$releases" | jq -r --argjson cutoff "$cutoff" '
+		map(select(.draft | not))
+		| map(select(.prerelease | not))
+		| map(select(.published_at != null))
+		| map(. + {ts: (.published_at | fromdateiso8601)})
+		| map(select(.ts <= $cutoff))
+		| sort_by(.ts)
+		| reverse
+		| .[].tag_name
+	')
+	[[ -n ${new:-} ]] || die "$attr: no GitHub release supports Go ${max_go}"
+	replace_field "$nix_file" version "$new"
+	fix_build_hash "$attr" "$nix_file" hash
+	fix_build_hash "$attr" "$nix_file" vendorHash
+	if [[ -n $latest_go && $latest_go != "$required_go" ]]; then
+		log "$attr: $cur -> $new (latest ${latest#v} requires Go ${latest_go}; using Go ${max_go})"
+	else
+		log "$attr: $cur -> $new"
+	fi
 }
 
 update_github_release_asset() {
@@ -523,7 +588,7 @@ import sys
 import time
 
 before_path, current_path, min_age = sys.argv[1], sys.argv[2], float(sys.argv[3])
-exempt_names = {"claude-code", "codex", "codex-cli"}
+exempt_names = {"claude-code", "codex", "codex-cli", "llm-agents", "llm-agents.nix"}
 cutoff = time.time() - min_age * 3600
 
 def is_exempt(*parts):
@@ -549,11 +614,38 @@ for name, node in list(current.get("nodes", {}).items()):
             current["nodes"][name] = before_nodes[name]
             restored.append(name)
 
+missing = []
+seen = set()
+
+def input_node_names(node):
+    for value in node.get("inputs", {}).values():
+        if isinstance(value, str):
+            yield value
+        elif isinstance(value, list) and value:
+            yield value[0]
+
+queue = list(current.get("nodes", {}))
+while queue:
+    name = queue.pop(0)
+    if name in seen:
+        continue
+    seen.add(name)
+    node = current.get("nodes", {}).get(name, {})
+    for child in input_node_names(node):
+        if child not in current.get("nodes", {}) and child in before_nodes:
+            current["nodes"][child] = before_nodes[child]
+            missing.append(child)
+        if child not in seen:
+            queue.append(child)
+
 if restored:
     with open(current_path, "w", encoding="utf-8") as f:
         json.dump(current, f, indent=2)
         f.write("\n")
-    print("==> kept fresh flake inputs at previous lock: " + ", ".join(restored))
+    msg = "==> kept fresh flake inputs at previous lock: " + ", ".join(restored)
+    if missing:
+        msg += " (restored referenced nodes: " + ", ".join(missing) + ")"
+    print(msg)
 PY
 }
 
@@ -616,7 +708,7 @@ main() {
 	update_go_github cli-proxy-api pkgs/cli-proxy-api.nix router-for-me CLIProxyAPI
 
 	log "gogcli"
-	update_go_github gogcli pkgs/gogcli.nix openclaw gogcli
+	update_gogcli
 
 	log "grok"
 	update_grok
