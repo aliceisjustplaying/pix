@@ -128,7 +128,6 @@
                 done
               '';
             sfw = final.callPackage ./pkgs/sfw.nix { };
-            signal-cli = final.callPackage ./pkgs/signal-cli.nix { signal-cli = _prev.signal-cli; };
             tirith = final.callPackage ./pkgs/tirith.nix { };
             vet-run = final.callPackage ./pkgs/vet-run.nix { };
             inherit (unstablePkgs)
