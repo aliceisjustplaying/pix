@@ -223,6 +223,9 @@ in
       security = {
         admin_user = "alice";
         admin_password = "$__file{/var/lib/grafana/admin-password}";
+        # 26.05 dropped the default secret_key; this is the old default the DB
+        # was encrypted with (rotation needs a 3rd-party tool, see changelog)
+        secret_key = "SW2YcwTIb9zpOOhoPsMm";
         cookie_secure = true;
       };
 

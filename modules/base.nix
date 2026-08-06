@@ -126,12 +126,12 @@ in
 
   services.journald.extraConfig = builtins.readFile ../files/journald/journald.conf;
 
-  systemd.coredump.extraConfig = ''
-    Storage=none
-    ProcessSizeMax=0
-    ExternalSizeMax=0
-    JournalSizeMax=0
-  '';
+  systemd.coredump.settings.Coredump = {
+    Storage = "none";
+    ProcessSizeMax = 0;
+    ExternalSizeMax = 0;
+    JournalSizeMax = 0;
+  };
 
   security.sudo.wheelNeedsPassword = false;
 

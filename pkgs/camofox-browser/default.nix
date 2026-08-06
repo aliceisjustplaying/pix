@@ -43,7 +43,7 @@ buildNpmPackage rec {
     sed -i 's/static MIN_VERSION = "[^"]*";/static MIN_VERSION = "alpha.0";/' \
       node_modules/camoufox-js/dist/__version__.js
     grep -q 'static MIN_VERSION = "alpha.0";' node_modules/camoufox-js/dist/__version__.js
-    npm rebuild better-sqlite3 --build-from-source --offline --nodedir=${nodejs_24.dev}
+    npm rebuild better-sqlite3 --build-from-source --offline --nodedir=${nodejs_24}
     popd
 
     makeWrapper ${nodejs_24}/bin/node $out/bin/camofox-browser \
