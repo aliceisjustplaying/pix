@@ -97,6 +97,13 @@
               in
               unstablePkgs.open-webui.overridePythonAttrs (old: {
                 inherit version src;
+                # 0.10.2 still needs these; dropped from the 0.11+ dependency list in nixpkgs
+                dependencies =
+                  (old.dependencies or [ ])
+                  ++ (with unstablePkgs.python3Packages; [
+                    python-jose
+                    rapidocr-onnxruntime
+                  ]);
                 makeWrapperArgs = [ "--set FRONTEND_BUILD_DIR ${frontend}/share/open-webui" ];
                 passthru = (old.passthru or { }) // { inherit frontend; };
               });
