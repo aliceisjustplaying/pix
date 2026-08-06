@@ -1,26 +1,19 @@
-{ fetchurl, lib, stdenvNoCC, unzip }:
+{ lib, stdenvNoCC }:
 
 stdenvNoCC.mkDerivation rec {
   pname = "kickbacks-ai";
   version = "0.3.177";
 
-  src = fetchurl {
-    url = "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/Kickbacksai/vsextensions/kickbacks-ai/latest/vspackage";
-    hash = "sha256-PC/qJWZ6KQi6CO8Q6wkFXdL5A55xkABleY7H6rni4WU=";
-  };
+  # The extension was pulled from the VS Code marketplace (all URLs 404 as of
+  # 2026-08-06), so this is a vendored snapshot of the last marketplace build.
+  src = ../files/vendor/kickbacks-ai-0.3.177.tar.gz;
 
-  nativeBuildInputs = [ unzip ];
-
-  unpackPhase = ''
-    runHook preUnpack
-    unzip -q "$src" -d source
-    runHook postUnpack
-  '';
+  sourceRoot = ".";
 
   installPhase = ''
     runHook preInstall
     mkdir -p "$out/share/kickbacks-ai"
-    cp -R source/extension "$out/share/kickbacks-ai/extension"
+    cp -R extension "$out/share/kickbacks-ai/extension"
     runHook postInstall
   '';
 
