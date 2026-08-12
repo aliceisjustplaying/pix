@@ -1,6 +1,6 @@
 # `vps` restore notes
 
-This is the minimal `aarch64-linux` target for Plausible and the Song of Songs bot. `pix2` remains the source of truth for the taper-calculator Plausible data until the final restore and cutover are verified.
+This is the minimal `aarch64-linux` target for Plausible and the Song of Songs bot.
 
 ## Installed state
 
@@ -10,8 +10,10 @@ This is the minimal `aarch64-linux` target for Plausible and the Song of Songs b
   the old 150 GB `jetstream` volume was detached and deleted.
 - SSH uses `agent@vps.bsky.sh` with `~/.ssh/pix`; direct root login is disabled.
 - The final Song of Songs `posted.txt` history was restored with mode `0600`.
-- Keep `/Users/sarah/Backups/vps.bsky.sh-2026-08-12` and its checksums until
-  the Plausible merge and cutover are verified.
+- The two Plausible instances were merged on 2026-08-12. `p.mosphere.at`
+  points here, and Plausible is stopped on `pix2`.
+- The merged, restore-tested backup is under
+  `/Users/sarah/Backups/plausible-migration-2026-08-12`.
 
 For a future reinstall, prepare the ignored bootstrap key directory:
 
@@ -27,13 +29,13 @@ Then run:
 ./scripts/deploy.sh --host vps <server-ip>
 ```
 
-## Restore order
+## Plausible recovery order
 
-1. Leave `p.mosphere.at` pointed at `pix2` while restoring.
-2. Stop Plausible, PostgreSQL, ClickHouse, Caddy, and `songofsongs.timer` on the new host.
-3. Restore and merge the Plausible PostgreSQL and ClickHouse backups, then verify all sites and the taper calculator.
-4. The final `posted.txt` is already restored to `/var/lib/songofsongs/posted.txt`.
-5. Start Plausible and verify HTTPS/tracking, validate the bot credentials
-   without starting its timer, then move DNS.
+1. Stop Plausible while restoring PostgreSQL and ClickHouse.
+2. Restore `merged/postgresql/merged-plausible.dump` and the three Native
+   ClickHouse streams from the migration backup.
+3. Verify six sites, 105,499 event rows, and 10,749 session rows before
+   starting Plausible.
+4. Verify HTTPS and `/js/script.js` after starting Caddy and Plausible.
 
 The bot service has a `ConditionPathExists` gate and cannot post until `posted.txt` is restored.
