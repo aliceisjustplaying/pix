@@ -1,4 +1,4 @@
-# Recipients, in order: pix2 host, operator, then the emojistats fleet
+# Recipients, in order: pix2 host, operator, the emojistats fleet, then vps
 # (emoji, crawl0..crawl5 — private keys live at /var/lib/sops-nix/key.txt on
 # each box, generated 2026-06-12, local copies under ~/.config/sops/age/fleet/).
 creation_rules:
@@ -12,4 +12,5 @@ creation_rules:
       age17m88du5h9j65vu5jfefn8f286wykredgl5c5wdsdy580085zvyjq6t8lcw,
       age1qjlh9ut99t7w5mwv7m9g9596gzgyflzn75gy77dpd88994gzly2s0dc4pu,
       age1ultenr3ldvn2g4hxdgrrmd3zmqgf4fekuprdyxl6n8vugd88pecs6wnmtg,
-      age17nkan9elzatzesdrwq26ph05dhtyd9m6x07k2czynfvg9y6tnqls539ukg
+      age17nkan9elzatzesdrwq26ph05dhtyd9m6x07k2czynfvg9y6tnqls539ukg,
+      age1rex82zcg2kjfxcllt2v0gcfs37xrhfgqw6qrx9dx0l2rzcm55dxsy42mv9

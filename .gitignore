@@ -1,5 +1,6 @@
 .DS_Store
 result
 .nixos-anywhere-extra/
+.nixos-anywhere-extra-vps/
 secrets/age/
 result-codex

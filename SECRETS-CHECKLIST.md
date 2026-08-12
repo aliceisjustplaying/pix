@@ -214,6 +214,15 @@ What it is:
 Where it goes:
 - `secrets/secrets.yaml` under `todoist-api-token`
 
+### Song of Songs Bluesky credentials
+
+What they are:
+- `songofsongs-bsky-username` — the bot account identifier
+- `songofsongs-bsky-password` — the bot's Bluesky app password
+
+Where they go:
+- `secrets/secrets.yaml`; the `songofsongs.service` receives them through systemd credentials
+
 ## Required bootstrap key material
 
 ### 16. Operator age key
@@ -243,6 +252,14 @@ How it is created:
 This generates:
 - `secrets/age/pix2-host.key`
 - `./.nixos-anywhere-extra/var/lib/sops-nix/key.txt`
+
+For the ARM VPS target, use:
+
+```bash
+./scripts/prepare-bootstrap-key.sh \
+  secrets/age/vps-host.key \
+  .nixos-anywhere-extra-vps
+```
 
 Use the printed public recipient in `.sops.yaml` (at the repo root).
 

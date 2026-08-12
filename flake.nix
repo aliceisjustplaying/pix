@@ -105,11 +105,14 @@
                     rapidocr-onnxruntime
                   ]);
                 makeWrapperArgs = [ "--set FRONTEND_BUILD_DIR ${frontend}/share/open-webui" ];
-                passthru = (old.passthru or { }) // { inherit frontend; };
+                passthru = (old.passthru or { }) // {
+                  inherit frontend;
+                };
               });
             oracle = final.callPackage ./pkgs/oracle.nix { };
             plausible = final.callPackage ./pkgs/plausible.nix { };
             portless = final.callPackage ./pkgs/portless { };
+            songofsongs = final.callPackage ./pkgs/songofsongs.nix { };
             rust-nightly = final.rust-bin.nightly.latest.default.override {
               extensions = [
                 "rust-src"
@@ -196,6 +199,7 @@
             portless
             sfw
             signal-cli
+            songofsongs
             tirith
             vet-run
             ;
@@ -211,6 +215,11 @@
         emoji = mkNixosConfiguration {
           system = "x86_64-linux";
           hostModule = ./hosts/emoji/default.nix;
+        };
+
+        vps = mkNixosConfiguration {
+          system = "aarch64-linux";
+          hostModule = ./hosts/vps/default.nix;
         };
       }
       // nixpkgs.lib.listToAttrs (

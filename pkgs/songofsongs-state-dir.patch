@@ -1,0 +1,47 @@
+diff --git a/index.ts b/index.ts
+index d928cfb..c58ee0a 100644
+--- a/index.ts
++++ b/index.ts
+@@ -3,6 +3,7 @@ const { BskyAgent } = bsky;
+ import * as dotenv from 'dotenv';
+ import process from 'node:process';
+ import fs from 'node:fs';
++import path from 'node:path';
+ dotenv.config();
+ 
+ const agent = new BskyAgent({
+@@ -10,17 +11,22 @@ const agent = new BskyAgent({
+ });
+ 
+ await agent.login({
+-  identifier: process.env.BSKY_USERNAME!,
+-  password: process.env.BSKY_PASSWORD!,
++  identifier: process.env.BSKY_USERNAME,
++  password: process.env.BSKY_PASSWORD,
+ });
+ 
+-const lines = fs.readFileSync('songofsongs.txt', 'utf8').split('\n');
+-const alreadyPosted = fs.readFileSync('posted.txt', 'utf8').split('\n');
++const sourceFile = process.env.SONGOFSONGS_SOURCE_FILE ?? 'songofsongs.txt';
++const stateDirectory = process.env.STATE_DIRECTORY ?? '.';
++const postedFile = path.join(stateDirectory, 'posted.txt');
++const lines = fs.readFileSync(sourceFile, 'utf8').split('\n');
++const alreadyPosted = fs.existsSync(postedFile)
++  ? fs.readFileSync(postedFile, 'utf8').split('\n')
++  : [];
+ let possibleOutput = lines.filter((line) => !alreadyPosted.includes(line));
+ if (possibleOutput.length === 0) {
+-  fs.rmSync('posted.txt');
++  fs.rmSync(postedFile, { force: true });
+   possibleOutput = lines;
+-  fs.appendFileSync('posted.txt', '\n');
++  fs.appendFileSync(postedFile, '\n');
+ }
+ const post = possibleOutput[Math.floor(Math.random() * possibleOutput.length)];
+ 
+@@ -30,4 +36,4 @@ await agent.post({
+   createdAt: new Date().toISOString(),
+ });
+ 
+-fs.appendFileSync('posted.txt', post + '\n');
++fs.appendFileSync(postedFile, post + '\n');

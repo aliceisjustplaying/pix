@@ -3,6 +3,9 @@
 NixOS host configuration for `pix2`, the active production host serving
 `pix.mosphere.at`.
 
+It also contains the minimal ARM64 `vps` target that will run Plausible and
+the Song of Songs bot after the Debian host is reinstalled.
+
 This repo owns the host/platform layer: NixOS modules, Home Manager config for
 the `agent` user, SOPS-managed secrets, systemd services, local helper
 commands, package wrappers, and first-deploy scripts. Application source trees
@@ -13,6 +16,7 @@ and mutable runtime state live under `/workspace` and are only wired here.
 | Target | System | Host module | Notes |
 | --- | --- | --- | --- |
 | `.#nixosConfigurations.pix2` | `x86_64-linux` | `hosts/pix2/default.nix` | Production host, hostname `pix2` |
+| `.#nixosConfigurations.vps` | `aarch64-linux` | `hosts/vps/default.nix` | Minimal Plausible + Song of Songs host |
 
 Package exports are built for `x86_64-linux`:
 `agentmemory`, `amp-code`, `camofox-browser`, `claude-code-acp`,

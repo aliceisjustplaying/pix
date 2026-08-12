@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
 	cat >&2 <<'USAGE'
-usage: scripts/deploy.sh [--host pix2] <server-ip>
+usage: scripts/deploy.sh [--host pix2|vps] <server-ip>
 USAGE
 }
 
@@ -43,6 +43,11 @@ server_ip="$1"
 case "$host" in
 pix2)
 	kexec_arch="x86_64"
+	extra_files_dir="${EXTRA_FILES_DIR:-.nixos-anywhere-extra}"
+	;;
+vps)
+	kexec_arch="aarch64"
+	extra_files_dir="${EXTRA_FILES_DIR:-.nixos-anywhere-extra-vps}"
 	;;
 *)
 	echo "unknown host: $host" >&2
@@ -55,6 +60,6 @@ kexec_url="${KEXEC_URL:-https://github.com/nix-community/nixos-images/releases/d
 nix run github:nix-community/nixos-anywhere -- \
 	--flake ".#${host}" \
 	--build-on remote \
-	--extra-files ./.nixos-anywhere-extra \
+	--extra-files "./${extra_files_dir}" \
 	--kexec "$kexec_url" \
 	root@"$server_ip"
