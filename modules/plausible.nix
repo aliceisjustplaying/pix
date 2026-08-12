@@ -74,7 +74,7 @@ in
         acme_ca https://acme.zerossl.com/v2/DV90
       '';
 
-      virtualHosts = {
+      virtualHosts = lib.optionalAttrs cfg.enable {
         ${cfg.domain}.extraConfig = builtins.readFile ../files/caddy/plausible.caddy;
       }
       // lib.optionalAttrs cfg.servePixProxy {
