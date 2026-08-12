@@ -11,7 +11,9 @@ This is the minimal `aarch64-linux` target for Plausible and the Song of Songs b
 - SSH uses `agent@vps.bsky.sh` with `~/.ssh/pix`; direct root login is disabled.
 - The final Song of Songs `posted.txt` history was restored with mode `0600`.
 - The two Plausible instances were merged on 2026-08-12. `p.mosphere.at`
-  points here, and Plausible is stopped on `pix2`.
+  points here, and Plausible is stopped and declaratively disabled on `pix2`.
+- A synthetic taper-calculator pageview reached this host on 2026-08-12,
+  increasing the merged totals to 105,500 events and 10,750 sessions.
 - The merged, restore-tested backup is under
   `/Users/sarah/Backups/plausible-migration-2026-08-12`.
 

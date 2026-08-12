@@ -4,6 +4,10 @@ let
 in
 {
   options.pix.plausible = {
+    enable = lib.mkEnableOption "Plausible Analytics" // {
+      default = true;
+    };
+
     domain = lib.mkOption {
       type = lib.types.str;
       default = "p.mosphere.at";
@@ -22,7 +26,7 @@ in
     sops.secrets.plausible-smtp-password = { };
 
     services.plausible = {
-      enable = true;
+      enable = cfg.enable;
 
       server = {
         baseUrl = "https://${cfg.domain}";
@@ -44,6 +48,8 @@ in
       };
     };
 
+    # Monitoring on pix2 still scrapes ClickHouse after Plausible moves away.
+    services.clickhouse.enable = true;
     services.clickhouse.extraServerConfig = ''
       <clickhouse>
         <trace_log remove="remove" />
@@ -81,7 +87,7 @@ in
       443
     ];
 
-    systemd.services.plausible.serviceConfig = {
+    systemd.services.plausible.serviceConfig = lib.mkIf cfg.enable {
       Restart = "on-failure";
       RestartSec = "10s";
     };
