@@ -32,6 +32,7 @@ let
     pkgs.zstd
   ];
   hermesTimezonePath = "${pkgs.tzdata}/share/zoneinfo";
+  caBundle = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
 
   hermesLive = pkgs.writeText "hermes-live" (tmpl ../files/hermes/hermes-live.sh {
     inherit hermesHome hermesOverrides hermesVenv;
@@ -65,7 +66,7 @@ in {
   sops.templates.hermes-service-env = {
     restartUnits = [ "hermes-gateway.service" ];
     content = tmpl ../files/sops/hermes-service.env {
-      inherit hermesHome hermesOverrides agentHome servicePath hermesLibraryPath hermesTimezonePath;
+      inherit hermesHome hermesOverrides agentHome servicePath hermesLibraryPath hermesTimezonePath caBundle;
       gogKeyringPassword = config.sops.placeholder.gog-keyring-password;
     };
   };

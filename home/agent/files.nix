@@ -17,6 +17,7 @@ let
   ];
   hermesBuildPath = pkgs.lib.makeBinPath [
     pkgs.gnumake
+    pkgs.npm-hermes
     pkgs.nodejs_24
     pkgs.pkg-config
     pkgs.python312
@@ -52,7 +53,10 @@ let
     piclaw-status = binStatic "piclaw-status";
     piclaw-logs = binStatic "piclaw-logs";
     backup = binStatic "backup";
-    hermes = binSrc "hermes" { inherit hermesBuildPath hermesLibraryPath; };
+    hermes = binSrc "hermes" {
+      inherit hermesBuildPath hermesLibraryPath;
+      caBundle = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+    };
     hermes-gateway-smoke = binStatic "hermes-gateway-smoke";
     npm = "${pkgs.npm-hermes}/bin/npm";
     npx = "${pkgs.npm-hermes}/bin/npx";
