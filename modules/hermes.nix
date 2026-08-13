@@ -6,13 +6,14 @@ let
   hermesOverrides = "${hermesHome}/overrides";
   hermesRepo = "/workspace/src/hermes-live";
   hermesVenv = "${hermesHome}/venv";
-  hermesSitePackages = "${hermesVenv}/lib/python3.12/site-packages";
+  hermesSitePackages = "${hermesVenv}/lib/python3.11/site-packages";
   hermesSitecustomize = pkgs.writeText "hermes-sitecustomize.py" (builtins.readFile ../files/hermes/sitecustomize.py);
   tmpl = import ../lib/template.nix;
 
   servicePath = agentService.runtimePath [ pkgs.uv pkgs.python312 ];
   hermesBuildPath = lib.makeBinPath [
     pkgs.gnumake
+    pkgs.npm-hermes
     pkgs.nodejs_24
     pkgs.pkg-config
     pkgs.python312

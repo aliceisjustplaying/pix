@@ -236,7 +236,7 @@ def _apply() -> None:
         import agent.prompt_builder as prompt_builder
         import agent.anthropic_adapter as anthropic_adapter
         import hermes_cli.main as hermes_main
-    except Exception:
+    except (Exception, SystemExit):
         return
 
     if getattr(prompt_builder, "_pix_claude_oauth_prompt_patch_applied", False):

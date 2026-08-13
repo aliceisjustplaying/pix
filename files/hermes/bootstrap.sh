@@ -35,16 +35,19 @@ fi
 rev="$(git -C "@hermesRepo@" rev-parse HEAD)"
 stamp="@hermesHome@/.install-rev"
 
-if [ ! -x "@hermesVenv@/bin/hermes" ] || [ ! -f "$stamp" ] || [ "$(cat "$stamp")" != "$rev" ]; then
+if [ ! -x "@hermesVenv@/bin/hermes" ] \
+	|| [ ! -x "@hermesVenv@/bin/python" ] \
+	|| [ ! -f "$stamp" ] \
+	|| [ "$(cat "$stamp")" != "$rev" ]; then
 	rm -rf "@hermesVenv@"
-	@uv@ venv "@hermesVenv@" --python @python@
+	@uv@ venv "@hermesVenv@" --python 3.11
 	(
 		cd "@hermesRepo@"
 		export UV_PROJECT_ENVIRONMENT="@hermesVenv@"
 		@uv@ sync \
+			--python 3.11 \
 			--extra messaging \
 			--extra cron \
-			--extra cli \
 			--extra pty \
 			--extra honcho \
 			--extra mcp \

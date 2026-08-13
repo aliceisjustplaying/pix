@@ -1,13 +1,13 @@
 # Workspace
 
-You're on a Hermes-hosted NixOS box managed by the `pix` flake. **Piclaw and Hermes both run here side by side** — Piclaw is a chat-app frontend, Hermes is the agent gateway. **Treat both as off-limits unless the user explicitly says they're working on one.** This is no longer primarily a Piclaw box.
+You're on the Hermes NixOS host managed by the `pix` flake. Hermes is the only application stack: gateway, WebUI, AgentMemory, Camofox, and its local model proxy. **Treat Hermes and its supporting services as off-limits unless the user explicitly says they're working on them.**
 
 Canonical tracked copy: `/workspace/src/pix/AGENTS.md`. Keep `/workspace/AGENTS.md` byte-for-byte aligned.
 
 ## Don't (without explicit per-turn approval)
 
-- Touch piclaw, hermes, hermes-webui, or their service files / configs.
-- Run host-job commands: `rebuild`, `update`, `rollback`, `piclaw-restart`, `backup`. Same for any direct `sudo nixos-rebuild` or service restart.
+- Touch hermes, hermes-webui, or their service files / configs.
+- Run host-job commands: `rebuild` or `backup`. Same for any direct `sudo nixos-rebuild` or service restart.
 - Delete `/workspace/.piclaw/store/messages.db`. Ever.
 - Stack untested patches in any deploy patch tree — each patch must pass `git apply --check`, a clean build, and a smoke test before the next one. When a patch makes things worse, bisect, don't layer. `.rej` / `.orig` files are debris.
 - Install host tooling ad hoc (`nix profile install`, `brew`, `apt`). Persistent tools go through `/workspace/src/pix` and the `rebuild` path.
@@ -18,23 +18,17 @@ Canonical tracked copy: `/workspace/src/pix/AGENTS.md`. Keep `/workspace/AGENTS.
 All async — they call `sudo systemctl start --no-block <unit>` and return immediately. Poll with `host-result`.
 
 - `rebuild` → `pix-rebuild.service` → `nixos-rebuild switch --flake path:/home/agent/workspace/src/pix#pix2`.
-- `update [--force]`, `rollback [--force]` → piclaw-update / piclaw-rollback services.
-- `piclaw-restart`, `piclaw-status`, `piclaw-logs` — piclaw service control.
 - `backup` → `restic-backups-r2.service`.
 - `host-result <unit> [--wait <s>]` — read recent journal of a queued unit. Use after any async job, especially ones that may kill the calling agent.
-- `verify-deploy` — local piclaw deploy validation (no activation).
 - `dependency-freshness`, `nfu` — flake/pin checks and updates.
 
-Aliases: `sync-nix`=`rebuild`, `update-force`=`update --force`, `rollback-force`=`rollback --force`.
+Alias: `sync-nix`=`rebuild`.
 
 ## Paths
 
 - `/workspace` → symlink to `/home/agent/workspace`. For Nix `path:` inputs, prefer the real `/home/agent/workspace/...` path.
 - `/workspace/src/pix` — NixOS host config, home-manager, secrets, service defs. Authoritative.
-- `/workspace/src/piclaw-customizations` — Piclaw prompt overlay, patches, app deploy flow.
-- `/workspace/src/piclaw-live` (live), `piclaw-live.previous` (rollback target), `piclaw-fork` (upstream PR work).
 - `/workspace/src/hermes-live`, `/workspace/src/hermes-webui`, `/workspace/.hermes/` — Hermes runtime. Off-limits unless asked.
-- `/workspace/.piclaw/`, `/workspace/.pi/` — persistent state.
 - `/workspace/notes/reference/nixos-gotchas.md` — known NixOS pitfalls (setuid wrappers, Playwright, Bun global state).
 
 ## Browser tooling

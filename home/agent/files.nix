@@ -54,6 +54,8 @@ let
     backup = binStatic "backup";
     hermes = binSrc "hermes" { inherit hermesBuildPath hermesLibraryPath; };
     hermes-gateway-smoke = binStatic "hermes-gateway-smoke";
+    npm = "${pkgs.npm-hermes}/bin/npm";
+    npx = "${pkgs.npm-hermes}/bin/npx";
     amp-login-proxy = binStatic "amp-login-proxy";
     amp-login-upstream = binStatic "amp-login-upstream";
   };

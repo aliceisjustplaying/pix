@@ -78,6 +78,7 @@
             grok = final.callPackage ./pkgs/grok.nix { };
             iii = final.callPackage ./pkgs/iii.nix { };
             kickbacks-ai = final.callPackage ./pkgs/kickbacks-ai.nix { };
+            npm-hermes = final.callPackage ./pkgs/npm-hermes.nix { };
             open-webui =
               let
                 version = "0.10.2";

@@ -8,18 +8,13 @@ in
     ../../disko/pix.nix
     ../../modules/base.nix
     ../../modules/browser-runtime.nix
-    ../../modules/bsky-boost.nix
-    ../../modules/bluepy-agent-runner.nix
-    ../../modules/bluepy-push-gateway.nix
     ../../modules/host-jobs.nix
     ../../modules/tailscale.nix
-    ../../modules/cloudflared.nix
+    # Piclaw itself is disabled, but this module still owns the shared agent
+    # secrets and workspace layout used by Hermes.
     ../../modules/piclaw.nix
     ../../modules/hermes.nix
     ../../modules/hermes-webui.nix
-    ../../modules/plausible.nix
-    ../../modules/glossonotif.nix
-    ../../modules/monitoring.nix
     ../../modules/backup.nix
   ];
 

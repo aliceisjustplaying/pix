@@ -33,6 +33,39 @@ in
     options = "--delete-older-than 7d";
   };
 
+  systemd.services.nix-generation-prune = {
+    description = "Keep only the newest four NixOS system generations";
+    path = with pkgs; [
+      coreutils
+      gawk
+      nix
+    ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      set -euo pipefail
+
+      mapfile -t generations < <(
+        nix-env --profile /nix/var/nix/profiles/system --list-generations \
+          | awk '{ print $1 }'
+      )
+      delete_count=$((''${#generations[@]} - 4))
+
+      if (( delete_count <= 0 )); then
+        echo "''${#generations[@]} system generations present; nothing to prune"
+        exit 0
+      fi
+
+      echo "pruning $delete_count old system generations"
+      nix-env --profile /nix/var/nix/profiles/system --delete-generations \
+        "''${generations[@]:0:delete_count}"
+    '';
+  };
+
+  systemd.services.nix-gc = {
+    requires = [ "nix-generation-prune.service" ];
+    after = [ "nix-generation-prune.service" ];
+  };
+
   nix.optimise.automatic = true;
 
   systemd.services.nix-disk-guard = {
