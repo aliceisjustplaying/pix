@@ -9,3 +9,5 @@ discord:
   websocket_liveness_failure_threshold: 1
   websocket_heartbeat_ack_max_age_seconds: 60
   websocket_max_latency_seconds: 30
+updates:
+  parked_branch_strategy: update_in_place
